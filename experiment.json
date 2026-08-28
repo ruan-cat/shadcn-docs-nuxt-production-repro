@@ -1,0 +1,7 @@
+{
+  "id": "R19",
+  "reason": "在 R15 已复现的 Element Plus standalone npm alias 缺包拓扑上，仅将 pnpm nodeLinker 切换为 hoisted，验证全局扁平 node_modules 是否会改变 Nitro tracing/materialization，还是只通过更宽松的 workspace 可见性掩盖 logical alias 缺口。",
+  "allowedSafetyPatterns": {
+    "pnpmWorkspace": ["nodeLinker: hoisted"]
+  }
+}
