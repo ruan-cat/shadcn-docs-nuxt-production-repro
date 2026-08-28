@@ -49,6 +49,9 @@ jobs:
       - name: 输出 H3 实际解析路径
         run: pnpm probe:h3
 
+      - name: 输出 workspace UI package 入口
+        run: pnpm probe:ui
+
   linux-production:
     name: Linux 完整生产构建与 artifact smoke
     runs-on: ubuntu-latest
@@ -119,7 +122,7 @@ jobs:
       - name: Nuxt prepare
         run: pnpm prepare:docs
 
-      - name: 依赖树与 H3 路径
+      - name: 依赖树、H3 与 UI 入口
         run: pnpm probe:all
 
       - name: 构建独立 Nitro 3 API
