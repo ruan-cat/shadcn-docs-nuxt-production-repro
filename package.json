@@ -23,6 +23,7 @@
     "probe:h3": "tsx probes/resolve-h3.ts",
     "probe:ui": "tsx probes/resolve-workspace-ui.ts",
     "probe:content": "tsx probes/content-smoke.ts",
+    "probe:closure": "tsx probes/inspect-artifact-closure.ts",
     "probe:artifact": "tsx probes/artifact-smoke.ts",
     "probe:all": "pnpm probe:deps && pnpm probe:h3 && pnpm probe:ui",
     "clean": "rimraf apps/**/.nuxt apps/**/.output apps/**/.vercel packages/**/dist .turbo"
