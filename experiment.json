@@ -1,0 +1,9 @@
+{
+  "id": "R06",
+  "reason": "验证将 control 的 nuxt-og-image root override 从 5.1.9 显式升级为 R05 已实测自然解析到的 5.1.13 后，依赖闭包、@nuxt/kit/H3 世代和生产运行时是否与 R05 的自然漂移一致。",
+  "expected": {
+    "rootOverrides": {
+      "nuxt-og-image": "5.1.13"
+    }
+  }
+}
