@@ -81,6 +81,9 @@ jobs:
       - name: 记录 docs standalone 依赖闭包
         run: pnpm probe:closure
 
+      - name: Docs 首页父级依赖隔离 smoke
+        run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3099/ --isolate-parent-node-modules
+
       - name: Docs 首页 artifact smoke
         run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3100/
 
