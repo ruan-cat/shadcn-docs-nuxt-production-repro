@@ -1,9 +1,12 @@
 import { defineEventHandler } from "nitro/h3";
-import { createRuntimeDescriptor } from "@repro/shared-core";
 
 export default defineEventHandler(() => {
   return {
-    descriptor: createRuntimeDescriptor("api", "nitro", "nitro3-h3v2"),
+    descriptor: {
+      application: "api",
+      runtime: "nitro",
+      generation: "nitro3-h3v2",
+    } as const,
     node: process.version,
     platform: process.platform,
   };

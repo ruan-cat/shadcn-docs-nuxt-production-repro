@@ -1,6 +1,9 @@
 import { defineEventHandler } from "nitro/h3";
-import { createHealthPayload } from "@repro/shared-core";
 
 export default defineEventHandler(() => {
-  return createHealthPayload("independent-nitro3-api");
+  return {
+    ok: true,
+    service: "independent-nitro3-api",
+    timestamp: new Date().toISOString(),
+  } as const;
 });

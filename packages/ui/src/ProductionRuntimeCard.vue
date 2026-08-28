@@ -2,11 +2,16 @@
 import { computed } from "vue";
 import { useToggle } from "@vueuse/core";
 import { ElButton, ElCard, ElSpace, ElTag, ElText } from "element-plus";
-import { createRuntimeDescriptor, formatRuntimeDescriptor } from "@repro/shared-core";
 
 const [expanded, toggleExpanded] = useToggle(false);
-const descriptor = createRuntimeDescriptor("docs", "nuxt", "nuxt3-h3v1");
-const label = computed(() => formatRuntimeDescriptor(descriptor));
+const descriptor = {
+  application: "docs",
+  runtime: "nuxt",
+  generation: "nuxt3-h3v1",
+} as const;
+const label = computed(
+  () => `${descriptor.application}:${descriptor.runtime}:${descriptor.generation}`,
+);
 </script>
 
 <template>
@@ -18,7 +23,7 @@ const label = computed(() => formatRuntimeDescriptor(descriptor));
         {{ expanded ? "收起运行时说明" : "展开运行时说明" }}
       </ElButton>
       <ElText v-if="expanded">
-        此组件来自独立 workspace 包，并直接消费 Element Plus、VueUse 与共享核心包。
+        此组件来自独立 workspace 包，并直接消费 Element Plus 与 VueUse。
       </ElText>
     </ElSpace>
   </ElCard>

@@ -1,0 +1,15 @@
+{
+  "id": "R07",
+  "reason": "移除 docs/UI/API 对纯 TypeScript shared-core 的 workspace 消费 edge，同时保留 shared-core 包本身及其独立 build/test，并用等价本地逻辑维持 UI descriptor 与 API payload 语义，用于量化这条 workspace topology 对依赖解析、tracing、build graph 与 artifact closure 的影响。",
+  "expected": {
+    "docsWorkspaceDependencies": {
+      "@repro/shared-core": null
+    },
+    "apiWorkspaceDependencies": {
+      "@repro/shared-core": null
+    },
+    "uiWorkspaceDependencies": {
+      "@repro/shared-core": null
+    }
+  }
+}
