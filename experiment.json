@@ -5,5 +5,15 @@
     "docsWorkspaceDependencies": {
       "@repro/ui": null
     }
+  },
+  "measurement": {
+    "lockfileCommit": "c4cbccf3fd1626bbc366447b3f5e5d055b29df1f",
+    "lockfileBlobSha": "6ddb72308fc68c7f503e1394076769f67c72e5e8",
+    "observed": {
+      "appsDocsUiEdge": "absent",
+      "packagesUiImporter": "retained",
+      "packagesUiElementPlus": "2.13.6",
+      "packagesUiVueUse": "14.2.1"
+    }
   }
 }
