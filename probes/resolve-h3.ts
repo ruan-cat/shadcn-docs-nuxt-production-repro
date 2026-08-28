@@ -22,29 +22,33 @@ function safeResolve(label: string, baseFile: string, specifier: string) {
 console.log("# H3 实际解析探针");
 console.log(`repo: ${root}`);
 
-const docsH3 = safeResolve("docs -> h3", docsManifest, "h3");
-const contentManifest = safeResolve(
-  "docs -> @ztl-uwu/nuxt-content/package.json",
-  docsManifest,
-  "@ztl-uwu/nuxt-content/package.json",
-);
+const docsH3 = safeResolve("docs package context -> h3", docsManifest, "h3");
 
-if (contentManifest) {
-  safeResolve("content package context -> h3", contentManifest, "h3");
+const contentEntry = safeResolve(
+  "docs -> @ztl-uwu/nuxt-content entry",
+  docsManifest,
+  "@ztl-uwu/nuxt-content",
+);
+if (contentEntry) {
+  safeResolve("Content package context -> h3", contentEntry, "h3");
 }
 
 const docsNuxtManifest = safeResolve("docs -> nuxt/package.json", docsManifest, "nuxt/package.json");
 if (docsNuxtManifest) {
-  safeResolve("nuxt package context -> h3", docsNuxtManifest, "h3");
+  safeResolve("Nuxt package context -> h3", docsNuxtManifest, "h3");
 }
 
 const apiNitroManifest = safeResolve("api -> nitro/package.json", apiManifest, "nitro/package.json");
 if (apiNitroManifest) {
-  safeResolve("nitro3 package context -> h3", apiNitroManifest, "h3");
+  safeResolve("Nitro 3 package context -> h3", apiNitroManifest, "h3");
 }
 
-safeResolve("api package context -> h3", apiManifest, "h3");
+safeResolve("API package context -> bare h3", apiManifest, "h3");
 
 console.log("\n# 判读提示");
-console.log("控制组期望 docs/Content 运行时属于 H3 v1；独立 Nitro 3 可以拥有自己的 H3 v2。两者路径不应被静默混用。");
-if (!docsH3) process.exitCode = 1;
+console.log("1. 控制组期望 docs 与 Content 的运行时 H3 都属于 v1。");
+console.log("2. 独立 Nitro 3 自己可以拥有 H3 v2；这不等于 docs 已被污染。");
+console.log("3. API package context 的裸 h3 解析仅用于暴露 workspace 可见性；API 源码本身不应裸 import 未声明的 h3。");
+console.log("4. 后续删除 docs 显式 H3 或放宽 Content 版本后，必须比较 Content package context 的路径是否发生变化。");
+
+if (!docsH3 || !contentEntry) process.exitCode = 1;
