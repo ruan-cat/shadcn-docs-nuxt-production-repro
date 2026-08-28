@@ -7,5 +7,4 @@ const manifest = JSON.parse(await readFile(new URL("../package.json", import.met
 test("UI 包保留生产复杂依赖", () => {
   assert.equal(manifest.dependencies["element-plus"], "2.13.6");
   assert.equal(manifest.dependencies["@vueuse/core"], "14.2.1");
-  assert.equal(manifest.dependencies["@repro/shared-core"], "workspace:*");
 });

@@ -8,5 +8,15 @@
   "rootOverrides": {
     "@ztl-uwu/nuxt-content": "2.13.9",
     "nuxt-og-image": "5.1.9"
+  },
+  "docsWorkspaceDependencies": {
+    "@repro/shared-core": "workspace:*",
+    "@repro/ui": "workspace:*"
+  },
+  "apiWorkspaceDependencies": {
+    "@repro/shared-core": "workspace:*"
+  },
+  "uiWorkspaceDependencies": {
+    "@repro/shared-core": "workspace:*"
   }
 }
