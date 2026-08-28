@@ -8,21 +8,29 @@
 
 目标：建立完整 monorepo、探针、CI、文档任务工件和精确锁定的 Nuxt 3 文档控制组。
 
+正式 control **有意同时包含独立 Nitro 3 sibling API、共享 core 和 workspace UI**，因为本仓的目标就是生产复杂场景，而不是官方最小 starter。
+
 要求：
 
 - `apps/docs` 可独立构建；
 - `apps/api` 可独立构建；
 - `packages/shared-core`、`packages/ui` 存在；
-- 所有故障实验默认关闭；
-- CI 不通过“故意失败”来制造效果。
+- 所有故障 workaround 默认关闭；
+- CI 不通过“故意失败”来制造效果；
+- committed `pnpm-lock.yaml` 冻结后，普通 CI 使用 `--frozen-lockfile`。
 
 ## 阶段 1：依赖世代与 H3 串味
 
-### PR R01：仅加入独立 Nitro 3 API
+### PR R01：移除独立 Nitro 3 sibling，形成 docs-only 反向 control
 
-单变量：相对 docs-only control，只加入 `apps/api`。
+因为正式 `main` control 已经包含 `apps/api`，R01 不再“重复加入 API”，而是只删除 `apps/api` 及其 workspace edge，形成相同依赖版本下的 docs-only 对照。
 
-目标：回答 sibling Nitro 3 本身是否足以影响 docs。
+目标：回答“独立 Nitro 3 sibling 的存在本身，是否改变 docs 的依赖树、Content H3 解析、build graph 或运行时结果”。
+
+判读：
+
+- main 与 R01 都绿且 Content H3 路径一致：sibling 存在本身不是污染充分条件；
+- 删除 sibling 后依赖/H3 路径发生关键变化：记录为 topology evidence，再继续 R02/R03 找到触发运行时失败的必要条件。
 
 ### PR R02：删除 docs 显式 H3
 
@@ -32,20 +40,20 @@
 
 - `pnpm why h3`；
 - 所有 H3 实例；
-- Content runtime `import "h3"` 的实际解析位置；
+- Content 物理 package context 的实际 H3 解析位置；
 - Content cache/search 结果。
 
 ### PR R03：Content 精确版本改 caret
 
-单变量：`2.13.9 -> ^2.13.9`。
+单变量：`2.13.9 -> ^2.13.9`，同时只解除为该实验服务的 root Content override。
 
-fresh lockfile，观察是否跨到 2.14.x。
+fresh lockfile，观察是否跨到 2.14.x，并明确区分 manifest 允许范围与实际解析结果。
 
 ### PR R04：theme 精确版本改 caret
 
 单变量：`1.1.9 -> ^1.1.9`。
 
-观察是否跨主题 Nuxt 3/Nuxt 4 世代。
+观察是否跨主题 Nuxt 3/Nuxt 4 世代；如果 root overrides 阻止某条预期漂移，必须在 PR 中说明而不是偷偷同时解除多个变量。
 
 ### PR R05：移除 `nuxt-og-image` override
 
@@ -57,17 +65,17 @@ fresh lockfile，观察是否跨到 2.14.x。
 
 ## 阶段 2：workspace 复杂度
 
-### PR R07：加入 shared-core 双向消费
+### PR R07：移除 shared-core 双向消费做 topology 对照
 
-只增加 docs/api 对同一纯 TS workspace 包的依赖。
+正式 control 已经让 docs/API 同时消费纯 TS shared-core；R07 通过减法对照确认这条 workspace edge 对解析和 tracing 的影响。
 
-### PR R08：加入 Vue + Element Plus UI workspace
+### PR R08：移除 workspace UI 做 docs complexity 对照
 
-只让 docs 消费 UI，API 不消费。
+正式 control 已包含 Vue + Element Plus + VueUse UI；R08 用减法量化 client/SSR modules、产物、内存和 externalization 差异。
 
-### PR R09：UI 走 package exports/dist
+### PR R09：UI 保持 package exports/dist
 
-作为 production control。
+把当前 production control 的 exports/dist 行为固化成对照证据。
 
 ### PR R10：UI 改为 source alias
 
@@ -155,13 +163,13 @@ fresh lockfile，观察是否跨到 2.14.x。
 
 ## 阶段 7：ESM/CJS 与交互
 
-### PR R30：去除 dayjs ESM alias（如当前场景需要）
+### PR R30：复现 dayjs 入口冲突
 
-### PR R31：去除 mermaid ESM alias
+### PR R31：复现 mermaid 入口冲突
 
-### PR R32：去除 debug shim / noExternal
+### PR R32：复现 debug ESM/CJS 入口问题
 
-### PR R33：去除 sanitize-url optimizeDeps
+### PR R33：复现 sanitize-url optimizeDeps 缺口
 
 每个 PR 记录 browser module error 与 hydration 状态，不能只截图 UI。
 
