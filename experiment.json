@@ -8,5 +8,10 @@
     "rootOverrides": {
       "@ztl-uwu/nuxt-content": null
     }
+  },
+  "measurement": {
+    "lockfileCommit": "4174cb7f4250121dfe7ed0eb606e7cd634f6c71f",
+    "lockfileBlobSha": "4f86e540638664c43263484e26721769ba499705",
+    "resolvedContent": "2.13.9"
   }
 }
