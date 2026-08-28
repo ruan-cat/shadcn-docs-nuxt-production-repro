@@ -49,6 +49,15 @@ jobs:
       - name: 输出 H3 实际解析路径
         run: pnpm probe:h3
 
+      - name: 上传初始化 control lockfile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: control-lockfile-${{ github.sha }}
+          path: pnpm-lock.yaml
+          if-no-files-found: error
+          retention-days: 7
+
   linux-production:
     name: Linux 完整生产构建与 artifact smoke
     runs-on: ubuntu-latest
