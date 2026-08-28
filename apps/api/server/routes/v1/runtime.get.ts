@@ -1,3 +1,4 @@
+import { defineEventHandler } from "nitro/h3";
 import { createRuntimeDescriptor } from "@repro/shared-core";
 
 export default defineEventHandler(() => {
