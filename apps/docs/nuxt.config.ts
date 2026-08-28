@@ -24,6 +24,9 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    externals: {
+      inline: [/.*/],
+    },
     prerender: {
       crawlLinks: true,
     },
