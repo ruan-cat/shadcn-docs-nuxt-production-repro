@@ -40,6 +40,9 @@ importers:
 
   apps/docs:
     dependencies:
+      '@popperjs/core':
+        specifier: npm:@sxzz/popperjs-es@^2.11.7
+        version: '@sxzz/popperjs-es@2.11.8'
       '@repro/shared-core':
         specifier: workspace:*
         version: link:../../packages/shared-core
