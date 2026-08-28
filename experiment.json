@@ -1,0 +1,9 @@
+{
+  "id": "R16",
+  "reason": "在 R15 已复现的 Element Plus standalone npm alias 缺包拓扑上，仅向 docs 增加 @popperjs/core 的 direct npm alias dependency，验证 Nitro tracing 是否因此保留 logical package identity 并恢复隔离 HTTP 200。",
+  "expected": {
+    "docsDependencies": {
+      "@popperjs/core": "npm:@sxzz/popperjs-es@^2.11.7"
+    }
+  }
+}
