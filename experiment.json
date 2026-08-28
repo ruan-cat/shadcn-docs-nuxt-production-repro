@@ -1,0 +1,7 @@
+{
+  "id": "R18",
+  "reason": "在 R15 已复现的 Element Plus standalone npm alias 缺包拓扑上，仅通过 pnpm publicHoistPattern 将逻辑 @popperjs/core 提升到 workspace 根 node_modules，验证这种安装拓扑 workaround 是否会改变 Nitro tracing/materialization，还是只掩盖 checkout 内解析问题。",
+  "allowedSafetyPatterns": {
+    "pnpmWorkspace": ["publicHoistPattern"]
+  }
+}
