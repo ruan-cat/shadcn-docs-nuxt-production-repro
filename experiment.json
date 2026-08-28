@@ -1,0 +1,7 @@
+{
+  "id": "R14",
+  "reason": "量化 blanket Nitro externals.inline 对 Nuxt server graph、内存、产物闭包与 standalone runtime 的影响。",
+  "allowedSafetyPatterns": {
+    "nuxtConfig": ["inline: [/.*/]"]
+  }
+}
