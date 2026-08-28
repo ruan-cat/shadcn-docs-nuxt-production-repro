@@ -1,0 +1,129 @@
+name: 基线 CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: 静态契约与依赖探针
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装依赖
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 记录环境
+        run: pnpm exec tsx probes/collect-environment.ts
+
+      - name: 校验任务与控制组契约
+        run: pnpm test:contracts
+
+      - name: 构建 workspace 包
+        run: pnpm build:packages
+
+      - name: 运行包级测试
+        run: pnpm test
+
+      - name: 输出实际依赖树
+        run: pnpm probe:deps
+
+      - name: 输出 H3 实际解析路径
+        run: pnpm probe:h3
+
+  linux-production:
+    name: Linux 完整生产构建与 artifact smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装依赖
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 记录构建前环境
+        run: pnpm exec tsx probes/collect-environment.ts
+
+      - name: 强制 fresh 串行构建
+        run: pnpm build:fresh
+
+      - name: Docs 首页 artifact smoke
+        run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3100/
+
+      - name: Docs Content cache artifact smoke
+        run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3101/api/_content/cache.json
+
+      - name: Docs Content search artifact smoke
+        run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3102/api/_content/search
+
+      - name: 独立 Nitro 3 API artifact smoke
+        run: pnpm probe:artifact apps/api/.output/server/index.mjs http://127.0.0.1:3200/v1/health
+
+  windows-resolution:
+    name: Windows 解析、prepare 与独立 API
+    runs-on: windows-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装依赖
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 记录环境
+        run: pnpm exec tsx probes/collect-environment.ts
+
+      - name: 控制组契约
+        run: pnpm test:contracts
+
+      - name: 构建 workspace 包
+        run: pnpm build:packages
+
+      - name: Nuxt prepare
+        run: pnpm prepare:docs
+
+      - name: 依赖树与 H3 路径
+        run: pnpm probe:all
+
+      - name: 构建独立 Nitro 3 API
+        run: pnpm build:api
+
+      - name: Nitro 3 API artifact smoke
+        run: pnpm probe:artifact apps/api/.output/server/index.mjs http://127.0.0.1:3200/v1/health

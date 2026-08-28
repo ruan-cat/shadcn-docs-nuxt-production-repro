@@ -1,0 +1,51 @@
+name: Fresh dependency resolution
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fresh-resolution:
+    name: 删除 lockfile 后重新解析依赖
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 删除已有 lockfile
+        run: rm -f pnpm-lock.yaml
+
+      - name: Fresh resolve
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 保存环境
+        run: pnpm exec tsx probes/collect-environment.ts > fresh-environment.json
+
+      - name: 保存依赖树
+        run: pnpm probe:deps > fresh-dependency-tree.txt
+
+      - name: 保存 H3 解析
+        run: pnpm probe:h3 > fresh-h3-resolution.txt
+
+      - name: 上传 fresh resolve 证据
+        uses: actions/upload-artifact@v4
+        with:
+          name: fresh-resolution
+          path: |
+            pnpm-lock.yaml
+            fresh-environment.json
+            fresh-dependency-tree.txt
+            fresh-h3-resolution.txt
+          retention-days: 7
