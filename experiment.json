@@ -1,0 +1,12 @@
+{
+  "id": "R03",
+  "reason": "验证 Nuxt Content 从精确 2.13.9 放宽到 caret 范围并解除 control root override 后，fresh pnpm 解析是否跨 minor，以及依赖世代、H3 路径和生产运行时是否随之改变。",
+  "expected": {
+    "docsDependencies": {
+      "@ztl-uwu/nuxt-content": "^2.13.9"
+    },
+    "rootOverrides": {
+      "@ztl-uwu/nuxt-content": null
+    }
+  }
+}
