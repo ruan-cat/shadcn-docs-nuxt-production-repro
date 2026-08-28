@@ -18,6 +18,7 @@ const experiment = await readOptionalJson("experiment.json");
 const rootManifest = await readJson("package.json");
 const docsManifest = await readJson("apps/docs/package.json");
 const apiManifest = await readJson("apps/api/package.json");
+const uiManifest = await readJson("packages/ui/package.json");
 
 function expected(group, key) {
   const overrideGroup = experiment?.expected?.[group];
@@ -35,15 +36,19 @@ function assertOptionalValue(actualObject, key, expectedValue, label) {
   }
 }
 
-test("control 或实验声明必须精确约束 Nuxt / Content / H3 / shadcn-docs", () => {
-  for (const key of Object.keys(control.docsDependencies)) {
+function assertDependencyGroup(manifest, group, label) {
+  for (const key of Object.keys(control[group])) {
     assertOptionalValue(
-      docsManifest.dependencies,
+      manifest.dependencies,
       key,
-      expected("docsDependencies", key),
-      `apps/docs dependencies.${key}`,
+      expected(group, key),
+      `${label} dependencies.${key}`,
     );
   }
+}
+
+test("control 或实验声明必须精确约束 Nuxt / Content / H3 / shadcn-docs", () => {
+  assertDependencyGroup(docsManifest, "docsDependencies", "apps/docs");
 });
 
 test("control 或实验声明必须精确约束根 overrides", () => {
@@ -55,6 +60,12 @@ test("control 或实验声明必须精确约束根 overrides", () => {
       `root pnpm.overrides.${key}`,
     );
   }
+});
+
+test("control 或实验声明必须精确约束 workspace dependency edges", () => {
+  assertDependencyGroup(docsManifest, "docsWorkspaceDependencies", "apps/docs");
+  assertDependencyGroup(apiManifest, "apiWorkspaceDependencies", "apps/api");
+  assertDependencyGroup(uiManifest, "uiWorkspaceDependencies", "packages/ui");
 });
 
 test("独立 Nitro API 不直接依赖 docs 运行时", () => {
