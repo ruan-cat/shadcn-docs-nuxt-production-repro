@@ -1,0 +1,13 @@
+node_modules
+.pnpm-store
+.nuxt
+.output
+.vercel
+.turbo
+dist
+coverage
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
