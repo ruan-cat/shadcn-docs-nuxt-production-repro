@@ -25,6 +25,7 @@ const policies = {
       "noExternal",
       "externals.inline",
       "inline: [/.*/]",
+      "traceAlias",
     ],
   },
   pnpmWorkspace: {
