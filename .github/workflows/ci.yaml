@@ -58,6 +58,46 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  freeze-control-lockfile:
+    name: 初始化期冻结真实 lockfile
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: contracts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 检出 PR 工作分支
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 用真实解析生成 lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 仅在缺少 lockfile 时提交控制组依赖树
+        shell: bash
+        run: |
+          if git ls-files --error-unmatch pnpm-lock.yaml >/dev/null 2>&1; then
+            echo "pnpm-lock.yaml 已由仓库跟踪，不再执行初始化自提交。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "📦 deps: 冻结初始化控制组依赖树"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+
   linux-production:
     name: Linux 完整生产构建与 artifact smoke
     runs-on: ubuntu-latest
