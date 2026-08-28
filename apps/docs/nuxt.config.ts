@@ -30,6 +30,11 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    externals: {
+      traceAlias: {
+        "@sxzz/popperjs-es": "@popperjs/core",
+      },
+    },
     prerender: {
       crawlLinks: true,
     },
