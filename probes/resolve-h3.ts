@@ -1,3 +1,4 @@
+import { existsSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,13 +25,14 @@ console.log(`repo: ${root}`);
 
 const docsH3 = safeResolve("docs package context -> h3", docsManifest, "h3");
 
-const contentEntry = safeResolve(
-  "docs -> @ztl-uwu/nuxt-content entry",
-  docsManifest,
-  "@ztl-uwu/nuxt-content",
-);
-if (contentEntry) {
-  safeResolve("Content package context -> h3", contentEntry, "h3");
+const contentLink = resolve(root, "apps/docs/node_modules/@ztl-uwu/nuxt-content");
+let contentRoot: string | undefined;
+if (existsSync(contentLink)) {
+  contentRoot = realpathSync(contentLink);
+  console.log(`Content physical package root: ${contentRoot}`);
+  safeResolve("Content package context -> h3", resolve(contentRoot, "package.json"), "h3");
+} else {
+  console.log("Content physical package root: <不存在>");
 }
 
 const docsNuxtManifest = safeResolve("docs -> nuxt/package.json", docsManifest, "nuxt/package.json");
@@ -51,4 +53,4 @@ console.log("2. 独立 Nitro 3 自己可以拥有 H3 v2；这不等于 docs 已�
 console.log("3. API package context 的裸 h3 解析仅用于暴露 workspace 可见性；API 源码本身不应裸 import 未声明的 h3。");
 console.log("4. 后续删除 docs 显式 H3 或放宽 Content 版本后，必须比较 Content package context 的路径是否发生变化。");
 
-if (!docsH3 || !contentEntry) process.exitCode = 1;
+if (!docsH3 || !contentRoot) process.exitCode = 1;
