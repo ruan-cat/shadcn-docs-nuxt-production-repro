@@ -1,0 +1,9 @@
+{
+  "id": "R05",
+  "reason": "验证仅移除 control 的 nuxt-og-image@5.1.9 root override 后，shadcn-docs-nuxt@1.1.9 的传递依赖会自然解析到哪个 OG Image 版本，并观察 @nuxt/kit / H3 世代和生产运行时是否变化。",
+  "expected": {
+    "rootOverrides": {
+      "nuxt-og-image": null
+    }
+  }
+}

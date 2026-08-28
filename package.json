@@ -34,8 +34,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@ztl-uwu/nuxt-content": "2.13.9",
-      "nuxt-og-image": "5.1.9"
+      "@ztl-uwu/nuxt-content": "2.13.9"
     }
   }
 }
