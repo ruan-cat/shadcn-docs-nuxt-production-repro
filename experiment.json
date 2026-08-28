@@ -5,5 +5,10 @@
     "docsDependencies": {
       "shadcn-docs-nuxt": "^1.1.9"
     }
+  },
+  "measurement": {
+    "lockfileCommit": "b398529873fae7ba6825da69973cff12e6cf782a",
+    "lockfileBlobSha": "b086e975610cb270165242a76c109bcc0a0cdea6",
+    "resolvedTheme": "1.1.9"
   }
 }
