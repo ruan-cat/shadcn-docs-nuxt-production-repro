@@ -1,0 +1,9 @@
+{
+  "id": "R02",
+  "reason": "验证 Nuxt Content 自身未声明 H3 runtime dependency 且文档应用不再显式兜底 H3 时，在包含独立 Nitro 3 sibling 的 pnpm monorepo 中实际解析哪个 H3 实例，以及 Content API 与生产产物是否发生变化。",
+  "expected": {
+    "docsDependencies": {
+      "h3": null
+    }
+  }
+}
