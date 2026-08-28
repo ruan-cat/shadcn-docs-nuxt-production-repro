@@ -5,5 +5,13 @@
     "rootOverrides": {
       "nuxt-og-image": "5.1.13"
     }
+  },
+  "measurement": {
+    "lockfileCommit": "a1cc62deb8a5bf50e1e76cff4d924d2617fb687f",
+    "lockfileBlobSha": "a833a31cf80020746e806eabb8978348ab9feada",
+    "resolvedOgImage": "5.1.13",
+    "observedOgImageNuxtKit": "4.5.2",
+    "observedOgImageDevtoolsKit": "3.4.2",
+    "comparison": "R05 natural resolution also resolved nuxt-og-image@5.1.13"
   }
 }
