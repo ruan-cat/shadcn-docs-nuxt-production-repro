@@ -1,0 +1,9 @@
+{
+  "id": "R04",
+  "reason": "验证 shadcn-docs-nuxt 从精确 1.1.9 放宽到 caret ^1.1.9 后，fresh pnpm 解析是否进入更高主题版本，并观察其传递依赖世代在 Content 与 OG Image control overrides 仍存在时的实际变化。",
+  "expected": {
+    "docsDependencies": {
+      "shadcn-docs-nuxt": "^1.1.9"
+    }
+  }
+}
