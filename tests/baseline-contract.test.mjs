@@ -75,18 +75,22 @@ test("独立 Nitro API 不直接依赖 docs 运行时", () => {
   assert.equal(apiManifest.dependencies["@ztl-uwu/nuxt-content"], undefined);
 });
 
-test("实验声明只能覆盖已知核心字段，且必须真的偏离 control", () => {
+test("实验声明必须是可审查的真实单变量偏离", () => {
   if (!experiment) return;
 
   assert.match(experiment.id, /^R\d{2}$/);
   assert.equal(typeof experiment.reason, "string");
   assert.ok(experiment.reason.trim().length >= 10, "experiment.reason 需要解释实验目的");
-  assert.equal(typeof experiment.expected, "object");
+
+  const expectedOverrides = experiment.expected ?? {};
+  assert.equal(typeof expectedOverrides, "object");
+  assert.equal(Array.isArray(expectedOverrides), false);
 
   let changed = 0;
-  for (const [group, values] of Object.entries(experiment.expected)) {
+  for (const [group, values] of Object.entries(expectedOverrides)) {
     assert.ok(Object.prototype.hasOwnProperty.call(control, group), `未知实验分组: ${group}`);
     assert.equal(typeof values, "object");
+    assert.equal(Array.isArray(values), false);
 
     for (const [key, value] of Object.entries(values)) {
       assert.ok(
@@ -98,5 +102,25 @@ test("实验声明只能覆盖已知核心字段，且必须真的偏离 control
     }
   }
 
-  assert.ok(changed >= 1, "实验声明至少需要一个真实偏离 control 的字段");
+  const allowedSafetyPatterns = experiment.allowedSafetyPatterns ?? {};
+  assert.equal(typeof allowedSafetyPatterns, "object");
+  assert.equal(Array.isArray(allowedSafetyPatterns), false);
+
+  for (const [group, patterns] of Object.entries(allowedSafetyPatterns)) {
+    assert.ok(
+      group === "nuxtConfig" || group === "pnpmWorkspace",
+      `未知配置安全实验分组: ${group}`,
+    );
+    assert.ok(Array.isArray(patterns), `${group} 必须是字符串数组`);
+    for (const pattern of patterns) {
+      assert.equal(typeof pattern, "string");
+      assert.ok(pattern.length > 0, `${group} 不允许空 pattern`);
+      changed += 1;
+    }
+  }
+
+  assert.ok(
+    changed >= 1,
+    "实验声明至少需要一个 dependency/workspace 偏离，或一个明确的配置安全 pattern",
+  );
 });
