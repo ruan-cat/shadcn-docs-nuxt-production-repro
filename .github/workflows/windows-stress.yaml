@@ -1,0 +1,60 @@
+name: Windows Nuxt 全量压力实验
+
+on:
+  workflow_dispatch:
+    inputs:
+      heap_mb:
+        description: Node old-space 上限 MiB；用于资源阈值实验，不代表永久推荐值
+        required: true
+        default: "4096"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  windows-docs-production:
+    name: Windows docs production build
+    runs-on: windows-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=${{ inputs.heap_mb }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装冻结依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 记录环境
+        shell: pwsh
+        run: pnpm exec tsx probes/collect-environment.ts | Tee-Object -FilePath windows-environment.json
+
+      - name: 构建 workspace 包
+        run: pnpm build:packages
+
+      - name: 全量 Nuxt production build
+        shell: pwsh
+        run: pnpm --filter @repro/docs build 2>&1 | Tee-Object -FilePath windows-docs-build.log
+
+      - name: Docs artifact smoke
+        run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3100/
+
+      - name: 上传 Windows 证据
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-docs-build-${{ inputs.heap_mb }}mb
+          path: |
+            windows-environment.json
+            windows-docs-build.log
+          retention-days: 7

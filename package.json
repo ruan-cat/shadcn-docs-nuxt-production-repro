@@ -1,0 +1,41 @@
+{
+  "name": "@shadcn-docs-nuxt-production-repro/root",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.14.0 <23"
+  },
+  "scripts": {
+    "build": "turbo run build --concurrency=1",
+    "build:fresh": "turbo run build --concurrency=1 --force",
+    "build:docs": "pnpm --filter @repro/docs build",
+    "build:api": "pnpm --filter @repro/api build",
+    "build:packages": "pnpm --filter @repro/shared-core build && pnpm --filter @repro/ui build",
+    "dev:docs": "pnpm --filter @repro/docs dev",
+    "dev:api": "pnpm --filter @repro/api dev",
+    "prepare:docs": "pnpm --filter @repro/docs prepare",
+    "typecheck": "turbo run typecheck --concurrency=1",
+    "test": "pnpm test:contracts && turbo run test --concurrency=1",
+    "test:contracts": "node --test tests/*.test.mjs",
+    "probe:deps": "tsx probes/dependency-tree.ts",
+    "probe:h3": "tsx probes/resolve-h3.ts",
+    "probe:content": "tsx probes/content-smoke.ts",
+    "probe:artifact": "tsx probes/artifact-smoke.ts",
+    "probe:all": "pnpm probe:deps && pnpm probe:h3",
+    "clean": "rimraf apps/**/.nuxt apps/**/.output apps/**/.vercel packages/**/dist .turbo"
+  },
+  "devDependencies": {
+    "rimraf": "6.1.3",
+    "tsx": "4.21.0",
+    "turbo": "2.9.3",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@ztl-uwu/nuxt-content": "2.13.9",
+      "nuxt-og-image": "5.1.9"
+    }
+  }
+}
