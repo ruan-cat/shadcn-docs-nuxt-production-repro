@@ -17,9 +17,12 @@
     "dev:api": "pnpm --filter @repro/api dev",
     "prepare:docs": "pnpm --filter @repro/docs prepare",
     "typecheck": "turbo run typecheck --concurrency=1",
-    "test": "turbo run test --concurrency=1",
+    "test": "pnpm test:contracts && turbo run test --concurrency=1",
+    "test:contracts": "node --test tests/*.test.mjs",
     "probe:deps": "tsx probes/dependency-tree.ts",
     "probe:h3": "tsx probes/resolve-h3.ts",
+    "probe:content": "tsx probes/content-smoke.ts",
+    "probe:artifact": "tsx probes/artifact-smoke.ts",
     "probe:all": "pnpm probe:deps && pnpm probe:h3",
     "clean": "rimraf apps/**/.nuxt apps/**/.output apps/**/.vercel packages/**/dist .turbo"
   },
