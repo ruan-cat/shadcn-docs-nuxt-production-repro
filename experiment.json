@@ -1,0 +1,7 @@
+{
+  "id": "R17",
+  "reason": "在 R15 已复现的 Element Plus standalone npm alias 缺包拓扑上，仅启用 Nitro v2 externals.traceAlias，将已追踪的物理 @sxzz/popperjs-es 链接为运行时所需的逻辑 @popperjs/core，验证 standalone materialization 是否恢复完整。",
+  "allowedSafetyPatterns": {
+    "nuxtConfig": ["traceAlias"]
+  }
+}
