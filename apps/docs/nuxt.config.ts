@@ -1,5 +1,15 @@
+import { fileURLToPath } from "node:url";
+
+const uiSourceEntry = fileURLToPath(
+  new URL("../../packages/ui/src/index.ts", import.meta.url),
+);
+
 export default defineNuxtConfig({
   extends: ["shadcn-docs-nuxt"],
+
+  alias: {
+    "@repro/ui": uiSourceEntry,
+  },
 
   devtools: { enabled: false },
 
