@@ -11,5 +11,15 @@
     "uiWorkspaceDependencies": {
       "@repro/shared-core": null
     }
+  },
+  "measurement": {
+    "lockfileCommit": "f33933b6a201fe2babff0e0c81c3a36a955dfc1b",
+    "lockfileBlobSha": "aae9140529c44c127f2408eb2f5e3d1010a2c132",
+    "observed": {
+      "appsDocsSharedCoreEdge": "absent",
+      "appsApiSharedCoreEdge": "absent",
+      "packagesUiSharedCoreEdge": "absent",
+      "sharedCoreImporter": "retained"
+    }
   }
 }
