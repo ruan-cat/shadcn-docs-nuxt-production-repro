@@ -3,6 +3,12 @@ export default defineNuxtConfig({
 
   devtools: { enabled: false },
 
+  vite: {
+    ssr: {
+      noExternal: true,
+    },
+  },
+
   i18n: {
     defaultLocale: "zh-CN",
     locales: [
