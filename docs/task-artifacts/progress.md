@@ -27,22 +27,36 @@
 - [x] 建立 Windows 解析/API CI
 - [x] 建立 Windows 全量压力 workflow
 - [x] 建立 fresh dependency resolution workflow
-- [ ] 开启初始化 Draft PR
-- [ ] 首轮 GitHub Actions 实际执行
-- [ ] 根据真实 pnpm install 生成首个 lockfile
-- [ ] 检查实际 Nuxt/Nitro/H3/@nuxt/kit/OG Image 解析
-- [ ] 修复初始化代码自身的非实验性错误
-- [ ] Linux docs + API artifact runtime 全绿
-- [ ] Windows 基础解析/API 门全绿
-- [ ] 提交并冻结首个控制组 lockfile
-- [ ] 普通 CI 从 `--no-frozen-lockfile` 收紧为 `--frozen-lockfile`
-- [ ] 初始化 PR 达到可合并状态
+- [x] 开启初始化 Draft PR #1
+- [x] 首轮 GitHub Actions 实际执行
+- [x] 根据真实 pnpm install 生成首个 lockfile
+- [x] 检查实际 Nuxt/Nitro/H3/@nuxt/kit/OG Image 解析
+- [x] 修复初始化代码自身的非实验性错误（Tailwind 入口、Nitro 3 handler）
+- [x] Linux docs + API artifact runtime 全绿
+- [x] Windows 基础解析/API 门全绿
+- [x] 提交并冻结首个控制组 lockfile
+- [x] 普通 CI 收紧为 `--frozen-lockfile`
+- [x] 增加 CI 契约，禁止普通 workflow 恢复动态解析
+- [x] Frozen control 三轨再次全绿（run `33171057923`）
+- [x] 固化首份 control evidence
+- [ ] 将初始化 PR 标记为 Ready
+- [ ] 合并初始化 PR 到 `main`
+
+## 已建立的控制事实
+
+- Docs：Nuxt 3.21.2 / Nitro 2.13.4 / shadcn-docs-nuxt 1.1.9 / Content 2.13.9 / H3 1.15.11。
+- API：独立 Nitro 3 beta，运行时事件 API 从 `nitro/h3` 使用。
+- frozen lockfile SHA256：`1373193329c18cd55e6c6d81da08683ec39ce6c34bd8da1db96730b55be752a8`。
+- Content 物理包 context -> H3 v1；Nitro 3 package context -> H3 v2。
+- dependency tree 已观察到 `@nuxt/kit` 3.x 与 4.5.2 并存，但 control runtime 全绿。
+- Linux fresh docs production：5005 client modules / 3581 SSR modules / 18.6 MB Nitro output。
+- Docs `/`、Content cache、Content search、Nitro API `/v1/health` 均通过 standalone HTTP 200。
 
 ## 后续实验
 
 ### 依赖世代
 
-- [ ] R01 独立 Nitro 3 sibling control
+- [ ] R01 移除独立 Nitro 3 sibling，形成 docs-only 反向 control
 - [ ] R02 删除 docs 显式 H3
 - [ ] R03 Content caret drift
 - [ ] R04 theme caret drift
@@ -83,4 +97,4 @@
 
 ## 注意
 
-初始化 PR 的目标是建立**真实可运行的 control infrastructure**，不是在同一个 PR 里故意触发 F01-F46。故障必须在后续单变量 PR 中逐个复现，否则无法形成可信因果证据。
+初始化 PR 的目标是建立**真实可运行的 frozen control infrastructure**，不是在同一个 PR 里故意触发 F01-F46。故障必须在后续单变量 PR 中逐个复现，否则无法形成可信因果证据。

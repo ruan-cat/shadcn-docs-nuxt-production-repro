@@ -33,10 +33,15 @@
 
 - [架构与边界](./architecture.md)
 - [完整故障目录](./failure-catalog.md)
+- [F01-F46 当前状态矩阵](./status-matrix.md)
 - [实验矩阵](./experiment-matrix.md)
 - [PR 路线图](./pr-roadmap.md)
 - [验收门禁](./acceptance-gates.md)
 - [证据与结论规范](./evidence-policy.md)
+- [真实项目事故映射](./real-world-incidents.md)
+- [CI 策略](./ci-strategy.md)
+- [初始化与实验进度](./progress.md)
+- [首份冻结控制组证据](../../evidence/2026-08-28-init-control-baseline.md)
 
 ## 重要原则
 
@@ -46,7 +51,7 @@
 
 ### 2. 一次只改变一个关键变量
 
-例如只删除 docs 应用显式 H3 依赖、只把 Content 从精确版本改为 caret、只添加 Nitro 3 sibling app、只打开一个 `noExternal` 条目。
+例如只删除 docs 应用显式 H3 依赖、只把 Content 从精确版本改为 caret、只改变 Nitro 3 sibling topology、只打开一个 `noExternal` 条目。
 
 ### 3. 不把所有事故都归咎于一个上游包
 
@@ -66,7 +71,7 @@
 
 完整绿色至少要求：
 
-- fresh install；
+- frozen install（fresh-resolution 实验除外）；
 - 依赖解析树符合预期；
 - Content cache/search API 正常；
 - docs production build 正常；

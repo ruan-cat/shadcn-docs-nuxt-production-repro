@@ -77,6 +77,41 @@ repository root
 
 这些版本只是实验 control，不代表生态唯一正确组合。
 
+## 首个冻结控制组已经成立
+
+正式 control 使用 committed `pnpm-lock.yaml`，普通 CI 全部执行：
+
+```bash
+pnpm install --frozen-lockfile
+```
+
+控制依赖树 SHA256：
+
+```text
+1373193329c18cd55e6c6d81da08683ec39ce6c34bd8da1db96730b55be752a8
+```
+
+GitHub Actions run `33171057923` 已验证：
+
+- Ubuntu 静态契约 / dependency tree / H3 resolution：✅
+- Ubuntu fresh production build：✅
+- Docs standalone `/`：HTTP 200
+- Content cache：HTTP 200
+- Content search：HTTP 200
+- 独立 Nitro 3 API `/v1/health`：HTTP 200
+- Windows frozen install / Nuxt prepare / dependency probes：✅
+- Windows Nitro 3 build + artifact HTTP：✅
+
+Linux docs build 基线：
+
+```text
+5005 client modules
+3581 SSR modules
+18.6 MB Nitro output
+```
+
+完整证据见 [`evidence/2026-08-28-init-control-baseline.md`](./evidence/2026-08-28-init-control-baseline.md)。
+
 ## 故障目录
 
 当前任务工件已经登记 **F01-F46**，覆盖：
@@ -97,7 +132,7 @@ repository root
 14. V8 heap OOM；
 15. Windows-only `trace:false` 的生产副作用；
 16. Content prerender workaround 破坏索引；
-17. ESM/CJS hydration 故障；
+17. ESM/CJS hydration；
 18. `entities` / `@vueuse/core` / `@intlify` 多版本；
 19. `.nuxt` generated state；
 20. Turbo/cache 对 fresh evidence 的遮蔽；
@@ -115,6 +150,7 @@ repository root
 - [任务总入口](./docs/task-artifacts/README.md)
 - [架构与边界](./docs/task-artifacts/architecture.md)
 - [完整故障目录](./docs/task-artifacts/failure-catalog.md)
+- [F01-F46 当前状态矩阵](./docs/task-artifacts/status-matrix.md)
 - [实验矩阵](./docs/task-artifacts/experiment-matrix.md)
 - [PR 路线图](./docs/task-artifacts/pr-roadmap.md)
 - [验收门禁](./docs/task-artifacts/acceptance-gates.md)
@@ -132,10 +168,10 @@ Node 22
 pnpm 10.33.0
 ```
 
-安装：
+安装 control：
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 构建 workspace 包：
@@ -174,7 +210,7 @@ pnpm build:fresh
 本仓要求分层判断：
 
 ```text
-fresh install
+frozen install
 -> dependency resolution
 -> nuxt prepare
 -> Content cache/search
@@ -204,7 +240,7 @@ fresh install
 
 ### Fresh dependency resolution
 
-手动 workflow 删除 lockfile 后重新解析，保存新的 lockfile、依赖树和 H3 路径作为 artifact。
+手动 workflow 删除 lockfile 后重新解析，保存新的 lockfile、依赖树和 H3 路径作为 artifact。它是唯一允许 `--no-frozen-lockfile` 的依赖漂移实验。
 
 ## PR 实验政策
 
@@ -219,9 +255,3 @@ control SHA
 ```
 
 失败 PR 是实验资产，不需要为了“看起来绿色”而偷偷加入多个 workaround。
-
-## 当前初始化状态
-
-初始化阶段由 GitHub 连接器直接搭建代码，因此首个真实 `pnpm-lock.yaml` 必须由实际 pnpm install 生成，不能人工伪造。首轮 CI 成功生成并验证依赖树后，控制组应提交 lockfile，并把普通 CI 收紧为 `--frozen-lockfile`。
-
-详见 [`progress.md`](./docs/task-artifacts/progress.md)。
