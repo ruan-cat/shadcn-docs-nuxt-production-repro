@@ -10,6 +10,23 @@
 
 Windows 的完整 Nuxt production build 不默认绑定每个 PR，因为历史问题恰好包含高内存、NFT trace 长尾和中断后残留进程。把它做成单独 workflow 可以明确区分“日常 control”与“平台压力实验”。
 
+## 控制组 lockfile 已冻结
+
+初始化阶段曾短暂使用 `pnpm install --no-frozen-lockfile`，唯一目的就是让真实 pnpm runner 生成首份依赖树；随后 GitHub Actions 把该 `pnpm-lock.yaml` 以 `📦 deps: 冻结初始化控制组依赖树` 提交回工作分支。
+
+从此以后，普通基线 CI 和 Windows stress 都必须执行：
+
+```bash
+pnpm install --frozen-lockfile
+```
+
+`tests/ci-contract.test.mjs` 会阻止以下回归：
+
+- 普通 CI 重新出现 `--no-frozen-lockfile`；
+- Windows stress 使用动态解析；
+- 初始化期自提交 job 被重新引入；
+- 日常 CI 获得不必要的 `contents: write`。
+
 ## Windows stress
 
 `windows-stress.yaml` 允许按 old-space 数值触发：
@@ -24,15 +41,18 @@ Windows 的完整 Nuxt production build 不默认绑定每个 PR，因为历史�
 
 ## Fresh resolution
 
-`fresh-resolution.yaml` 故意删除 lockfile 后重新解析，用来回答：
+`fresh-resolution.yaml` 是唯一故意删除 lockfile 后重新解析的 workflow，用来回答：
 
 - theme caret 会解析到什么；
 - Content caret 会解析到什么；
 - OG Image / Kit / H3 会出现哪些实例；
 - committed lockfile 与 fresh resolve 是否产生不同运行时世代。
 
-## 为什么当前安装使用 `--no-frozen-lockfile`
+它明确执行：
 
-初始化 PR 由 GitHub 连接器直接创建文件，当前尚没有通过真实 pnpm 解析生成并提交的 lockfile。首轮 CI 需要先生成真实 lockfile 和构建证据；在控制组完成首轮验证后，应把生成的 lockfile 纳入后续基线，并将普通 CI 收紧到 `--frozen-lockfile`。
+```bash
+rm -f pnpm-lock.yaml
+pnpm install --no-frozen-lockfile
+```
 
-这个状态属于初始化阶段任务，不得长期保留为最终控制组状态。
+因此 fresh-resolution 的产物只能作为**实验依赖树证据**，不能静默覆盖 `main` 的 control lockfile。

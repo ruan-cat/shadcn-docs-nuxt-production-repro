@@ -32,8 +32,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: 安装依赖
-        run: pnpm install --no-frozen-lockfile
+      - name: 安装冻结依赖
+        run: pnpm install --frozen-lockfile
 
       - name: 记录环境
         shell: pwsh
