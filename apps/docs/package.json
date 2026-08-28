@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@repro/shared-core": "workspace:*",
-    "@repro/ui": "workspace:*",
     "@ztl-uwu/nuxt-content": "2.13.9",
     "h3": "1.15.11",
     "nuxt": "3.21.2",
