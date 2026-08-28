@@ -8,9 +8,15 @@
 - Control PR：
 - Control 已通过门禁：
 
+## 实验声明
+
+- Experiment ID：
+- `experiment.json` 是否存在：
+- 声明的唯一核心偏离：
+
 ## 唯一变量
 
-<!-- 精确描述相对 control 改了什么。 -->
+<!-- 精确描述相对 control 改了什么。lockfile 是 manifest 变量的必然后果，不作为第二个业务变量。 -->
 
 ## 预期回答的问题
 
