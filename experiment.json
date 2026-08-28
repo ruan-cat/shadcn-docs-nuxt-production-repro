@@ -1,0 +1,7 @@
+{
+  "id": "R12",
+  "reason": "量化 blanket Vite SSR noExternal 对 Nuxt server graph、Nitro 产物、Windows/Linux 构建与 standalone runtime 的影响。",
+  "allowedSafetyPatterns": {
+    "nuxtConfig": ["noExternal"]
+  }
+}
