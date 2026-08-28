@@ -78,6 +78,9 @@ jobs:
       - name: 强制 fresh 串行构建
         run: pnpm build:fresh
 
+      - name: 验证 R10 workspace UI 源码进入 server sourcemap
+        run: pnpm exec tsx probes/inspect-workspace-ui-output.ts
+
       - name: Docs 首页 artifact smoke
         run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3100/
 
