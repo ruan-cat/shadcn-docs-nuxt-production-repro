@@ -1,0 +1,10 @@
+// repro-ui 最小设计令牌：演示组件库 SCSS 构建链的入口。
+// 令牌保持极简，不要把本包扩展成样式框架。
+$repro-accent: #2563eb !default;
+$repro-surface-border: #e2e8f0 !default;
+$repro-radius: 8px !default;
+
+@mixin repro-surface {
+  border: 1px solid $repro-surface-border;
+  border-radius: $repro-radius;
+}

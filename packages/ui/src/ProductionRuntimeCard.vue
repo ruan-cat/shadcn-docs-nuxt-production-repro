@@ -17,9 +17,21 @@ const label = computed(() => formatRuntimeDescriptor(descriptor));
       <ElButton size="small" @click="toggleExpanded()">
         {{ expanded ? "收起运行时说明" : "展开运行时说明" }}
       </ElButton>
-      <ElText v-if="expanded">
+      <ElText v-if="expanded" class="repro-runtime-card__detail">
         此组件来自独立 workspace 包，并直接消费 Element Plus、VueUse 与共享核心包。
       </ElText>
     </ElSpace>
   </ElCard>
 </template>
+
+<style scoped lang="scss">
+@use "./styles/tokens" as *;
+
+.repro-runtime-card {
+  @include repro-surface;
+
+  .repro-runtime-card__detail {
+    color: $repro-accent;
+  }
+}
+</style>

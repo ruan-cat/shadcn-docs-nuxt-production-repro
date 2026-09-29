@@ -10,7 +10,8 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./dist/repro-ui.js"
-    }
+    },
+    "./styles.css": "./dist/repro-ui.css"
   },
   "scripts": {
     "build": "vite build",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "6.0.5",
+    "sass": "1.105.0",
     "typescript": "5.9.3",
     "vite": "6.3.5",
     "vue": "3.5.30",

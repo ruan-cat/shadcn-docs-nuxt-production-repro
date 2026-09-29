@@ -1,6 +1,8 @@
 export default defineNuxtConfig({
   extends: ["shadcn-docs-nuxt"],
 
+  css: ["@repro/ui/styles.css"],
+
   devtools: { enabled: false },
 
   i18n: {

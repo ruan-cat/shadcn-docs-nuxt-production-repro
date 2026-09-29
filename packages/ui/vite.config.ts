@@ -10,6 +10,7 @@ export default defineConfig({
       entry: fileURLToPath(new URL("./src/index.ts", import.meta.url)),
       formats: ["es"],
       fileName: () => "repro-ui.js",
+      cssFileName: "repro-ui",
     },
     rollupOptions: {
       external: ["vue", "element-plus", "@vueuse/core", "@repro/shared-core"],
