@@ -81,6 +81,12 @@
 - D06：搬运时 preserve symlink；
 - D07：搬运时 dereference。
 
+### D08：Cloudflare Workers（2026-09-29 新增）
+
+| 编号 | 目标 | 触发 | 说明 |
+| --- | --- | --- | --- |
+| D08 | Cloudflare Workers（docs，`NITRO_PRESET=cloudflare_module`） | GitHub Actions push main（`deploy-cloudflare.yaml`），凭据缺失时优雅跳过 | 本地只做 `--dry-run` + `wrangler dev` 冒烟；已复现 F47（Content API 200 假阳性）。后续 CF 相关单变量实验从本行派生。 |
+
 ## 7. 每个矩阵单元必须收集
 
 ```text

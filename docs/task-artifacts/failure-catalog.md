@@ -299,3 +299,11 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
 ## F46：复杂业务场景与官方最小 starter 的可靠性落差
 
 最终仓库要能形成一张逐层加压表：官方风格最小 docs 能工作；每增加一个真实生产因素（workspace、UI、API、Vercel、Windows、fresh resolution）都记录首次出现的不稳定边界。
+
+## F47：Nuxt Content v2 运行时 API 在 Cloudflare Workers（workerd）目标失效并以 200 假阳性呈现（2026-09-29 登记）
+
+**现象**：`NITRO_PRESET=cloudflare_module` 构建绿色；`wrangler dev` 本地 workerd 中预渲染页面（`/`、`/guide/baseline`）正常返回真实内容；但 `/api/_content/cache.json` 与 `/api/_content/search` 返回 **HTTP 200 且响应体为 404 错误页 HTML**——nitro catch-all 兜底渲染，wrangler 日志零错误。
+
+**要表达的风险**：仅凭状态码 200 与空错误日志会把 Content API 故障误判为通过；必须做响应体内容断言（与技能记忆「HTTP 200 ≠ 内容正常」同源纪律）。
+
+**实验**：F47 根因证实（Content 服务端 DB 原生 sqlite 绑定在 workerd 不可加载 vs `_content` 路由未注册）应作为独立实验 PR 展开。证据见 `evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`。

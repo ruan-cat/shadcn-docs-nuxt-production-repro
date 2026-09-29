@@ -98,3 +98,27 @@
 ## 注意
 
 初始化 PR 的目标是建立**真实可运行的 frozen control infrastructure**，不是在同一个 PR 里故意触发 F01-F46。故障必须在后续单变量 PR 中逐个复现，否则无法形成可信因果证据。
+
+## 2026-09-29 接力核对与基础设施新增
+
+> Agent：ZCode（CLI）/ GLM-5.3-Flash。基线 SHA `d3fb147`。
+
+### PR 遗产接力核对（修正本文件的历史滞后）
+
+- 初始化 PR **#1 已于 2026-08-28 MERGED**（`2026-8-28-init-production-repro`），上方"初始化 PR"两个未勾选项为滞后状态，予以修正性备注。
+- 配套契约/探针 PR 已合并：#2 实验 lockfile 通道、#3 实验声明契约、#5 控制组断言修正、#10 workspace 拓扑契约、#13 UI 入口探针、#14 R09 dist 控制组证据、#17 配置型实验安全契约、#18 闭包探针、#20 父级依赖隔离 smoke、#22 R16 槽位、#24 R17 槽位。
+- 实验 PR 按"失败不合并"政策已 CLOSED：#4 R02、#6 R05、#7 R06、#8 R04、#9 R03、#11 R07、#12 R08、#15 R10、#16 R12、#19 R14、#21 R15、#23 R16、#25 R17、#26 R18。
+- **PR #27（R19 全局 hoisted node linker 对照）当前 OPEN**，为唯一在途实验 PR。
+- 本文件实验清单中的 R01（docs-only 反向 control）尚未开 PR；R20-R45 未启动。
+
+### 本轮新增（基线基础设施，非故障实验）
+
+- [x] packages/ui 补 SCSS 构建能力（sass 1.105.0 + tokens.scss + SFC scoped scss + `cssFileName` + exports `./styles.css` + docs css 消费）；产物 `dist/repro-ui.css` 内容断言通过（token 编译硬证据）
+- [x] 补齐 packages/ui 缺失的 tsconfig.json（vue-tsc 此前打印 tsc 帮助并 exit 1 的既有隐患）
+- [x] 本地验证门禁：frozen install 36.2s / 16 项测试全绿 / typecheck / probe:ui / nuxt prepare
+- [x] apps/docs/wrangler.jsonc + `.github/workflows/deploy-cloudflare.yaml`（push main 触发，凭据缺失优雅跳过）
+- [x] 本地 CF 全链路：CF preset 构建 exit 0（Windows 默认堆）→ `--dry-run` exit 0（202 资产，ASSETS 绑定）→ workerd 冒烟
+- [x] **F47 复现并登记**：CF workerd 上 Content cache/search API 返回 200 + 404 shell HTML（假阳性）；预渲染页面正常。证据 `evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`
+- [ ] `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets 由用户配置后，下一次 push 自动真实部署
+- [ ] F47 根因证实实验（独立 PR）
+- [ ] Vercel 部署（use-vercel-deploy-in-monorepo 技能，Git Integration 主链，docs + api 双 Project）——用户授权延后

@@ -58,6 +58,7 @@
 | F44 | 待组合对照 | 后续每个 workaround PR 都同时记录第一失败门和副作用门。 |
 | F45 | 待 Nuxt 4 迁移 | R45：整组兼容矩阵迁移，禁止普通单包 bump。 |
 | F46 | 控制组已建立 | 已有生产复杂度 control；后续用逐层减法/加压 PR 量化官方最小场景与真实复杂度之间的可靠性落差。 |
+| F47 | 本仓已复现（L1，2026-09-29） | CF workerd 本地复现：`/api/_content/cache.json` 与 `/api/_content/search` 返回 200 但响应体为 404 shell HTML（catch-all 假象）；预渲染页面正常。详见 `evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`。 |
 
 ## 初始化阶段已经得到的关键事实
 

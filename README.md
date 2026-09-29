@@ -44,6 +44,7 @@ repository root
 │  ├─ Vue
 │  ├─ Element Plus
 │  ├─ VueUse
+│  ├─ SCSS 构建能力（sass + tokens.scss，vite lib 产出 dist/repro-ui.css）
 │  └─ workspace production package
 │
 ├─ packages/shared-core
@@ -55,9 +56,26 @@ repository root
 │  ├─ Content HTTP
 │  └─ standalone artifact HTTP smoke
 │
+├─ apps/docs/wrangler.jsonc + .github/workflows/deploy-cloudflare.yaml
+│  └─ Cloudflare Workers（NITRO_PRESET=cloudflare_module）git 触发部署
+│
 └─ docs/task-artifacts
    └─ 完整故障目录、实验矩阵、PR 路线、门禁、证据规范
 ```
+
+## 部署（全部 git 提交触发）
+
+正式部署链只接受 GitHub push 触发，不允许本地直接上传工件。
+
+### Cloudflare Workers（docs）
+
+`push main` 触发 [`deploy-cloudflare.yaml`](./.github/workflows/deploy-cloudflare.yaml)：frozen install → build:packages → `NITRO_PRESET=cloudflare_module` 构建 → `wrangler deploy`（`apps/docs/wrangler.jsonc`：worker 入口 `.output/server/index.mjs` + ASSETS 资产绑定，compatibility_date `2024-09-19`）。仓库需配置 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets；缺失时守门步骤优雅跳过，main 保持绿色。
+
+已知边界：本地 workerd 冒烟已复现 **F47**（Content cache/search API 返回 200 + 404 shell 假阳性，预渲染页面正常），详见 [`evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`](./evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md)。
+
+### Vercel（docs + api 双 Project，待执行）
+
+按 `use-vercel-deploy-in-monorepo` 技能执行：Vercel Git Integration 为主链，docs 与 API 分别建 Project 并独立验收；与 R34-R38（Vercel 多项目污染）实验矩阵衔接。
 
 ## 控制组核心版本
 
