@@ -1,0 +1,14 @@
+// Cloudflare Workers 部署配置：由 NITRO_PRESET=cloudflare_module 的构建产物驱动。
+// 产物布局：.output/server/index.mjs（worker 入口）+ .output/public（静态资产）。
+// compatibility_date 固定 2024-09-19，与 init-shadcn-docs-nuxt 技能的平台契约一致。
+// 正式部署走 GitHub Actions（git 提交触发），本地仅允许 dev / deploy --dry-run 验证。
+{
+  "name": "shadcn-docs-nuxt-production-repro-docs",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2024-09-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".output/public",
+    "binding": "ASSETS"
+  }
+}
