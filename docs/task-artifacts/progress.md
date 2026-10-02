@@ -122,3 +122,15 @@
 - [ ] `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets 由用户配置后，下一次 push 自动真实部署
 - [ ] F47 根因证实实验（独立 PR）
 - [ ] Vercel 部署（use-vercel-deploy-in-monorepo 技能，Git Integration 主链，docs + api 双 Project）——用户授权延后
+
+## 2026-09-30 Vercel 双 Project 部署（进行时）
+
+> Agent：ZCode（CLI）/ GLM-5.3-Flash。技能：use-vercel-deploy-in-monorepo v2.2.0；spec/plan 经用户审核授权（团队 ruancat-projects、命名确定、先 docs 后 api、MCP/CLI 完成修改、push 仅限验收里程碑、dev/main 同步）。
+
+- [x] 阶段 1 本地 `VERCEL=1` 预验证：docs/api 均自动探测 vercel preset，`.vercel/output` 生成，**零仓库变更**；Build Command 定稿 `turbo run build --filter=@repro/docs...` / `--filter=@repro/api...`
+- [x] 阶段 2 docs Project 创建：`prj_nRhiR3d9kkcWp8U9prKNUh5cHdt1`；inspect 回读五字段全一致；`link{github, ruan-cat, productionBranch: main}` 回读；nodeVersion 24.x→22.x 写回回读
+- [x] 阶段 3 api Project 创建：`prj_AAGUVMU0BfCce4ydRp8MmTdAYc5b`；同构回读全绿
+- [x] 阶段 4 分目录单槽 link：`apps/docs` ↔ docs 项目、`apps/api` ↔ api 项目；双 projectId/orgId gate 均 PASS；link 产生的 per-app `.gitignore` 入库、`.env.local` 留本地（已忽略）
+- [ ] 阶段 5 Git E2E（本提交即触发：双 Project 生产部署）
+- [ ] 阶段 6 环境变量审计 + Settings 终审
+- [ ] 阶段 7 收口（README/AGENTS/evidence/progress）+ dev/main 同步
