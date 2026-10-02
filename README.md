@@ -73,9 +73,16 @@ repository root
 
 已知边界：本地 workerd 冒烟已复现 **F47**（Content cache/search API 返回 200 + 404 shell 假阳性，预渲染页面正常），详见 [`evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`](./evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md)。
 
-### Vercel（docs + api 双 Project，待执行）
+### Vercel（docs + api 双 Project，已验收）
 
-按 `use-vercel-deploy-in-monorepo` 技能执行：Vercel Git Integration 为主链，docs 与 API 分别建 Project 并独立验收；与 R34-R38（Vercel 多项目污染）实验矩阵衔接。
+`use-vercel-deploy-in-monorepo` 技能指导完成，Git Integration 主链（团队 `ruancat-projects`）：
+
+| Project | Root Directory | Framework | 部署 |
+| --- | --- | --- | --- |
+| shadcn-docs-nuxt-production-repro-docs | apps/docs | nuxtjs | 生产 READY（SHA `e710f86`，3m） |
+| shadcn-docs-nuxt-production-repro-api | apps/api | nitro | 生产 READY（SHA `e710f86`，50s） |
+
+Install 均为 `pnpm install --frozen-lockfile`（仓库根执行），Build 均为 `turbo run build --filter=@repro/<pkg>...`（Turbo DAG 表达 workspace 依赖闭包），Output 均为 `.vercel/output`，Node 22.x。E2E：`Cloning github` 日志 + SHA 精确匹配 + 冒烟——api `/v1/health` 返回健康 JSON；docs 页面/SCSS/UI 全部存活，**Content API 200 + 404 shell 假阳性（F47 双平台复现，见下）**。完整证据：[`evidence/2026-09-30-vercel-deploy-e2e.md`](./evidence/2026-09-30-vercel-deploy-e2e.md)。部署 URL 受团队 SSO 保护；公网访问需接入自定义域名（用户决策）。
 
 ## 控制组核心版本
 

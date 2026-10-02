@@ -131,6 +131,8 @@
 - [x] 阶段 2 docs Project 创建：`prj_nRhiR3d9kkcWp8U9prKNUh5cHdt1`；inspect 回读五字段全一致；`link{github, ruan-cat, productionBranch: main}` 回读；nodeVersion 24.x→22.x 写回回读
 - [x] 阶段 3 api Project 创建：`prj_AAGUVMU0BfCce4ydRp8MmTdAYc5b`；同构回读全绿
 - [x] 阶段 4 分目录单槽 link：`apps/docs` ↔ docs 项目、`apps/api` ↔ api 项目；双 projectId/orgId gate 均 PASS；link 产生的 per-app `.gitignore` 入库、`.env.local` 留本地（已忽略）
-- [ ] 阶段 5 Git E2E（本提交即触发：双 Project 生产部署）
-- [ ] 阶段 6 环境变量审计 + Settings 终审
-- [ ] 阶段 7 收口（README/AGENTS/evidence/progress）+ dev/main 同步
+- [x] 阶段 5 Git E2E：push `e710f86` → 双 Project 生产 READY；构建日志 `Cloning github` + SHA 精确匹配；api `/v1/health` 健康 JSON ✅；docs 页面/SCSS/UI ✅、**Content API 200+404shell ❌（F47 升级为三 preset 矩阵，L3）**
+- [x] 阶段 6 环境变量审计：双 Project `envs: []`；Settings 终审 inspect 全绿
+- [x] 阶段 7 收口：README/AGENTS/evidence（`evidence/2026-09-30-vercel-deploy-e2e.md`）/failure-catalog F47 升级/status-matrix L3；dev/main 同步
+- [ ] F47 根因单变量实验（`.vercel/output/functions` vs `.output/server` handler 注册对比，套用 R19 模板）
+- [ ] 生产别名公网访问（需用户接入自定义域名绕开团队 SSO 保护）

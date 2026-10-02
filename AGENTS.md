@@ -45,3 +45,12 @@
 ## Git 提交
 
 默认使用中文 Conventional Commits，并遵循 ruan-cat `git-commit` 规则中的 type/emoji 映射。不要凭记忆猜 emoji，提交前应读取权威 `commit-types.ts`。
+
+## Vercel 部署事实（2026-09-30）
+
+- 团队 `ruancat-projects`，Git Integration 主链，生产分支 `main`；push 即触发双 Project 生产部署（注意部署额度，批量本地 commit、验收里程碑才 push）。
+- `shadcn-docs-nuxt-production-repro-docs`（root `apps/docs`，nuxtjs）与 `shadcn-docs-nuxt-production-repro-api`（root `apps/api`，nitro）：Install `pnpm install --frozen-lockfile`、Build `turbo run build --filter=@repro/<pkg>...`、Output `.vercel/output`、Node 22.x。
+- 本地 link 分目录单槽（`apps/docs` / `apps/api` 各自 `.vercel/project.json`），不得同目录反复 link 覆盖。
+- 环境变量零依赖；不做根 `vercel.json`（F38）；F47：Content API 在 vercel/cloudflare_module preset 下 200 假阳性失效，node-server 正常——验收必须做响应体内容断言。
+- 部署 URL 受团队 SSO 保护，公网冒烟用 `vercel curl --yes` 或接入自定义域名。
+- 证据：`evidence/2026-09-30-vercel-deploy-e2e.md`。
