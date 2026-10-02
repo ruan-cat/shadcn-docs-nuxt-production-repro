@@ -13,4 +13,16 @@ export default defineConfig({
       inlineDynamicImports: true,
     },
   },
+  cloudflare: {
+    wrangler: {
+      name: "shadcn-docs-nuxt-production-repro-api",
+      routes: [
+        {
+          pattern: "shadcn-docs-nuxt-production-repro-api.cf.ruan-cat.com",
+          custom_domain: true,
+          zone_name: "ruan-cat.com",
+        },
+      ],
+    },
+  },
 });

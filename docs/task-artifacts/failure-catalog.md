@@ -304,13 +304,14 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
 
 **现象**：非 node-server preset 的生产构建中，预渲染页面（`/`、`/guide/baseline`）正常返回真实内容，但 `/api/_content/cache.json` 与 `/api/_content/search` 返回 **HTTP 200 且响应体为 404 错误页 HTML**——catch-all 兜底渲染，构建/运行日志零错误。
 
-**三 preset 对比矩阵**（同 SHA `e710f86`）：
+**三 preset 四平台对比矩阵**（同构建链路）：
 
 | preset | 平台 | Content API | 证据 |
 | --- | --- | --- | --- |
 | node-server | 本地 Windows + CI Linux artifact smoke | ✅ 200 且非空 | control |
 | vercel | Vercel 生产 | ❌ 200 + 404 shell | `evidence/2026-09-30-vercel-deploy-e2e.md` §4-5 |
-| cloudflare_module | workerd 本地 | ❌ 200 + 404 shell | `evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md` |
+| cloudflare_module | workerd 本地（wrangler dev） | ❌ 200 + 404 shell | `evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md` |
+| cloudflare_module | workerd 远端（CF Workers 生产，run 36998783811） | ❌ 200 + 404 shell | 同上文件「远端部署证据」节 |
 
 **要表达的风险**：仅凭状态码 200 与空错误日志会把 Content API 故障误判为通过；且该失效跨双 serverless 平台复现，**不是** workerd 原生模块边界特有。
 

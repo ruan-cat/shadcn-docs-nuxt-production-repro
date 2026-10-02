@@ -10,5 +10,12 @@
   "assets": {
     "directory": ".output/public",
     "binding": "ASSETS"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "shadcn-docs-nuxt-production-repro-docs.cf.ruan-cat.com",
+      "custom_domain": true,
+      "zone_name": "ruan-cat.com"
+    }
+  ]
 }

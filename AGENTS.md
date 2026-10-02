@@ -54,3 +54,11 @@
 - 环境变量零依赖；不做根 `vercel.json`（F38）；F47：Content API 在 vercel/cloudflare_module preset 下 200 假阳性失效，node-server 正常——验收必须做响应体内容断言。
 - 部署 URL 受团队 SSO 保护，公网冒烟用 `vercel curl --yes` 或接入自定义域名。
 - 证据：`evidence/2026-09-30-vercel-deploy-e2e.md`。
+
+## Cloudflare Workers 部署事实（2026-09-30，机制修正版）
+
+- 部署机制 = **Cloudflare Workers Builds 识别 GitHub 更新**（用户方向修正：禁止 GitHub Actions 部署链；原 `deploy-cloudflare.yaml` 已删除，运行记录已清理）。
+- 双 Worker：`shadcn-docs-nuxt-production-repro-docs`（apps/docs/wrangler.jsonc）与 `shadcn-docs-nuxt-production-repro-api`（apps/api/nitro.config.ts `cloudflare.wrangler` 配置，nitro 3 生成 worker 配置）。
+- 自定义域名经 wrangler `routes.custom_domain` 声明（`…docs.cf.ruan-cat.com` / `…api.cf.ruan-cat.com`），Workers Builds 首次部署时自动绑定并建 DNS。
+- Workers Builds 连接与构建命令在 Dashboard 配置（Settings → Builds）；Builds/DNS/Domains 写 API 不在现有 token scope 内，不得用 API 硬试。
+- F47：Content API 假阳性在 workerd 本地/远端 + Vercel 三处一致（node-server 正常）——验收必须做响应体内容断言。

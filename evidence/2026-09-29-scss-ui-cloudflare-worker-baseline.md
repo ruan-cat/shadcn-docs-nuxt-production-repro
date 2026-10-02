@@ -129,7 +129,15 @@ wrangler dev 的 workerd 孤儿进程树（PID 11440 → 18744 → 23140）已 t
 
 ## 5. 遗留事项
 
-1. `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` GitHub secrets 待用户配置（本地 wrangler 为 OAuth 登录，无法铸造 API Token；已向用户说明凭据策略选项）。
+1. ~~`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` GitHub secrets 待用户配置~~ → **2026-09-30 已配置**（账号级 API Token + Account ID；R2 S3 凭据不用于本工作流，未入库）。
 2. F47 根因证实实验（native sqlite 绑定加载 vs 路由未注册）待独立实验 PR。
-3. Vercel 部署（use-vercel-deploy-in-monorepo 技能、Git Integration 主链、docs + api 双 Project）按用户授权延后。
+3. Vercel 部署（use-vercel-deploy-in-monorepo 技能、Git Integration 主链、两个 Project 分别验收）按用户授权延后。→ 已于 2026-09-30 完成，见 `evidence/2026-09-30-vercel-deploy-e2e.md`。
 4. status-matrix 中 F01-F46 与 27 个 PR 的历史状态存在滞后（初始化 PR #1 已 MERGED 但复选框未勾选；R02-R18 实验 PR 已 CLOSED 未回填），本次仅做接力核对备注，不擅自改写历史状态矩阵。
+
+## 6. 远端部署证据（2026-09-30 补记）
+
+- 前置修复：`wrangler-action@v3` 的 npm 兜底安装撞 pnpm `workspace:*` 协议（EUNSUPPORTEDPROTOCOL，run 36998247940 失败）；修复 = `apps/docs` 固定 `wrangler@4.146.0` devDependency（commit `bb962eb`），action 的 npx 本地探测直接命中。
+- 部署：push 触发 run `36998783811` ✓（2m13s），`Deployed shadcn-docs-nuxt-production-repro-docs triggers`。
+- Worker URL：`https://shadcn-docs-nuxt-production-repro-docs.1219043956.workers.dev`（公网，无 SSO）。
+- 冒烟（内容断言）：`/` 真实标题 ✅、`repro-runtime-card` ×2 ✅（SCSS 链路在远端 workerd 存活）、`/guide/baseline`「绿色控制组」✅；`/api/_content/cache.json` 与 `/api/_content/search` **200 + 404 shell** ❌——与本地 wrangler dev 行为一致，F47 失效确认于远端生产 workerd。
+- 结论：F47 的 Content API 失效在 **workerd 本地 / workerd 远端 / Vercel Node 三处生产级一致**，node-server control 正常——preset 相关构建差分假设进一步加固。

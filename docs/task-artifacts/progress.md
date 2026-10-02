@@ -136,3 +136,16 @@
 - [x] 阶段 7 收口：README/AGENTS/evidence（`evidence/2026-09-30-vercel-deploy-e2e.md`）/failure-catalog F47 升级/status-matrix L3；dev/main 同步
 - [ ] F47 根因单变量实验（`.vercel/output/functions` vs `.output/server` handler 注册对比，套用 R19 模板）
 - [ ] 生产别名公网访问（需用户接入自定义域名绕开团队 SSO 保护）
+
+## 2026-09-30 CF 机制修正（Workers Builds 取代 GitHub Actions）与四域名配置
+
+> 用户方向修正：CF 部署必须走 **Workers Builds 识别 GitHub 更新**，禁止 GHA 部署链；同时要求 4 个自定义域名（vc.* → Vercel 双 Project，cf.* → 双 Worker）。
+
+- [x] 回退：删除 `.github/workflows/deploy-cloudflare.yaml`；回退 `apps/docs` 的 wrangler devDep（GHA 专用修复）；GHA 运行记录经 API 删除
+- [x] F47 第四格保留：GHA 时期完成的远端 workerd 部署产出的真实证据仍有效（机制更替不影响行为事实）
+- [x] api worker 补齐：`apps/api/nitro.config.ts` `cloudflare.wrangler` 配置——worker 名 `shadcn-docs-nuxt-production-repro-api`（修正 nitro 自动命名）+ custom_domain route；CF preset 构建本地验证 ✓
+- [x] docs worker 域名：`apps/docs/wrangler.jsonc` 增 custom_domain route `…docs.cf.ruan-cat.com`
+- [x] Vercel 双域名：`…docs.vc.ruan-cat.com` / `…api.vc.ruan-cat.com` 已 add 且 `verified: true`（apex 已在账号体系）
+- [x] 权限边界实测：现有两个 CF token 均无 Builds API / DNS / Workers Domains 写权限（12006/10405/10000）——Workers Builds 连接与 vc.* CNAME 记录转 Dashboard 人工 gate
+- [ ] **待用户 Dashboard**：① docs worker Settings → Builds → Connect（仓库/根 apps/docs/构建命令/分支 main）；② Create → Import repository 建 api worker（根 apps/api，worker 名自动取自 nitro 配置）；③ CF DNS 加 2 条 CNAME（`…docs.vc` / `…api.vc` → `cname.vercel-dns.com`）
+- [ ] Workers Builds 首次部署后：cf.* 域名自动绑定 + 双 Worker 域名冒烟 + F47 矩阵终版

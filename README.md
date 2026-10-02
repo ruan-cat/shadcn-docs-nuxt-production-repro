@@ -67,11 +67,14 @@ repository root
 
 正式部署链只接受 GitHub push 触发，不允许本地直接上传工件。
 
-### Cloudflare Workers（docs）
+### Cloudflare Workers（docs + api 双 Worker，Workers Builds 机制）
 
-`push main` 触发 [`deploy-cloudflare.yaml`](./.github/workflows/deploy-cloudflare.yaml)：frozen install → build:packages → `NITRO_PRESET=cloudflare_module` 构建 → `wrangler deploy`（`apps/docs/wrangler.jsonc`：worker 入口 `.output/server/index.mjs` + ASSETS 资产绑定，compatibility_date `2024-09-19`）。仓库需配置 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets；缺失时守门步骤优雅跳过，main 保持绿色。
+部署机制：**Cloudflare Workers Builds 识别 GitHub 仓库更新**（非 GitHub Actions）。Worker 配置随仓库走：
 
-已知边界：本地 workerd 冒烟已复现 **F47**（Content cache/search API 返回 200 + 404 shell 假阳性，预渲染页面正常），详见 [`evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`](./evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md)。
+- docs：`apps/docs/wrangler.jsonc`（worker `shadcn-docs-nuxt-production-repro-docs`，入口 `.output/server/index.mjs` + ASSETS 资产绑定 + 自定义域名 route `shadcn-docs-nuxt-production-repro-docs.cf.ruan-cat.com`）
+- api：`apps/api/nitro.config.ts` 的 `cloudflare.wrangler` 配置（worker `shadcn-docs-nuxt-production-repro-api`，nitro 3 生成 `.output/server/wrangler.json`，含自定义域名 route `…-api.cf.ruan-cat.com`）
+
+历史记录：2026-09-30 曾以 GitHub Actions + wrangler-action 完成一版部署（F47 远端 workerd 证据产生于此），后按方向修正整体回退，GHA 工作流与运行记录已删除； Workers Builds 连接在 Dashboard 完成。已知边界：**F47** Content API 200 + 404 shell 假阳性在 workerd 本地/远端与 Vercel 三处一致复现（node-server control 正常），详见 [`evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`](./evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md)。
 
 ### Vercel（docs + api 双 Project，已验收）
 
