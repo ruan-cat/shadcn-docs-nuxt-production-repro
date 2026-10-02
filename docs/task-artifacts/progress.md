@@ -147,5 +147,12 @@
 - [x] docs worker 域名：`apps/docs/wrangler.jsonc` 增 custom_domain route `…docs.cf.ruan-cat.com`
 - [x] Vercel 双域名：`…docs.vc.ruan-cat.com` / `…api.vc.ruan-cat.com` 已 add 且 `verified: true`（apex 已在账号体系）
 - [x] 权限边界实测：现有两个 CF token 均无 Builds API / DNS / Workers Domains 写权限（12006/10405/10000）——Workers Builds 连接与 vc.* CNAME 记录转 Dashboard 人工 gate
-- [ ] **待用户 Dashboard**：① docs worker Settings → Builds → Connect（仓库/根 apps/docs/构建命令/分支 main）；② Create → Import repository 建 api worker（根 apps/api，worker 名自动取自 nitro 配置）；③ CF DNS 加 2 条 CNAME（`…docs.vc` / `…api.vc` → `cname.vercel-dns.com`）
-- [ ] Workers Builds 首次部署后：cf.* 域名自动绑定 + 双 Worker 域名冒烟 + F47 矩阵终版
+- [x] **Workers Builds 连接经 cf CLI 全自动化完成**（Dashboard gate 取消）：
+  - `cf builds repos connections upsert`（GitHub App 授权从既有安装继承，无需浏览器流）
+  - `cf builds workers create` ×2（docs tag `088d894e…` / api tag `bcb29b48…`；git_repository main + build/deploy 命令 + build token）
+  - `cf dns records create` ×2：vc.* CNAME → `cname.vercel-dns.com`（DNS-only）
+  - `wrangler deploy` 引导部署 ×2（OAuth 通道完成 `cf.*` 域名绑定，DNS 自动创建；api 经账号 token 上传后 OAuth 补绑——账号 token 缺 zone 级 routes 写）
+  - 实测坑位：builds API 按 **script-tag** 寻址（非 worker 名）；nitro 3 worker 名经 `cloudflare.wrangler.name` 覆盖；cf `--body` 对部分端点有校验缺陷（旗标优先）
+- [x] F47 矩阵第四格确认：**远端 CF Workers 生产与本地 workerd 行为一致**（页面/SCSS ✅，Content API 200+404shell ❌）——worker `…docs.cf.ruan-cat.com` 实测；api `…api.cf.ruan-cat.com/v1/health` 200 健康 JSON ✅
+- [ ] 本次 push 触发双 Worker 首次 Workers Builds 自动构建（git 触发机制首次实战）
+- [ ] F47 根因单变量实验（`.vercel/output/functions` vs `.output/server` handler 注册对比，套用 R19 模板）
