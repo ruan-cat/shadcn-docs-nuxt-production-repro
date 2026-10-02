@@ -28,6 +28,7 @@
   "devDependencies": {
     "@iconify-json/lucide": "1.2.98",
     "typescript": "5.9.3",
-    "vue-tsc": "2.2.12"
+    "vue-tsc": "2.2.12",
+    "wrangler": "4.146.0"
   }
 }
