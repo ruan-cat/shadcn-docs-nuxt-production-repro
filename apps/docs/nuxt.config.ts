@@ -28,10 +28,14 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       crawlLinks: true,
-      // F47 构建期形态：/api/_content/*（含时间戳变体 cache.<ts>.json / search-<ts>）
-      // 在 cloudflare_module preset 的构建环境 prerender 时 500（node-server preset 正常）。
-      // nitro 的 ignore 是 startsWith 前缀匹配（matchesIgnorePattern），写前缀而非 glob。
-      // 仅解除构建阻塞，不修复运行时行为（CF/Vercel 目标下该 API 仍为 200+404shell）。
+      // F47 机制：content 模块把带时间戳的 API 变体（cache.<ts>.json / search-<ts>）
+      // 注册为 prerender 初始路由，挤掉了默认的 "/" 种子；且这些路由经 h3 HTTP 层时
+      // 抛 Invalid URL（h3 v2 与 content h3 v1 预期的世代串味，见 failure-catalog F47/F06）。
+      // 显式补 "/" 种子让 crawler 爬页面（页面 SSR 直连 content storage，不经 HTTP 层）；
+      // API 路由走前缀 ignore。运行时 API 的 200+404shell 行为不变。
+      // 显式种子：首页为 landing 页无文档链接，侧边栏导航走被 ignore 的
+      // /api/_content/navigation（crawler 断链），内容页面须显式列出。
+      routes: ["/", "/guide/baseline", "/guide/failure-domains"],
       ignore: ["/api/_content/"],
     },
   },
