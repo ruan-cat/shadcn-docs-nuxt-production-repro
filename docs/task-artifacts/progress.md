@@ -154,5 +154,7 @@
   - `wrangler deploy` 引导部署 ×2（OAuth 通道完成 `cf.*` 域名绑定，DNS 自动创建；api 经账号 token 上传后 OAuth 补绑——账号 token 缺 zone 级 routes 写）
   - 实测坑位：builds API 按 **script-tag** 寻址（非 worker 名）；nitro 3 worker 名经 `cloudflare.wrangler.name` 覆盖；cf `--body` 对部分端点有校验缺陷（旗标优先）
 - [x] F47 矩阵第四格确认：**远端 CF Workers 生产与本地 workerd 行为一致**（页面/SCSS ✅，Content API 200+404shell ❌）——worker `…docs.cf.ruan-cat.com` 实测；api `…api.cf.ruan-cat.com/v1/health` 200 健康 JSON ✅
-- [ ] 本次 push 触发双 Worker 首次 Workers Builds 自动构建（git 触发机制首次实战）
-- [ ] F47 根因单变量实验（`.vercel/output/functions` vs `.output/server` handler 注册对比，套用 R19 模板）
+- [x] **F47 根因实锤（2026-10-03，CF 构建日志栈）**：content handler chunk 解析到 h3@2.0.1-rc.22 的 getQuery（外层 h3@1.15.11），对内部 fetch URL 抛 Invalid URL → 500 → prerender 产出 404 shell；content 包 manifest 无 h3 声明（F04 本体），bundle 型 preset 按其依赖上下文解析 h3→v2
+- [x] **修复实证**：pnpm-workspace.yaml packageExtensions（key 须带 @2.13.9 range，裸名无效）注入 h3@1.15.11 → CF Builds 构建后 `…docs.cf.ruan-cat.com` 页面真实内容 200（首页/子页/SCSS×2）；Vercel 侧经 `vercel redeploy`（无缓存重建）后 `…docs.vc.ruan-cat.com` 同步恢复
+- [x] 遗留收窄：F47 的**运行时** content API（workerd/Vercel node）仍 404shell——构建期已修、运行时解析链差异留实验
+- [ ] F47 运行时层根因实验（独立 PR，套用 R19 模板）

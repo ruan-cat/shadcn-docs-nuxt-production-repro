@@ -315,6 +315,6 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
 
 **要表达的风险**：仅凭状态码 200 与空错误日志会把 Content API 故障误判为通过；且该失效跨双 serverless 平台复现，**不是** workerd 原生模块边界特有。
 
-**修正后的根因假设**：preset 相关的 Nitro 构建差分——`_content` 服务端 handler 注册或 server asset（content.db）闭包在 vercel/cloudflare_module preset 下与 node-server 不一致，路由 fall-through 到 catch-all。原生 sqlite 不可加载只是 workerd 侧可能并发因素，无法解释 Vercel Node 侧。
+**修正后的根因假设（2026-10-03 实证）**：CF 构建日志栈实锤——content handler chunk（`.nuxt/prerender/chunks/_/query.mjs`）解析到 **h3@2.0.1-rc.22 的 `getQuery`**，对 nitro 内部 fetch 的 URL 抛 `Invalid URL`（同栈外层为 h3@1.15.11）；而 **content 包 manifest 无 h3 依赖声明（F04 本体）**，bundle 型 preset（vercel/cloudflare_module）按 content 包自身依赖上下文解析 h3 → v2 混入；node-server preset external 化走提升层 v1（control 正常）。页面 SSR 直连 storage 不经 HTTP 层，故 API 路由 500/404shell 而页面依赖构建期 content DB。
 
-**实验**：单变量对比 `.vercel/output/functions` 与 `.output/server`（node-server）产物中 `_content` handler 注册与 content.db 资产存在性（套用 R19 模板），作为独立实验 PR。
+**修复实证（2026-10-03）**：`pnpm-workspace.yaml` 的 `packageExtensions`（key 须带显式 range `@ztl-uwu/nuxt-content@2.13.9`，裸名无效）注入 `h3: 1.15.11` → **CF Workers Builds 环境构建后页面恢复真实内容**（`…docs.cf.ruan-cat.com` 首页/子页 200 实测）；Vercel 侧同修复需无缓存重建（构建缓存会复用旧 404-shell prerender 产物，`vercel redeploy` 验证通过）。运行时 content API 在 workerd 仍 404shell——API handler 运行时解析链与构建期差异留实验。
