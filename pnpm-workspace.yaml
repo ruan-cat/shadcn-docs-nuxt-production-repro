@@ -6,3 +6,12 @@ packageExtensions:
   "@ztl-uwu/nuxt-content@2.13.9":
     dependencies:
       h3: 1.15.11
+  "@nuxtjs/mdc@*":
+    dependencies:
+      h3: 1.15.11
+  "@nuxt/icon@*":
+    dependencies:
+      h3: 1.15.11
+  "nuxt-og-image@5.1.9":
+    dependencies:
+      h3: 1.15.11
