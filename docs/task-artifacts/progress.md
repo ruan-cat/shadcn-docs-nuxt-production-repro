@@ -1,6 +1,6 @@
 # 初始化与实验进度
 
-最后更新：2026-08-28
+最后更新：2026-10-16
 
 ## 初始化 PR
 
@@ -159,3 +159,15 @@
 - [x] 遗留收窄：F47 的**运行时** content API（workerd/Vercel node）仍 404shell——构建期已修、运行时解析链差异留实验
 - [x] CI 回绿：prerender 种子让爬取走深后暴露 IPX logo 资产缺失（F44 教材）→ 补 `public/logo{,-dark}.svg`（bda6be9）→ 基线 CI 恢复 success（bda6be9 起三平台全绿）
 - [ ] F47 运行时层根因实验（独立 PR，套用 R19 模板）
+
+## 2026-10-16 会话备份唤起与接力上下文恢复
+
+> Agent：ZCode（CLI）/ GLM-5.3-Flash。前会话（sess_d5079b4a…，公开历史 sequence 0-423 / 390 条消息）经 memorix 十六进制归档唤起并逐字节核验；权威入口 `docs/task-artifacts/session-relay.md`。
+
+- [x] 主索引 obs:6042 读回（分片映射、脱敏口径、完整性哈希、F47 两层警示、未完成任务清单）
+- [x] 实测发现合并坑位：obs:5989-5998 已被 memorix consolidate 进 obs:5999，逐条直读不可达；正确路径为 5999 解出全部 11 条 hex（顺序 chunk 11→1，按 envelope chunkNumber 重排）
+- [x] 11 条 hex 解码与本地档案 `chunks/` 逐字节比对全部一致（本地文件仅多末尾换行符）
+- [x] 完整性核验：本地 JSONL 1,203,874 字节 / sha256 `3df00952…` 与基准完全匹配；390 条消息数与基准一致
+- [x] 仓库现状核对：HEAD `3f67f36`、工作区干净、failure-catalog F47 分层定案在位——仓库状态与会话终态一致
+- [x] 接力上下文文档化：新建 [session-relay.md](./session-relay.md)（唤起命令、坑位、核验记录、任务状态快照）；README 工件清单同步
+- 未变项（与备份警示一致）：F47 第二层运行时实验未启动；PR #27（R19）仍 OPEN；R01 与 R20-R45 未启动

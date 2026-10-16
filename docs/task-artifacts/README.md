@@ -41,6 +41,7 @@
 - [真实项目事故映射](./real-world-incidents.md)
 - [CI 策略](./ci-strategy.md)
 - [初始化与实验进度](./progress.md)
+- [会话接力与备份唤起](./session-relay.md)
 - [首份冻结控制组证据](../../evidence/2026-08-28-init-control-baseline.md)
 
 ## 重要原则
