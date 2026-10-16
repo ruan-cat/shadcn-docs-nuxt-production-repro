@@ -60,7 +60,7 @@ memorix 已把 11 个分片 consolidate 进 obs:5999：`memorix memory detail --
 
 ### 工件指针
 
-- 进度账本：[progress.md](./progress.md)（2026-09-29 / 2026-09-30 三段收口）
+- 进度账本：[progress.md](./progress.md)（2026-09-29 / 2026-09-30 / 2026-10-16 三段收口）
 - 故障目录：[failure-catalog.md](./failure-catalog.md) F47 节
-- 证据：`evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`、`evidence/2026-09-30-vercel-deploy-e2e.md`
+- 证据：`evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`、`evidence/2026-09-30-vercel-deploy-e2e.md`、`evidence/2026-10-16-push-788630b-production-verify.md`（最新生产快照）
 - 工作区（仓库外）：`D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/2026-9-29-new-repo/` 下 spec/plan/工具清单四件套

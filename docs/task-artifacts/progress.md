@@ -171,3 +171,12 @@
 - [x] 仓库现状核对：HEAD `3f67f36`、工作区干净、failure-catalog F47 分层定案在位——仓库状态与会话终态一致
 - [x] 接力上下文文档化：新建 [session-relay.md](./session-relay.md)（唤起命令、坑位、核验记录、任务状态快照）；README 工件清单同步
 - 未变项（与备份警示一致）：F47 第二层运行时实验未启动；PR #27（R19）仍 OPEN；R01 与 R20-R45 未启动
+
+### 同日 push `788630b` 生产部署监听与生产级验证
+
+- [x] push main（`3f67f36..788630b`）→ 四项部署自动触发并全部成功：Vercel docs Ready 3m（`bx1y6gzax`）、Vercel api Ready 24s（`de9tf4pfx`）、CF docs Worker success 3m22s（`dadcc6a3`）、CF api Worker success 1m13s（`168c65bb`）——CF 构建记录 commit_hash 实测 `788630b`
+- [x] 四域名 HTTP 响应体断言：双平台首页「生产级复现实验室」、子页「绿色控制组」、`/v1/health` 健康 JSON、SCSS 内联令牌（`#2563eb` + 8px computed）全部命中
+- [x] F47 分层复验：构建期修复保持；运行时 `/api/_content/*` 双平台仍 200+404shell（已知第二层，非回归）——「200 ≠ 内容正常」纪律再次实证
+- [x] 新记录跨平台差异：CF 边缘对无尾斜杠路径 307 → `/guide/baseline/`，Vercel 200 直达，最终内容一致
+- [x] 浏览器级验收（agent-browser MCP）：CF 首页/子页 + Vercel 首页，水合 `__vue_app__` true、SCSS 8px computed 生效、三截图视觉完整；CLI `open` 两次挂起 → 按分流纪律切 MCP 工具族（失败路径已记录）
+- [x] 证据落盘：`evidence/2026-10-16-push-788630b-production-verify.md`（部署记录、断言矩阵、八要素、失败路径；取代 09-29/09-30 证据成为当前 HEAD 生产快照）
