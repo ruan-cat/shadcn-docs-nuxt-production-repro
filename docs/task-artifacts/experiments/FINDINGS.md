@@ -1,0 +1,59 @@
+# 关键技术发现台账
+
+> 收录具有横向价值（跨实验有效）的技术发现。全部来自 2026-10-17 本机复现会话实证，证据可溯源至 [总检报告](../../reports/2026-10-17-branch-pr-fault-reproduction-audit.md) 或对应 R{xx}.md 档案。只收录实证，不做推测性扩写。
+
+## 1. 跨分支隐藏提升层残留制造伪故障信号
+
+- **发现**：跨分支切换时 pnpm 隐藏提升层（`.pnpm/node_modules`）残留上一分支安装态，使后续分支出现伪故障信号。
+- **证据**：受控对照——r05 污染态 build exit 1 + Invalid URL，同一分支全清重装后 exit 0，结果相反（总检报告 §3.2）。
+- **影响**：所有分支本地复现必须先隔离 `node_modules`（mv 改名）再 frozen install；首轮 r05-r17 批处理结果全部因此判废。
+- **沉淀动作**：写入 [SOP.md](./SOP.md) 标准流程第 2 步与异常处理第 3 条；档案模板自检清单首项。
+
+## 2. harness bulk-delete 守卫拦后台构建与清理
+
+- **发现**：后台任务会被 harness 的 bulk-delete 守卫拦截（`SAFE_DELETE_BULK_CONFIRM_REQUIRED`），实测拦截 `.nuxt/dist` 清理 549 文件。
+- **证据**：首轮批处理中两轮受守卫干扰（总检报告 §3.1 / §3.3 运行时注意）。
+- **影响**：含构建/清理的复现流程不能放后台跑。
+- **沉淀动作**：[SOP.md](./SOP.md) 环境前提"复现必须前台执行" + 异常处理第 1 条（转前台豁免执行）。
+
+## 3. nitro 3 beta `nitro prepare` 静默写 `node_modules/.nitro/`
+
+- **发现**：nitro 3 beta 的 `nitro prepare` 静默写入 `node_modules/.nitro/`（不是 `.nitro/`），生成 4 份 d.ts 的 nitro/types 模块增强。
+- **证据**：本机复现会话实测。
+- **影响**：该路径在常规 tsconfig include 范围之外，类型增强会"看起来没生效"。
+- **沉淀动作**：消费 nitro 3 的包配置须显式 include `node_modules/.nitro/`。
+
+## 4. nitro 3 官方导出 `nitro/tsconfig` 预设
+
+- **发现**：nitro 3 官方导出 `nitro/tsconfig` 预设。
+- **证据**：本机复现会话实测。
+- **影响**：注意其陷阱——预设只含 `compilerOptions`、无 `include`，直接 extends 后文件不会被纳入。
+- **沉淀动作**：extends `nitro/tsconfig` 即用，但 include 需自行补（与发现 3 配套）。
+
+## 5. prettier 3.9.10 json parser 容忍 JSONC 注释
+
+- **发现**：prettier 3.9.10 的 json parser 容忍 JSONC 注释。
+- **证据**：本机复现会话实测。
+- **影响**：含注释的 tsconfig.json 可直接过 pre-commit 钩子，"json 格式化挡注释"这一假设不成立。
+- **沉淀动作**：不得依赖 prettier 充当 JSONC 注释门禁；需要禁注释须另行校验。
+
+## 6. R02 故障机制实证：Content 变体路由经 h3 HTTP 层抛 Invalid URL
+
+- **发现**：R02（删 docs 显式 h3）的故障机制——Content 变体路由（`cache.<ts>.json` / `search-<ts>`）经 h3 HTTP 层抛 `Invalid URL` → `[500]` → prerender 失败。
+- **证据**：experiment/r02 本机实测信号原文（总检报告 §3.2 R02 行）。
+- **影响**：与 [F47](../failure-catalog.md)（h3 v2 `getQuery` 对 nitro 内部 fetch URL 抛 `Invalid URL`）同根因域，两个故障可互相印证解析路径。
+- **沉淀动作**：详见 [R02.md](./R02.md)；后续 h3 解析类实验优先复用此信号链。
+
+## 7. vue-tsc 2.2.12 与 tsconfig incremental 兼容
+
+- **发现**：vue-tsc 2.2.12 与 tsconfig `incremental` 兼容。
+- **证据**：本机复现会话实测（增量缓存正常生成）。
+- **影响**：类型检查缓存可放心开启，不构成当前故障面。
+- **沉淀动作**：无需 workaround；如未来类型缓存异常，先对照本条排除 vue-tsc/incremental 兼容性。
+
+## 8. tsconfig exclude 拦不住 import 闭包拉入的文件
+
+- **发现**：tsconfig `exclude` 无法拦截被 import 闭包拉入的文件。
+- **证据**：本机复现会话实测——上游 layer 源码噪声 86 个文件被拉入。
+- **影响**：该噪声无法在本仓侧配置消除，只能归属上游修复。
+- **沉淀动作**：不在本仓做排除上游 layer 的无效配置尝试；涉及上游 issue 时引用此量化数据。

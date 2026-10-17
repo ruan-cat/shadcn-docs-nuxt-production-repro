@@ -44,6 +44,7 @@
 - [会话接力与备份唤起](./session-relay.md)
 - [历史文档迁移存档](../history/README.md)
 - [首份冻结控制组证据](../../evidence/2026-08-28-init-control-baseline.md)
+- [实验执行层（队列/SOP/发现/档案）](./experiments/README.md)
 
 ## 重要原则
 
