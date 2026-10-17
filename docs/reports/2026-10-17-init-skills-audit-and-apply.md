@@ -5,36 +5,36 @@
 
 ## 1. 十一项技能决策总表
 
-| # | 技能 | 版本 | 决策 | 核心理由 |
-| --- | --- | --- | --- | --- |
-| 1 | init-shadcn-docs-nuxt | 1.6.1 | ✅ **应用（合规审计模式）** | 本仓即该技能的复测实验田；逐项对照 22 条强约束做审计，不重新初始化 |
-| 2 | init-tsconfig | 1.0.0 | ✅ **应用** | monorepo 子包形态命中；仅动 packages ×2 tsconfig + .gitignore，零回归验证通过 |
-| 3 | init-ai-md | 23.0.0 | ✅ **应用（部分）** | AGENTS.md 已存在且为唯一事实来源；按技能规定无条件部署 record-bug-fix-memory v2.0.0 + 登记技能表；通用记忆项模板酌情跳过（理由见 §3.3） |
-| 4 | init-simple-memorix | 2.7.0 | ✅ **应用（项目级）** | 落地 `.workbuddy/hooks/hooks.json`（仅生命周期 4 事件，无高频噪音）；MCP mode 层属用户级配置未触碰 |
-| 5 | init-vscode | 2.0.0 | ✅ **应用** | 本仓有大量构建产物（.nuxt/.output/.turbo/.vercel），三层排除 + files.eol LF 对开发体验有实际价值；纯编辑器配置，零构建链影响 |
-| 6 | init-prettier-git-hooks | 4.0.0 | ⏸️ **跳过（opt-in）** | 实验中仓新增 5 devDeps + lockfile 重算 + 全量 md 重排 = 基线噪音；MDC 防护当前无 prettier 链路故无风险；后续如需按技能契约（lint-md@1.0.1 三层一致 + 三链路验证）单独走 |
-| 7 | init-playwright | 1.1.0 | ⏸️ **跳过（opt-in）** | 浏览器验证已由 agent-browser MCP 覆盖（evidence 2026-10-16）；技能自带"headless CPU 过载→3 天全删"事故复盘，实验仓不宜引入三件套扩面 |
-| 8 | init-pure-admin-iconify | 0.5.0 | ❌ 不适用 | pure-admin 业务后台图标体系；本仓 packages/ui 是最小 SSR 探针包，文档站走 @nuxt/icon 默认链路，引入 unplugin-icons 属实验污染 |
-| 9 | init-release-base-relizy-and-bumpp | 3.0.2 | ❌ 不适用 | 实验仓 @repro/* 全部 workspace 私有包，无发版/发布语义；技能自身"非目标"条款禁止在 private 策略未决时落盘 |
-| 10 | init-claude-code-statusline | 0.15.0 | ❌ 不适用 | Claude Code CLI 用户级状态栏（.claude/settings.json + statusline.sh），与本仓实验目标无关；如需应由用户在 Claude Code 会话单独执行 |
-| 11 | init-linux-cloud-agent-env | 0.1.1 | ❌ 不适用 | 面向云 Linux agent 沙箱（MCP 客户端 + gh/vercel CLI + PR 云任务规范）；本仓为本地 Windows 项目 |
+| #   | 技能                               | 版本   | 决策                        | 核心理由                                                                                                                                                                |
+| --- | ---------------------------------- | ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | init-shadcn-docs-nuxt              | 1.6.1  | ✅ **应用（合规审计模式）** | 本仓即该技能的复测实验田；逐项对照 22 条强约束做审计，不重新初始化                                                                                                      |
+| 2   | init-tsconfig                      | 1.0.0  | ✅ **应用**                 | monorepo 子包形态命中；仅动 packages ×2 tsconfig + .gitignore，零回归验证通过                                                                                           |
+| 3   | init-ai-md                         | 23.0.0 | ✅ **应用（部分）**         | AGENTS.md 已存在且为唯一事实来源；按技能规定无条件部署 record-bug-fix-memory v2.0.0 + 登记技能表；通用记忆项模板酌情跳过（理由见 §3.3）                                 |
+| 4   | init-simple-memorix                | 2.7.0  | ✅ **应用（项目级）**       | 落地 `.workbuddy/hooks/hooks.json`（仅生命周期 4 事件，无高频噪音）；MCP mode 层属用户级配置未触碰                                                                      |
+| 5   | init-vscode                        | 2.0.0  | ✅ **应用**                 | 本仓有大量构建产物（.nuxt/.output/.turbo/.vercel），三层排除 + files.eol LF 对开发体验有实际价值；纯编辑器配置，零构建链影响                                            |
+| 6   | init-prettier-git-hooks            | 4.0.0  | ⏸️ **跳过（opt-in）**       | 实验中仓新增 5 devDeps + lockfile 重算 + 全量 md 重排 = 基线噪音；MDC 防护当前无 prettier 链路故无风险；后续如需按技能契约（lint-md@1.0.1 三层一致 + 三链路验证）单独走 |
+| 7   | init-playwright                    | 1.1.0  | ⏸️ **跳过（opt-in）**       | 浏览器验证已由 agent-browser MCP 覆盖（evidence 2026-10-16）；技能自带"headless CPU 过载→3 天全删"事故复盘，实验仓不宜引入三件套扩面                                    |
+| 8   | init-pure-admin-iconify            | 0.5.0  | ❌ 不适用                   | pure-admin 业务后台图标体系；本仓 packages/ui 是最小 SSR 探针包，文档站走 @nuxt/icon 默认链路，引入 unplugin-icons 属实验污染                                           |
+| 9   | init-release-base-relizy-and-bumpp | 3.0.2  | ❌ 不适用                   | 实验仓 @repro/* 全部 workspace 私有包，无发版/发布语义；技能自身"非目标"条款禁止在 private 策略未决时落盘                                                               |
+| 10  | init-claude-code-statusline        | 0.15.0 | ❌ 不适用                   | Claude Code CLI 用户级状态栏（.claude/settings.json + statusline.sh），与本仓实验目标无关；如需应由用户在 Claude Code 会话单独执行                                      |
+| 11  | init-linux-cloud-agent-env         | 0.1.1  | ❌ 不适用                   | 面向云 Linux agent 沙箱（MCP 客户端 + gh/vercel CLI + PR 云任务规范）；本仓为本地 Windows 项目                                                                          |
 
 ## 2. init-shadcn-docs-nuxt 合规审计（22 条强约束抽核）
 
 审计对象：`apps/docs`（Nuxt 3 文档站）与根 workspace 配置。**结论：合规，无违规项。**
 
-| 契约项 | 本仓现状 | 判定 |
-| --- | --- | --- |
-| 核心四包按兼容矩阵固定（铁律 7） | nuxt 3.21.2 / shadcn-docs-nuxt 1.1.9 / content 2.13.9 / h3 1.15.11 全精确版本 | ✅ |
-| `nuxt-og-image` 根 overrides 固定 5.1.9（铁律 11） | 根 `package.json` `pnpm.overrides`：content 2.13.9 + nuxt-og-image 5.1.9 | ✅ |
-| `ogImage: { enabled: false }` 不得直接启用（禁改项 5） | `apps/docs/nuxt.config.ts` 显式 `ogImage: { enabled: false }` | ✅ |
-| `@iconify-json/lucide` devDependency 必需 | `apps/docs` devDeps `@iconify-json/lucide@1.2.98` + `icon.serverBundle.collections: ["lucide"]` 默认链路 | ✅ |
-| predev / prebuild / postinstall 三处 nuxt prepare | `prepare`（pnpm install 生命周期 = postinstall 等价）+ `predev` + `prebuild` | ✅ |
-| i18n 单语最小配置（禁改项 3） | 仅 zh-CN 单 locale | ✅ |
-| 无危险 workaround 入基线（铁律 8/13 相关） | nuxt.config 无 `trace:false`/`noExternal`/`routes.clear()`；nitro.prerender 显式种子为 F47 已定案机制（failure-catalog F47 有完整证据链，非盲目 workaround） | ✅ |
-| compatibilityDate 2024-09-19 契约 | wrangler.jsonc / api nitro config 固定 2024-09-19 | ✅ |
-| Vercel READY ≠ runtime、200 ≠ 内容正常（铁律 12/17） | 已固化为 G 门 + F47 假阳性纪律（acceptance-gates / evidence-policy） | ✅ |
-| 依赖漂移实验以单变量 PR 承载（铁律 9/14 相关） | R01-R45 路线图 + experiment.json 声明机制 | ✅ |
+| 契约项                                                 | 本仓现状                                                                                                                                                     | 判定 |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| 核心四包按兼容矩阵固定（铁律 7）                       | nuxt 3.21.2 / shadcn-docs-nuxt 1.1.9 / content 2.13.9 / h3 1.15.11 全精确版本                                                                                | ✅   |
+| `nuxt-og-image` 根 overrides 固定 5.1.9（铁律 11）     | 根 `package.json` `pnpm.overrides`：content 2.13.9 + nuxt-og-image 5.1.9                                                                                     | ✅   |
+| `ogImage: { enabled: false }` 不得直接启用（禁改项 5） | `apps/docs/nuxt.config.ts` 显式 `ogImage: { enabled: false }`                                                                                                | ✅   |
+| `@iconify-json/lucide` devDependency 必需              | `apps/docs` devDeps `@iconify-json/lucide@1.2.98` + `icon.serverBundle.collections: ["lucide"]` 默认链路                                                     | ✅   |
+| predev / prebuild / postinstall 三处 nuxt prepare      | `prepare`（pnpm install 生命周期 = postinstall 等价）+ `predev` + `prebuild`                                                                                 | ✅   |
+| i18n 单语最小配置（禁改项 3）                          | 仅 zh-CN 单 locale                                                                                                                                           | ✅   |
+| 无危险 workaround 入基线（铁律 8/13 相关）             | nuxt.config 无 `trace:false`/`noExternal`/`routes.clear()`；nitro.prerender 显式种子为 F47 已定案机制（failure-catalog F47 有完整证据链，非盲目 workaround） | ✅   |
+| compatibilityDate 2024-09-19 契约                      | wrangler.jsonc / api nitro config 固定 2024-09-19                                                                                                            | ✅   |
+| Vercel READY ≠ runtime、200 ≠ 内容正常（铁律 12/17）   | 已固化为 G 门 + F47 假阳性纪律（acceptance-gates / evidence-policy）                                                                                         | ✅   |
+| 依赖漂移实验以单变量 PR 承载（铁律 9/14 相关）         | R01-R45 路线图 + experiment.json 声明机制                                                                                                                    | ✅   |
 
 ## 3. 应用详情
 
@@ -46,10 +46,10 @@
 
 **零回归验证（技能 L1 纪律：改前/改后错误数对照）**：
 
-| 包 | 命令 | 改前基线 | 改后 | tsbuildinfo |
-| --- | --- | --- | --- | --- |
-| @repro/shared-core | `tsc -p tsconfig.json --noEmit` | exit 0 / 0 errors | exit 0 / 0 errors | ✅ 生成 |
-| @repro/ui | `vue-tsc --noEmit` | exit 0 / 0 errors | exit 0 / 0 errors | ✅ 生成（vue-tsc 与 incremental 兼容） |
+| 包                 | 命令                            | 改前基线          | 改后              | tsbuildinfo                            |
+| ------------------ | ------------------------------- | ----------------- | ----------------- | -------------------------------------- |
+| @repro/shared-core | `tsc -p tsconfig.json --noEmit` | exit 0 / 0 errors | exit 0 / 0 errors | ✅ 生成                                |
+| @repro/ui          | `vue-tsc --noEmit`              | exit 0 / 0 errors | exit 0 / 0 errors | ✅ 生成（vue-tsc 与 incremental 兼容） |
 
 ### 3.2 init-ai-md（record-bug-fix-memory + 技能表）
 
@@ -84,6 +84,28 @@ git status：            仅本任务计划内文件变更
 
 ## 5. 遗留与后续
 
-1. init-prettier-git-hooks / init-playwright 为 **opt-in**：用户明确授权后按各自技能契约单独执行（前者注意 lint-md@1.0.1 三层一致铁律；后者注意 headless CPU 安全规范）。
+1. ~~init-prettier-git-hooks / init-playwright 为 opt-in~~ → **init-prettier-git-hooks 已于同日按用户指令补齐执行，见 §6**；init-playwright 仍为 opt-in。
 2. record-bug-fix-memory 案例索引为空——首个 bug 修复经验产生时按双层架构写入。
 3. .workbuddy/hooks/hooks.json 生效性需下次 WorkBuddy 会话观察（实验性模板）。
+
+## 6. init-prettier-git-hooks 补齐执行（2026-10-17，用户指令"必须要用"）
+
+决策表 #6 由 ⏸️ opt-in 转为 ✅ 已执行，按技能 v4.0.0 契约全流程落地：
+
+- **依赖**（`pnpm add -Dw`）：prettier ^3.9.10、@prettier/plugin-oxc ^0.2.3、lint-staged ^17.6.0、simple-git-hooks ^2.14.0、prettier-plugin-lint-md@**1.0.1**——三层一致性核验通过（package.json 声明 = lockfile 解析 = 运行时解析，全部 1.0.1）。
+- **六份模板**：
+  - `prettier.config.mjs`：受保护 JSDoc 原样保留；顶层字符串 `plugins: ["prettier-plugin-lint-md"]`；启用 `.vscode/extensions.json` 的 jsonc 精确 override（init-vscode §3.2 契约：带注释 JSONC 必须精确接管，settings.json 为严格 JSON 不纳入）。
+  - `lint-staged.config.mjs`：模板 + 追加 `--ignore-unknown`（本仓特有适配，证据：init-playwright 坑#1——.editorconfig/.gitattributes/.gitignore 等无 parser 文件会阻塞全部提交）。
+  - `simple-git-hooks.mjs`：仅 pre-commit；本仓无 commitlint 配置，按技能契约不生成 commit-msg。
+  - `.editorconfig` / `.gitattributes`：模板原样（LF 三层）。
+  - `.github/workflows/cloud-pr-prettier.yml`：无条件安装；`pull_request` 事件 + 同仓 gate + `pnpm install --frozen-lockfile`，与本仓 ci-contract 治理兼容（契约测试只逐文件检查 4 份既有 workflow，不通配 glob——已读源码核实）。
+- **.prettierignore 三重保护**：`content/**/*.md`（MDC 防护，init-shadcn-docs-nuxt 模板主方案）+ `docs/history/**/*.md`（byte-identical 迁移存档，sha256 基准登记于 docs/history/README.md）+ `pnpm-lock.yaml`（锁文件禁止重排）。
+- **package.json**：新增 `format`（`prettier --experimental-cli --write --no-parallel .`）与 `prepare`（`simple-git-hooks`，install 时自动装钩子）；pre-commit 钩子已实测安装（`.git/hooks/pre-commit` → `pnpm exec lint-staged`）。
+- **三链路验证（技能 §5 + 用户跨仓铁律）**：
+  - 普通 CLI 与 experimental CLI `--no-parallel` 对中英数混排样例输出 **A/B 完全一致**（lint-md 空格规则实证：`中文abc混排123` → `中文 abc 混排 123`）；
+  - `resolveConfig().plugins` 命中顶层字符串（VSCode 链路模拟）；
+  - oxc override（对象插件）在 experimental CLI 下处理 .ts 样例无崩溃（prettier 3.9.10）。
+- **保护不变量**：content md / history md / pnpm-lock.yaml 三文件经 `--write` 后 sha256 不变（均被 ignore 跳过）。
+- **行尾**：`.gitattributes` 落地后 `git status` 零幽灵改动（index 本为 LF，core.autocrlf=false，无需 renormalize）。
+- **事故记录**：`pnpm add` 重连 node_modules 时 `packages/ui/node_modules/vite` 链接瞬时损坏（MODULE_NOT_FOUND，turbo 因 lockfile 变更缓存失效而暴露真实构建）→ `pnpm install --frozen-lockfile` 重连修复，ui build 恢复（668ms）。属 Windows 链接瞬时故障，非配置错误。
+- **全量验证**：`pnpm test` 6/6（含契约 12/12，fail 0）；`git diff --check` 无空白错误；临时样例已清理。
