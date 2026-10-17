@@ -49,22 +49,24 @@
 
 按总检报告 §4/§5 执行队列排序：
 
-| 序  | 实验    | PR   | 单变量 / 目标                                                                                                                       | 执行平台               | 风险                       |
-| --- | ------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | -------------------------- |
-| 🔍  | 排查项  | —    | F47 第二层平台维度定案：Linux node-server 响应体级复验（CI probe:artifact 升级内容断言或手动复验）——见 [FINDINGS #9](./FINDINGS.md) | Linux（CI 或手动复验） | 待定案                     |
-| ①   | R21     | 未建 | Windows-only `trace:false`                                                                                                          | Windows 本机           | 高：长尾                   |
-| ②   | R23     | 未建 | 默认 heap（预期 OOM，exit 134）                                                                                                     | Windows 本机           | 高：OOM，须 timeout + 串行 |
-| ③   | R24     | 未建 | 4608 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
-| ④   | R25     | 未建 | 5120 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
-| ⑤   | R26     | 未建 | 6144 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
-| ⑥   | R22     | 未建 | Linux `trace:false`                                                                                                                 | 需 Linux CI            | 高：依赖 CI 协同           |
-| ⑦   | R27     | 未建 | `crawlLinks:false`                                                                                                                  | 本机                   | 中                         |
-| ⑧   | R28     | 未建 | `routes.clear()`                                                                                                                    | 本机                   | 中                         |
-| ⑨   | R29     | 未建 | 两者同时开启                                                                                                                        | 本机                   | 中                         |
-| ⑩   | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url）                                                                               | 本机                   | 中                         |
-| ⑪   | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵                                                                                                     | 本机                   | 中                         |
-| ⑫   | R34-R38 | 未建 | Vercel 多项目污染                                                                                                                   | 需云端（Vercel）       | 需云端协同，非本机         |
-| ⑬   | R45     | 未建 | Nuxt 4 整组兼容矩阵迁移                                                                                                             | 本机 + CI              | 大变更，独立 PR            |
+| 序  | 实验   | PR   | 单变量 / 目标                                                                                                                       | 执行平台               | 风险     |
+| --- | ------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | -------- |
+| 🔍  | 排查项 | —    | F47 第二层平台维度定案：Linux node-server 响应体级复验（CI probe:artifact 升级内容断言或手动复验）——见 [FINDINGS #9](./FINDINGS.md) | Linux（CI 或手动复验） | 待定案   |
+| ①   | R21    | 未建 | Windows-only `trace:false`                                                                                                          | Windows 本机           | 高：长尾 |
+
+> **R21 已完成测量（2026-10-18，分支 experiment/r21-windows-only-trace-false，变更留工作区未 commit）**：build 绿 79.8s（vs R20 213s，快 ~133s）；`.output/server/node_modules` 消失（16.6MB→8.2MB）但 F26 缺包链未触发——产物零裸导入，依赖已在构建链早期全量 inline，孤立环境三断言全绿。详见 [R21.md](./R21.md)。
+> | ② | R23 | 未建 | 默认 heap（预期 OOM，exit 134） | Windows 本机 | 高：OOM，须 timeout + 串行 |
+> | ③ | R24 | 未建 | 4608 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
+> | ④ | R25 | 未建 | 5120 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
+> | ⑤ | R26 | 未建 | 6144 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
+> | ⑥ | R22 | 未建 | Linux `trace:false` | 需 Linux CI | 高：依赖 CI 协同 |
+> | ⑦ | R27 | 未建 | `crawlLinks:false` | 本机 | 中 |
+> | ⑧ | R28 | 未建 | `routes.clear()` | 本机 | 中 |
+> | ⑨ | R29 | 未建 | 两者同时开启 | 本机 | 中 |
+> | ⑩ | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url） | 本机 | 中 |
+> | ⑪ | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵 | 本机 | 中 |
+> | ⑫ | R34-R38 | 未建 | Vercel 多项目污染 | 需云端（Vercel） | 需云端协同，非本机 |
+> | ⑬ | R45 | 未建 | Nuxt 4 整组兼容矩阵迁移 | 本机 + CI | 大变更，独立 PR |
 
 ## DoD（完成定义）
 
