@@ -62,3 +62,9 @@
 - 自定义域名经 wrangler `routes.custom_domain` 声明（`…docs.cf.ruan-cat.com` / `…api.cf.ruan-cat.com`），已绑定并自动建 DNS。
 - Workers Builds 连接与构建命令经 **cf CLI**（`cf builds repos connections upsert` + `cf builds workers create`）完成——按 script-tag 寻址（非 worker 名）；改配置用 `cf builds workers update`，勿再走 Dashboard。
 - F47：Content API 假阳性在 workerd 本地/远端 + Vercel 三处一致（node-server 正常）——验收必须做响应体内容断言。
+
+## 历史源文档存档（2026-10-17 迁移）
+
+- 历史源文档 4 份（Lucide 排除性调研、复用计划、Vercel 部署 spec/plan）已 byte-identical 迁移入仓 `docs/history/shadcn-docs-nuxt/`，索引与吸收状态映射见 `docs/history/README.md`。
+- 迁移副本是历史存档，不随实验状态更新；**现行状态与结论一律以 `docs/task-artifacts/` 与 `evidence/` 为准**，不得引用历史副本中的过时数据作为验收依据。
+- 外部源目录 `D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/` 仅作 provenance 保留。

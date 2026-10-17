@@ -186,6 +186,7 @@ Linux docs build 基线：
 - [真实项目事故映射](./docs/task-artifacts/real-world-incidents.md)
 - [CI 策略](./docs/task-artifacts/ci-strategy.md)
 - [初始化进度](./docs/task-artifacts/progress.md)
+- [历史文档存档](./docs/history/README.md)（源目录 4 份迁移副本：Lucide 排除调研 + 复用计划 + Vercel spec/plan）
 
 ## 本地运行
 

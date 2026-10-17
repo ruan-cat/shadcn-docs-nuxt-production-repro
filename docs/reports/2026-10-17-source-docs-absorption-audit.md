@@ -73,3 +73,11 @@
 - [x] `failure-catalog.md` F24 增补历史量化锚点（exit 134 / `Initializing prerenderer` / 145.479s / 4.05 GiB / 5.76 GiB / eams 对照 100.4s / 3751 modules）
 - [x] `session-relay.md` 工作区指针修正（4 份文件按子目录如实拆分，链接到 real-world-incidents §8 与本报告）
 - 提交：按仓库 git-commit 规范分笔提交；**未 push**（push 需用户显式授权）
+
+## 8. 迁移执行记录（2026-10-17 第二批，用户指令"迁移全部原目录文档"后）
+
+- [x] 4 份源文档 byte-identical 复制入仓 `docs/history/shadcn-docs-nuxt/`（合计 82,987 字节，sha256 双侧核验 4/4 一致，哈希基准见 `docs/history/README.md`）
+- [x] 新建迁移索引 `docs/history/README.md`：源路径、sha256、吸收状态映射、权威性说明（历史存档不随实验状态更新，现行状态以 task-artifacts 为准）
+- [x] 指针接线五处：real-world-incidents §8（入仓副本为主 + 外部路径降级为 provenance）、session-relay、根 README 任务工件、task-artifacts README 工件清单、AGENTS.md 新增「历史源文档存档」节
+- [x] 外部源目录保持只读未动（迁移 = 复制入仓，不从源仓删除；如需清理源仓另行明确授权）
+- **跨项目上下文接替就此收口**：本仓自包含，后续会话不依赖 `D:/store` 外部路径即可获得全部历史上下文（4 份原文 + 排除性结论 + 量化锚点 + 部署事实 + 会话备份）
