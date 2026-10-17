@@ -1,0 +1,7 @@
+{
+	"id": "R13",
+	"reason": "检验精确单包 inline（ufo）在当前 topology 的实际效果：是否复现 R14 blanket 的 prerender resolution failure，以及 ufo 是否被正确内联（对照 R14 blanket inline=[/.*/] 的确定性失败，记录精确宽度与 blanket 宽度的故障轴差异）。",
+	"allowedSafetyPatterns": {
+		"nuxtConfig": ["externals.inline"]
+	}
+}
