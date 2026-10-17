@@ -1,0 +1,20 @@
+# Prettier 排除规则
+#
+# ## MDC 文件防护（双保险方案之一，来源：init-shadcn-docs-nuxt 技能模板）
+#
+# 排除 MDC markdown 文件，防止 Prettier 破坏 ::demo-playground 等容器语法。
+# 已知破坏行为：
+# - 在 :: 开闭标记前后添加/删除空行
+# - 改变 frontmatter 内的缩进
+# - 重新包装长行，破坏 slot 标记
+# - 将 #preview / #code 识别为 Markdown 标题
+content/**/*.md
+
+# ## 本仓追加（2026-10-17 init-prettier-git-hooks 落地时）
+#
+# byte-identical 历史迁移存档：sha256 基准登记在 docs/history/README.md，
+# 任何重排都会破坏"迁移副本与源文件逐字节一致"的完整性保证。
+docs/history/**/*.md
+
+# pnpm 锁文件禁止任何重排（重排会改变 lockfile hash 并可能破坏解析）
+pnpm-lock.yaml
