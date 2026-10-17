@@ -64,3 +64,10 @@ memorix 已把 11 个分片 consolidate 进 obs:5999：`memorix memory detail --
 - 故障目录：[failure-catalog.md](./failure-catalog.md) F47 节
 - 证据：`evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`、`evidence/2026-09-30-vercel-deploy-e2e.md`、`evidence/2026-10-16-push-788630b-production-verify.md`（最新生产快照）
 - 历史源文档 4 份（lucide 构建调研 + 复用计划 + Vercel spec/plan）：**已 byte-identical 迁移入仓** [`docs/history/shadcn-docs-nuxt/`](../history/README.md)（sha256 双侧核验一致；索引与吸收状态映射见该 README）；原始外部路径 `D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/` 仅作 provenance 保留。Vercel spec/plan 与复用计划已由本仓 progress.md / evidence 全量承接；lucide 排除性结论见 [real-world-incidents](./real-world-incidents.md) §8（2026-10-17 审计补齐，审计报告 `docs/reports/2026-10-17-source-docs-absorption-audit.md`）
+
+## 2026-10-18 起实验执行阶段接力入口（新阶段）
+
+- **权威检查点：memorix obs #6062**（实验执行阶段检查点：QUEUE 快照 / SOP 方法论 / 蜂群模式 / 下一步队列；CLI 唤起 `memorix memory detail --id 6062`）
+- **在库执行层**：[docs/task-artifacts/experiments/](./experiments/README.md)（QUEUE 看板 + SOP + FINDINGS 台账 + 44 份实验档案）；总检报告 `docs/reports/2026-10-17-branch-pr-fault-reproduction-audit.md`
+- **恢复动作**：读 obs #6062 → 读 experiments/QUEUE.md 定任务 → 按 experiments/SOP.md 执行（复现前必读 FINDINGS #1 提升层污染与 #2 safe-delete 两条 gotcha）
+- **推送状态**：experiment/r01、experiment/r13 分支与 main 6 笔的 push 状态以 QUEUE.md 与远端实测为准；**只有 main push 会触发生产部署**，experiment/* 分支 push 仅作备份
