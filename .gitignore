@@ -19,3 +19,6 @@ coverage
 
 # TypeScript 增量编译缓存（2026-10-17 init-tsconfig 追加；实际落点 node_modules/.cache 已被上方 node_modules 覆盖，此处兜底）
 *.tsbuildinfo
+
+# 实验复现隔离目录（等用户批量删除确认后物理清理；safe-delete 守卫对 >50 文件删除要求确认，trash 对巨型目录会超时中止）
+node_modules.stale-*
