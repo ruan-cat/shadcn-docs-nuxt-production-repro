@@ -1,0 +1,7 @@
+{
+	"id": "R21",
+	"reason": "仅 Windows 打开 trace:false，验证 nitro 3 beta 是否仍支持该选项，并测量关闭依赖追踪对 node-server 产物自包含的影响（F26 缺包链验证；对照 R20 默认 trace 基线 213s 绿）",
+	"allowedSafetyPatterns": {
+		"nuxtConfig": ["trace: false"]
+	}
+}
