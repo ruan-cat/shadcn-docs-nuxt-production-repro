@@ -12,3 +12,7 @@ coverage
 .env.*
 !.env.example
 .DS_Store
+
+# WorkBuddy / WorkBuddy-AI 本地记忆目录（2026-10-17 追加，对齐 2026-6-30-common .gitignore）
+.workbuddy/memory/
+.workbuddy-ai/memory/
