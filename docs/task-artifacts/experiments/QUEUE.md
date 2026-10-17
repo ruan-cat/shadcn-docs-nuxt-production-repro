@@ -21,6 +21,7 @@
 | R09  | UI 保持 package exports/dist 控制组固化               | #14（MERGED） | 以 #14 固化 dist 控制组（无 experiment 分支） | ✅ 完成                                                                                                 | （以 PR #14 固化，无独立档案） |
 | R01  | 移除 apps/api sibling，docs-only 反向 control         | 未开 PR       | experiment/r01-remove-nitro-sibling           | ✅ clean 可信完成（对照成立，2026-10-18）；分支已建未开 PR（随下一里程碑 push 创建）；CI api job 预期红 | [R01.md](./R01.md)             |
 | R13  | 精确 `nitro.externals.inline`（externalization 补课） | 未开 PR       | experiment/r13-precise-nitro-inline           | ✅ clean 可信完成（排除性证据，2026-10-18）；分支已建未开 PR；根 experiment.json 声明随分支提交         | [R13.md](./R13.md)             |
+| R20  | Windows 默认 trace 控制（测量型，main 原地）          | 未开 PR       | 无分支（main @ c0c9f448 测量基线）            | ✅ clean 可信完成（长尾未复现，冷态 213s / 预热态 169s 均 exit 0，2026-10-18）；为 R21 提供对照         | [R20.md](./R20.md)             |
 
 ## 表 2：待重测（首轮结果不可采信）
 
@@ -44,27 +45,26 @@
 | ---- | --------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------ |
 | R11  | 精确 `ssr.noExternal`（externalization 补课） | 未建 | 无证据驱动目标（R12 blanket 全绿未产生首个 SSR externalization 错误，详见 [R11.md](./R11.md)） | 捕获首个 SSR externalization 错误后重启 | [R11.md](./R11.md) |
 
-## 表 4：未启动 26 个（R20-R45）
+## 表 4：未启动 25 个（R21-R45）
 
 按总检报告 §4/§5 执行队列排序：
 
 | 序  | 实验    | PR   | 单变量 / 目标                                                                                                                       | 执行平台               | 风险                       |
 | --- | ------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | -------------------------- |
 | 🔍  | 排查项  | —    | F47 第二层平台维度定案：Linux node-server 响应体级复验（CI probe:artifact 升级内容断言或手动复验）——见 [FINDINGS #9](./FINDINGS.md) | Linux（CI 或手动复验） | 待定案                     |
-| ①   | R20     | 未建 | Windows 默认 trace 控制                                                                                                             | Windows 本机           | 高：NFT 长尾可能 30min+    |
-| ②   | R21     | 未建 | Windows-only `trace:false`                                                                                                          | Windows 本机           | 高：长尾                   |
-| ③   | R23     | 未建 | 默认 heap（预期 OOM，exit 134）                                                                                                     | Windows 本机           | 高：OOM，须 timeout + 串行 |
-| ④   | R24     | 未建 | 4608 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
-| ⑤   | R25     | 未建 | 5120 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
-| ⑥   | R26     | 未建 | 6144 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
-| ⑦   | R22     | 未建 | Linux `trace:false`                                                                                                                 | 需 Linux CI            | 高：依赖 CI 协同           |
-| ⑧   | R27     | 未建 | `crawlLinks:false`                                                                                                                  | 本机                   | 中                         |
-| ⑨   | R28     | 未建 | `routes.clear()`                                                                                                                    | 本机                   | 中                         |
-| ⑩   | R29     | 未建 | 两者同时开启                                                                                                                        | 本机                   | 中                         |
-| ⑪   | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url）                                                                               | 本机                   | 中                         |
-| ⑫   | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵                                                                                                     | 本机                   | 中                         |
-| ⑬   | R34-R38 | 未建 | Vercel 多项目污染                                                                                                                   | 需云端（Vercel）       | 需云端协同，非本机         |
-| ⑭   | R45     | 未建 | Nuxt 4 整组兼容矩阵迁移                                                                                                             | 本机 + CI              | 大变更，独立 PR            |
+| ①   | R21     | 未建 | Windows-only `trace:false`                                                                                                          | Windows 本机           | 高：长尾                   |
+| ②   | R23     | 未建 | 默认 heap（预期 OOM，exit 134）                                                                                                     | Windows 本机           | 高：OOM，须 timeout + 串行 |
+| ③   | R24     | 未建 | 4608 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
+| ④   | R25     | 未建 | 5120 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
+| ⑤   | R26     | 未建 | 6144 MiB heap                                                                                                                       | Windows 本机           | 高：OOM 矩阵，串行         |
+| ⑥   | R22     | 未建 | Linux `trace:false`                                                                                                                 | 需 Linux CI            | 高：依赖 CI 协同           |
+| ⑦   | R27     | 未建 | `crawlLinks:false`                                                                                                                  | 本机                   | 中                         |
+| ⑧   | R28     | 未建 | `routes.clear()`                                                                                                                    | 本机                   | 中                         |
+| ⑨   | R29     | 未建 | 两者同时开启                                                                                                                        | 本机                   | 中                         |
+| ⑩   | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url）                                                                               | 本机                   | 中                         |
+| ⑪   | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵                                                                                                     | 本机                   | 中                         |
+| ⑫   | R34-R38 | 未建 | Vercel 多项目污染                                                                                                                   | 需云端（Vercel）       | 需云端协同，非本机         |
+| ⑬   | R45     | 未建 | Nuxt 4 整组兼容矩阵迁移                                                                                                             | 本机 + CI              | 大变更，独立 PR            |
 
 ## DoD（完成定义）
 
