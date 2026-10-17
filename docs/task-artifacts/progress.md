@@ -162,7 +162,7 @@
 
 ## 2026-10-16 会话备份唤起与接力上下文恢复
 
-> Agent：ZCode（CLI）/ GLM-5.3-Flash。前会话（sess_d5079b4a…，公开历史 sequence 0-423 / 390 条消息）经 memorix 十六进制归档唤起并逐字节核验；权威入口 `docs/task-artifacts/session-relay.md`。
+> Agent：ZCode（CLI）/ GLM-5.3-Flash。前会话（sess_d5079b4a……，公开历史 sequence 0-423 / 390 条消息）经 memorix 十六进制归档唤起并逐字节核验；权威入口 `docs/task-artifacts/session-relay.md`。
 
 - [x] 主索引 obs:6042 读回（分片映射、脱敏口径、完整性哈希、F47 两层警示、未完成任务清单）
 - [x] 实测发现合并坑位：obs:5989-5998 已被 memorix consolidate 进 obs:5999，逐条直读不可达；正确路径为 5999 解出全部 11 条 hex（顺序 chunk 11→1，按 envelope chunkNumber 重排）
@@ -180,3 +180,13 @@
 - [x] 新记录跨平台差异：CF 边缘对无尾斜杠路径 307 → `/guide/baseline/`，Vercel 200 直达，最终内容一致
 - [x] 浏览器级验收（agent-browser MCP）：CF 首页/子页 + Vercel 首页，水合 `__vue_app__` true、SCSS 8px computed 生效、三截图视觉完整；CLI `open` 两次挂起 → 按分流纪律切 MCP 工具族（失败路径已记录）
 - [x] 证据落盘：`evidence/2026-10-16-push-788630b-production-verify.md`（部署记录、断言矩阵、八要素、失败路径；取代 09-29/09-30 证据成为当前 HEAD 生产快照）
+
+## 2026-10-17 应用级 tsconfig 缺失修复（typecheck 通道打通）
+
+> 背景：`pnpm typecheck`（turbo 四包矩阵）自初始骨架 `a1bf378` 起从未全绿——apps/api 无 tsconfig.json（裸 `tsc` 打印帮助 exit 1）、apps/docs 无 tsconfig.json（@nuxt/cli 的 readTSConfig 硬性要求项目根存在该文件）。CI 不跑 typecheck，故从未阻塞部署链。
+
+- [x] apps/api：新增 tsconfig.json，`extends: "nitro/tsconfig"`（nitro 3 官方预设，package exports `./tsconfig`，仅含 compilerOptions 无 include 陷阱）+ include `nitro.config.ts` / `server/**/*.ts` / `node_modules/.nitro/types/**/*.d.ts`（`nitro prepare` 生成的 `nitro/types` 模块增强，实测 prepare 静默写入 `node_modules/.nitro/`，非 `.nitro/`）+ init-tsconfig 增量三件套 → **exit 1 → exit 0**
+- [x] apps/docs：新增 tsconfig.json，Nuxt 标准 `extends: ./.nuxt/tsconfig.json` → runner 打通，**首次暴露**上游 layer 源码类型噪声：127 个错误 100% 位于 `shadcn-docs-nuxt@1.1.9` 源码（TS2304 自动导入符号缺失 33 / TS2307 上游内部 `@/` 别名 81 类 / TS2589），本仓代码 0 错误
+- [x] exclude 收敛：`**/node_modules/shadcn-docs-nuxt/**` 拦截纯 include 来源（127→86）；剩余 86 个经 .nuxt 生成文件 import 闭包进入程序，exclude 无法拦截——**Nuxt layer 与独立 tsc 的结构性错配，修复归属上游**（可作 upstream issue 证据素材）；vite/nitro 构建不经过 tsc，排除零影响（实测 Build complete）
+- [x] 验证：api/docs/shared-core/ui 单包 typecheck 逐一实测；`pnpm test` 6/6（fail 0）；docs 生产构建 ✓；矩阵终态 5/6（docs 红为已定性的上游噪声，非本仓回归）
+- 事故附带：init-prettier-git-hooks 的 `pnpm add` 曾致 packages/ui 的 vite 链接瞬时损坏（MODULE_NOT_FOUND）→ `pnpm install --frozen-lockfile` 重连修复（668ms 恢复）
