@@ -63,4 +63,4 @@ memorix 已把 11 个分片 consolidate 进 obs:5999：`memorix memory detail --
 - 进度账本：[progress.md](./progress.md)（2026-09-29 / 2026-09-30 / 2026-10-16 三段收口）
 - 故障目录：[failure-catalog.md](./failure-catalog.md) F47 节
 - 证据：`evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md`、`evidence/2026-09-30-vercel-deploy-e2e.md`、`evidence/2026-10-16-push-788630b-production-verify.md`（最新生产快照）
-- 工作区（仓库外）：`D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/2026-9-29-new-repo/` 下 spec/plan/工具清单四件套
+- 工作区（仓库外）：`D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/` 下共 4 份——lucide 构建调研 1 份（`2026-8-5-shadcn-docs-nuxt-bug/`）+ 复用计划 / Vercel spec / Vercel plan 3 份（`2026-9-29-new-repo/`）。Vercel spec/plan 与复用计划已由本仓 progress.md / evidence 全量承接；lucide 排除性结论见 [real-world-incidents](./real-world-incidents.md) §8（2026-10-17 审计补齐，审计报告 `docs/reports/2026-10-17-source-docs-absorption-audit.md`）

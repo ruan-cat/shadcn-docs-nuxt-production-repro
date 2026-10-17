@@ -90,7 +90,20 @@ ERR_MODULE_NOT_FOUND: @popperjs/core
 
 本仓对应：F23、F36、F37。
 
-## 8. 本仓库的职责
+## 8. Lucide / Iconify 已排除（2026-08-05 排除性调研，SmallAliceWeb + eams）
+
+历史场景：构建慢 / OOM 曾被假设为"Lucide barrel 导入导致"。2026-08-05 调研（源文档：`D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/2026-8-5-shadcn-docs-nuxt-bug/2026-08-05-shadcn-docs-nuxt-lucide-build-analysis.md`）已排除该假设：
+
+- `shadcn-docs-nuxt` 的 Lucide 能力是 `@iconify-json/lucide` + `@nuxt/icon` 的字符串图标链路（`<Icon name="lucide:...">`），不是 `lucide-vue-next` / `lucide` JS barrel；两个项目源码均无 barrel 导入。
+- 产物量级：服务端 Lucide 集合 JSON 约 0.5 MiB；客户端扫描仅 SmallAlice 5 个图标（约 1.8 KiB）、eams 20 个图标（约 8.1 KiB），与约 7 GiB OOM 峰值不在同一数量级。
+- lucide issue #2806（barrel import 使 dev 变慢）对象是 Lucide 组件 barrel，不适用于 `@nuxt/icon` + Iconify JSON 链路。
+- OOM 主因指向 Content index + Nitro prerender 内存峰值（本仓 F24 / R23-R26）；构建长尾指向 workspace SSR 链、NFT trace 与 externalization（本仓 F12-F16、F22-F23）。
+
+处理边界：不要删除 `@iconify-json/lucide`、不要关闭 `@nuxt/icon`、不要把图标改成 `lucide-vue-next` 来"修"构建问题。若仍要做性能验证，只能以单变量 A/B（`externalizeIconsJson`、`clientBundle.scan`）进入实验矩阵，并记录图标完整性。
+
+状态：历史已排除（针对 Lucide 假设）；本仓未登记相关实验（该假设无复现需求）。
+
+## 9. 本仓库的职责
 
 以上只是历史问题来源。本仓必须重新用 control / single variable / failure gate 证明：
 

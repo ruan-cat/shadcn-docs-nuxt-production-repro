@@ -171,6 +171,8 @@ CI 必须实际启动 `.output/server/index.mjs` 并发送 HTTP 请求。
 
 **实验**：默认 heap、4608、5120、6144 等档位作为诊断变量。
 
+**历史量化锚点（2026-08-05 调研，来源与处理边界见 [real-world-incidents](./real-world-incidents.md) §8）**：SmallAliceWeb 标准构建在 `Initializing prerenderer` 阶段自然 OOM（exit 134，墙钟 145.479s，主 Node 工作集约 4.05 GiB）；8192 堆下观测约 5.76 GiB 工作集后被人工中止（非自然退出）。同期对照：eams 完整构建自然成功（约 100.4s，3751 client transform modules）。Lucide/Iconify 已排除为主因。
+
 **原则**：提高 heap 只用于确认资源门槛，不能替代缩小构建图的结构修复。
 
 ## F25：Windows-only `trace:false` workaround
