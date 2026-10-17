@@ -1,0 +1,19 @@
+{
+	// 2026-10-17 修复 typecheck（用户指令）：apps/api 自初始骨架 a1bf378 起
+	// "typecheck": "nitro prepare && tsc --noEmit" 因缺本文件而失败（裸 tsc 打印帮助 exit 1）。
+	//
+	// 接法（init-tsconfig 技能 form E）：extends nitro 3 官方 tsconfig 预设
+	// （package exports "./tsconfig" → node_modules/nitro/lib/tsconfig.json，
+	// 仅含 compilerOptions，无 include 陷阱）。nitro prepare 会把环境类型增强
+	// （declare module "nitro/types" 等 4 份 .d.ts）生成到 node_modules/.nitro/types/，
+	// 必须显式 include 才能进入编译程序——因此脚本链保留 "nitro prepare &&"。
+	"extends": "nitro/tsconfig",
+	"compilerOptions": {
+		// init-tsconfig 技能落地（monorepo 子包形态 D）：增量缓存消除全量重复编译内存峰值，
+		// 缓存写本包 node_modules/.cache（已被 .gitignore 覆盖）；变更只重查直接依赖。
+		"incremental": true,
+		"tsBuildInfoFile": "./node_modules/.cache/tsconfig.tsbuildinfo",
+		"assumeChangesOnlyAffectDirectDependencies": true
+	},
+	"include": ["nitro.config.ts", "server/**/*.ts", "node_modules/.nitro/types/**/*.d.ts"]
+}

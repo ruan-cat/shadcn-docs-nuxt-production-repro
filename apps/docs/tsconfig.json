@@ -1,0 +1,25 @@
+{
+	// 2026-10-17 修复 typecheck（与 apps/api 同类问题一并修复）：apps/docs 自初始骨架起
+	// 无 tsconfig.json，@nuxt/cli 的 typecheck 命令（pkg-types readTSConfig）硬性要求
+	// 项目根存在 tsconfig.json，缺失时直接报 "Cannot find matching tsconfig.json" exit 1。
+	//
+	// 接法：Nuxt 3 标准形态——extends 生成的 .nuxt/tsconfig.json（.nuxt 已被 .gitignore 覆盖，
+	// nuxt typecheck 会先生成类型再跑 vue-tsc）。
+	"extends": "./.nuxt/tsconfig.json",
+	"compilerOptions": {
+		// init-tsconfig 技能落地（monorepo 子包形态 D）：增量缓存 + 变更只重查直接依赖
+		"incremental": true,
+		"tsBuildInfoFile": "./node_modules/.cache/tsconfig.tsbuildinfo",
+		"assumeChangesOnlyAffectDirectDependencies": true
+	},
+	"exclude": [
+		// 2026-10-17：.nuxt/tsconfig.json 经 `shadcn-docs-nuxt/**/*` 宽通配把上游 layer 源码
+		// 拉进编译程序。exclude 实测把纯 include 来源的噪声从 127 砍到 86；剩余 86 个全部
+		// 位于上游 shadcn-docs-nuxt@1.1.9 源码（TS2304 Nuxt 自动导入符号缺失 33 / TS2307
+		// 上游内部 `@/` 别名不可解析 81 类 / TS2589），经 .nuxt 生成文件的 import 闭包进入
+		// 程序，exclude 无法拦截——属 Nuxt layer 与独立 tsc 的结构性错配，修复归属上游。
+		// 本仓代码 0 错误；vite/nitro 构建不经过 tsc，排除对构建零影响（实测 Build complete）。
+		// 通配写法抗主题版本升级（.pnpm 目录带 peer hash 后缀）。
+		"**/node_modules/shadcn-docs-nuxt/**"
+	]
+}
