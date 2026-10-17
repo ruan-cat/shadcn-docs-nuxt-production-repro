@@ -1,0 +1,78 @@
+// .vscode/extensions.json — 2026-10-17 由 init-vscode 技能 v2.0.0 模板部署。
+// JSONC 语义（VS Code 按 JSONC 解析）：允许 // 行注释，禁止尾逗号。
+// recommendations 已含 replacement mapping：better-todo-tree 替代旧 todo-tree（unwantedRecommendations 登记旧 ID）。
+// prettier-ignore
+{
+	"recommendations": [
+		// ========== 语言支持 ==========
+
+		// vue3的 .vue SFCs 的 LSP 语言支持服务
+		"Vue.volar",
+		// TypeScript 语言服务增强（Nightly 版本，支持最新特性）
+		"ms-vscode.vscode-typescript-next",
+
+		// ========== 代码格式化与检查 ==========
+
+		// 使用 prettier 实现格式化
+		"esbenp.prettier-vscode",
+		// 使用 eslint 实现代码检查
+		"dbaeumer.vscode-eslint",
+		// 行内展示错误与警告信息，提升错误可见性
+		"usernamehw.errorlens",
+		// 英文单词拼写检查
+		"streetsidesoftware.code-spell-checker",
+		// EditorConfig 文件支持（统一不同编辑器的代码风格）
+		"EditorConfig.EditorConfig",
+
+		// ========== Git 管理 ==========
+
+		// 使用 gitlens 插件 实现git代码管理
+		"eamodio.gitlens",
+		// 使用 git-graph 插件 实现git提交分支图的查看
+		"mhutchie.git-graph",
+
+		// ========== 测试 ==========
+
+		// node:test 契约测试与包测试（本仓使用 node --test）
+		"vitest.explorer",
+
+		// ========== 样式与 UI 开发 ==========
+
+		// TailwindCSS 智能提示与补全（apps/docs 文档站使用 tailwindcss 4.x）
+		"bradlc.vscode-tailwindcss",
+		// 颜色值（如 hex、rgb）的行内颜色预览
+		"naumovs.color-highlight",
+
+		// ========== 路径与导入增强 ==========
+
+		// 路径字符串的智能补全
+		"christian-kohler.path-intellisense",
+		// 自动导入文件的智能跳转（支持路径别名）
+		"antfu.goto-alias",
+		// HTML/JSX 中标签重命名时自动同步修改配对标签
+		"formulahendry.auto-rename-tag",
+
+		// ========== 环境变量 ==========
+
+		// .env 文件的语法高亮支持
+		"mikestead.dotenv",
+
+		// ========== 图标与图片 ==========
+
+		// 对 iconify 的图标做图标提示（apps/docs 使用 @nuxt/icon + lucide 集合）
+		"antfu.iconify",
+		// vscode 的图标主题
+		"PKief.material-icon-theme",
+
+		// ========== UI 交互增强 ==========
+
+		// TODO 高亮
+		"wayou.vscode-todo-highlight",
+		// TODO 树统计：原 Todo Tree 的活跃维护替代实现
+		"FanaticPythoner.better-todo-tree"
+	],
+	"unwantedRecommendations": [
+		// 已知被替代的旧 Todo Tree；这里只表达工作区不再推荐，不代表卸载或禁用
+		"Gruntfuggly.todo-tree"
+	]
+}
