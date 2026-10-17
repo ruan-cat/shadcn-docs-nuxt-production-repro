@@ -308,18 +308,21 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
 
 **三 preset 四平台对比矩阵**（同构建链路）：
 
-| preset | 平台 | Content API | 证据 |
-| --- | --- | --- | --- |
-| node-server | 本地 Windows + CI Linux artifact smoke | ✅ 200 且非空 | control |
-| vercel | Vercel 生产 | ❌ 200 + 404 shell | `evidence/2026-09-30-vercel-deploy-e2e.md` §4-5 |
-| cloudflare_module | workerd 本地（wrangler dev） | ❌ 200 + 404 shell | `evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md` |
-| cloudflare_module | workerd 远端（CF Workers 生产，run 36998783811） | ❌ 200 + 404 shell | 同上文件「远端部署证据」节 |
+| preset            | 平台                                             | Content API        | 证据                                                        |
+| ----------------- | ------------------------------------------------ | ------------------ | ----------------------------------------------------------- |
+| node-server       | 本地 Windows + CI Linux artifact smoke           | ✅ 200 且非空      | control                                                     |
+| vercel            | Vercel 生产                                      | ❌ 200 + 404 shell | `evidence/2026-09-30-vercel-deploy-e2e.md` §4-5             |
+| cloudflare_module | workerd 本地（wrangler dev）                     | ❌ 200 + 404 shell | `evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md` |
+| cloudflare_module | workerd 远端（CF Workers 生产，run 36998783811） | ❌ 200 + 404 shell | 同上文件「远端部署证据」节                                  |
 
 **要表达的风险**：仅凭状态码 200 与空错误日志会把 Content API 故障误判为通过；且该失效跨双 serverless 平台复现，**不是** workerd 原生模块边界特有。
 
 **修正后的根因假设（2026-10-03 实证）**：CF 构建日志栈实锤——content handler chunk（`.nuxt/prerender/chunks/_/query.mjs`）解析到 **h3@2.0.1-rc.22 的 `getQuery`**，对 nitro 内部 fetch 的 URL 抛 `Invalid URL`（同栈外层为 h3@1.15.11）；而 **content 包 manifest 无 h3 依赖声明（F04 本体）**，bundle 型 preset（vercel/cloudflare_module）按 content 包自身依赖上下文解析 h3 → v2 混入；node-server preset external 化走提升层 v1（control 正常）。页面 SSR 直连 storage 不经 HTTP 层，故 API 路由 500/404shell 而页面依赖构建期 content DB。
 
 **修复实证与分层定案（2026-10-04）**：`pnpm-workspace.yaml` 的 `packageExtensions`（key 须带显式 range）注入 `h3: 1.15.11` 到 content/mdc/icon/og-image 四包 → 产物 h3 v2 清零（.output chunks 实测 0 引用）→ **构建期 Invalid URL 清零、页面 prerender 恢复真实内容（CF+Vercel 生产实测）**。但**运行时 content API 在 workerd 与 Vercel node 上仍 200+404shell**——证实 F47 存在**两层独立失败**：
+
 - 第一层（构建期，已修）：h3 v2 串味 → packageExtensions 修复 verified；
 - 第二层（运行时，未修）：content 运行时 DB/存储初始化在 serverless 运行时（workerd + Vercel node）一致失败 → handler 崩溃 → catch-all 404shell。与 h3 无关（h3 v2 已清零仍复现）。node-server control 的运行时正常。
-第二层根因实验方向：content 运行时 DB 初始化路径（node:sqlite/better-sqlite3/serverAsset）在两个运行时中的失败点对比（套用 R19 模板，独立 PR）。
+  第二层根因实验方向：content 运行时 DB 初始化路径（node:sqlite/better-sqlite3/serverAsset）在两个运行时中的失败点对比（套用 R19 模板，独立 PR）。
+
+**2026-10-18 本机 node-server 响应体级实测（R01 受控对照附带发现，FINDINGS #9）**：本机 Windows node-server 构建产物冒烟中 `/api/_content/cache.json` 呈现 200+404shell（实验组与对照组一致，排除拓扑变量因果）；且复核 `probes/artifact-smoke.ts` 确认 CI 的 Content artifact smoke 仅断言 `response.ok`、从未做响应体检查——矩阵中"node-server ✅"的原始证据强度应修正为"HTTP 200 已验证、响应体内容未验证"。第二层是否覆盖 node-server（全 preset）待 Linux 响应体级复验定案；定案前本节矩阵结论保持不变。
