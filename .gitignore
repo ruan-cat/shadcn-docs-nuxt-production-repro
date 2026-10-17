@@ -16,3 +16,6 @@ coverage
 # WorkBuddy / WorkBuddy-AI 本地记忆目录（2026-10-17 追加，对齐 2026-6-30-common .gitignore）
 .workbuddy/memory/
 .workbuddy-ai/memory/
+
+# TypeScript 增量编译缓存（2026-10-17 init-tsconfig 追加；实际落点 node_modules/.cache 已被上方 node_modules 覆盖，此处兜底）
+*.tsbuildinfo

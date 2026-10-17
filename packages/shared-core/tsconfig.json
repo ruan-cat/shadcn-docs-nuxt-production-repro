@@ -5,7 +5,13 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    // 2026-10-17 init-tsconfig 技能落地（形态 D monorepo 子包）：增量缓存消除 tsc/tsserver 全量重复编译内存峰值。
+    // 缓存写本包 node_modules/.cache（已被 .gitignore 覆盖），与 ui 包各目录独立，无共享写冲突。
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.tsbuildinfo",
+    // 仅 monorepo 子包生效：变更只重查直接依赖
+    "assumeChangesOnlyAffectDirectDependencies": true
   },
   "include": ["src/**/*.ts"]
 }
