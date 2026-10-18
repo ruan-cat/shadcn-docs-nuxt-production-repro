@@ -22,6 +22,7 @@
 | R01  | 移除 apps/api sibling，docs-only 反向 control         | 未开 PR       | experiment/r01-remove-nitro-sibling           | ✅ clean 可信完成（对照成立，2026-10-18）；分支已建未开 PR（随下一里程碑 push 创建）；CI api job 预期红 | [R01.md](./R01.md)             |
 | R13  | 精确 `nitro.externals.inline`（externalization 补课） | 未开 PR       | experiment/r13-precise-nitro-inline           | ✅ clean 可信完成（排除性证据，2026-10-18）；分支已建未开 PR；根 experiment.json 声明随分支提交         | [R13.md](./R13.md)             |
 | R20  | Windows 默认 trace 控制（测量型，main 原地）          | 未开 PR       | 无分支（main @ c0c9f448 测量基线）            | ✅ clean 可信完成（长尾未复现，冷态 213s / 预热态 169s 均 exit 0，2026-10-18）；为 R21 提供对照         | [R20.md](./R20.md)             |
+| R23  | 默认 heap（约 4 GiB）（测量型，main 原地）            | 未开 PR       | 无分支（main @ 76bd0fa 测量基线）             | ✅ clean 可信完成（OOM 未复现 + 峰值水位量化，2026-10-19）；水位 ~3.5 GiB，距 F24 锚点余量 13.2%        | [R23.md](./R23.md)             |
 
 ## 表 2：待重测（首轮结果不可采信）
 
@@ -45,7 +46,7 @@
 | ---- | --------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------ |
 | R11  | 精确 `ssr.noExternal`（externalization 补课） | 未建 | 无证据驱动目标（R12 blanket 全绿未产生首个 SSR externalization 错误，详见 [R11.md](./R11.md)） | 捕获首个 SSR externalization 错误后重启 | [R11.md](./R11.md) |
 
-## 表 4：未启动 25 个（R21-R45）
+## 表 4：未启动 23 个（R22、R24-R45）
 
 按总检报告 §4/§5 执行队列排序：
 
@@ -55,18 +56,18 @@
 | ①   | R21    | 未建 | Windows-only `trace:false`                                                                                                          | Windows 本机           | 高：长尾 |
 
 > **R21 已完成测量（2026-10-18，分支 experiment/r21-windows-only-trace-false，变更留工作区未 commit）**：build 绿 79.8s（vs R20 213s，快 ~133s）；`.output/server/node_modules` 消失（16.6MB→8.2MB）但 F26 缺包链未触发——产物零裸导入，依赖已在构建链早期全量 inline，孤立环境三断言全绿。详见 [R21.md](./R21.md)。
-> | ② | R23 | 未建 | 默认 heap（预期 OOM，exit 134） | Windows 本机 | 高：OOM，须 timeout + 串行 |
-> | ③ | R24 | 未建 | 4608 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
-> | ④ | R25 | 未建 | 5120 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
-> | ⑤ | R26 | 未建 | 6144 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
-> | ⑥ | R22 | 未建 | Linux `trace:false` | 需 Linux CI | 高：依赖 CI 协同 |
-> | ⑦ | R27 | 未建 | `crawlLinks:false` | 本机 | 中 |
-> | ⑧ | R28 | 未建 | `routes.clear()` | 本机 | 中 |
-> | ⑨ | R29 | 未建 | 两者同时开启 | 本机 | 中 |
-> | ⑩ | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url） | 本机 | 中 |
-> | ⑪ | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵 | 本机 | 中 |
-> | ⑫ | R34-R38 | 未建 | Vercel 多项目污染 | 需云端（Vercel） | 需云端协同，非本机 |
-> | ⑬ | R45 | 未建 | Nuxt 4 整组兼容矩阵迁移 | 本机 + CI | 大变更，独立 PR |
+
+| ② | R24 | 未建 | 4608 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
+| ③ | R25 | 未建 | 5120 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
+| ④ | R26 | 未建 | 6144 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
+| ⑤ | R22 | 未建 | Linux `trace:false` | 需 Linux CI | 高：依赖 CI 协同 |
+| ⑥ | R27 | 未建 | `crawlLinks:false` | 本机 | 中 |
+| ⑦ | R28 | 未建 | `routes.clear()` | 本机 | 中 |
+| ⑧ | R29 | 未建 | 两者同时开启 | 本机 | 中 |
+| ⑨ | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url） | 本机 | 中 |
+| ⑩ | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵 | 本机 | 中 |
+| ⑪ | R34-R38 | 未建 | Vercel 多项目污染 | 需云端（Vercel） | 需云端协同，非本机 |
+| ⑫ | R45 | 未建 | Nuxt 4 整组兼容矩阵迁移 | 本机 + CI | 大变更，独立 PR |
 
 ## DoD（完成定义）
 
