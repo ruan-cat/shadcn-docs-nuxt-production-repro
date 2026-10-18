@@ -12,18 +12,20 @@
 
 ## 表 1：已完成实验
 
-| 实验 | 单变量                                                | PR            | 分支 / 固化方式                                                               | 结果                                                                                                                        | 档案                           |
-| ---- | ----------------------------------------------------- | ------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| R02  | 删 docs 显式 h3@1.15.11                               | #4（CLOSED）  | experiment/r02-remove-docs-direct-h3                                          | ✅ 故障复现（Invalid URL → 500 → prerender 失败，与 CI 结论一致）                                                           | [R02.md](./R02.md)             |
-| R03  | Content `^2.13.9`（解除 root override）               | #6（CLOSED）  | experiment/r03-content-caret-drift                                            | ✅ 故障复现（clean 安装态下稳定失败）                                                                                       | [R03.md](./R03.md)             |
-| R04  | theme `^1.1.9`                                        | #7（CLOSED）  | experiment/r04-theme-caret-drift                                              | ✅ 故障复现（clean 安装态下稳定失败）                                                                                       | [R04.md](./R04.md)             |
-| R05  | 移除 og-image override                                | #8（CLOSED）  | experiment/r05-remove-og-image-override                                       | ✅ 绿对照（证明 override 漂移不炸 node-server build）                                                                       | [R05.md](./R05.md)             |
-| R09  | UI 保持 package exports/dist 控制组固化               | #14（MERGED） | 以 #14 固化 dist 控制组（无 experiment 分支）                                 | ✅ 完成                                                                                                                     | （以 PR #14 固化，无独立档案） |
-| R01  | 移除 apps/api sibling，docs-only 反向 control         | 未开 PR       | experiment/r01-remove-nitro-sibling                                           | ✅ clean 可信完成（对照成立，2026-10-18）；分支已建未开 PR（随下一里程碑 push 创建）；CI api job 预期红                     | [R01.md](./R01.md)             |
-| R13  | 精确 `nitro.externals.inline`（externalization 补课） | 未开 PR       | experiment/r13-precise-nitro-inline                                           | ✅ clean 可信完成（排除性证据，2026-10-18）；分支已建未开 PR；根 experiment.json 声明随分支提交                             | [R13.md](./R13.md)             |
-| R20  | Windows 默认 trace 控制（测量型，main 原地）          | 未开 PR       | 无分支（main @ c0c9f448 测量基线）                                            | ✅ clean 可信完成（长尾未复现，冷态 213s / 预热态 169s 均 exit 0，2026-10-18）；为 R21 提供对照                             | [R20.md](./R20.md)             |
-| R23  | 默认 heap（约 4 GiB）（测量型，main 原地）            | 未开 PR       | 无分支（main @ 76bd0fa 测量基线）                                             | ✅ clean 可信完成（OOM 未复现 + 峰值水位量化，2026-10-19）；水位 ~3.5 GiB，距 F24 锚点余量 13.2%                            | [R23.md](./R23.md)             |
-| R24  | 4608 MiB heap 档位（测量型，main 原地）               | 未开 PR       | 无分支（main @ 5557de7 测量基线，环境级单变量 NODE_OPTIONS 注入，无代码变更） | ✅ clean 可信完成（build exit 0 / 160.0s 与 R23 持平，OOM 未复现，2026-10-19）；水位 +8.4% 判据内——水位由构建图决定非堆上限 | [R24.md](./R24.md)             |
+| 实验 | 单变量                                                | PR            | 分支 / 固化方式                                                               | 结果                                                                                                                                                                              | 档案                           |
+| ---- | ----------------------------------------------------- | ------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| R02  | 删 docs 显式 h3@1.15.11                               | #4（CLOSED）  | experiment/r02-remove-docs-direct-h3                                          | ✅ 故障复现（Invalid URL → 500 → prerender 失败，与 CI 结论一致）                                                                                                                 | [R02.md](./R02.md)             |
+| R03  | Content `^2.13.9`（解除 root override）               | #6（CLOSED）  | experiment/r03-content-caret-drift                                            | ✅ 故障复现（clean 安装态下稳定失败）                                                                                                                                             | [R03.md](./R03.md)             |
+| R04  | theme `^1.1.9`                                        | #7（CLOSED）  | experiment/r04-theme-caret-drift                                              | ✅ 故障复现（clean 安装态下稳定失败）                                                                                                                                             | [R04.md](./R04.md)             |
+| R05  | 移除 og-image override                                | #8（CLOSED）  | experiment/r05-remove-og-image-override                                       | ✅ 绿对照（证明 override 漂移不炸 node-server build）                                                                                                                             | [R05.md](./R05.md)             |
+| R09  | UI 保持 package exports/dist 控制组固化               | #14（MERGED） | 以 #14 固化 dist 控制组（无 experiment 分支）                                 | ✅ 完成                                                                                                                                                                           | （以 PR #14 固化，无独立档案） |
+| R01  | 移除 apps/api sibling，docs-only 反向 control         | 未开 PR       | experiment/r01-remove-nitro-sibling                                           | ✅ clean 可信完成（对照成立，2026-10-18）；分支已建未开 PR（随下一里程碑 push 创建）；CI api job 预期红                                                                           | [R01.md](./R01.md)             |
+| R13  | 精确 `nitro.externals.inline`（externalization 补课） | 未开 PR       | experiment/r13-precise-nitro-inline                                           | ✅ clean 可信完成（排除性证据，2026-10-18）；分支已建未开 PR；根 experiment.json 声明随分支提交                                                                                   | [R13.md](./R13.md)             |
+| R20  | Windows 默认 trace 控制（测量型，main 原地）          | 未开 PR       | 无分支（main @ c0c9f448 测量基线）                                            | ✅ clean 可信完成（长尾未复现，冷态 213s / 预热态 169s 均 exit 0，2026-10-18）；为 R21 提供对照                                                                                   | [R20.md](./R20.md)             |
+| R23  | 默认 heap（约 4 GiB）（测量型，main 原地）            | 未开 PR       | 无分支（main @ 76bd0fa 测量基线）                                             | ✅ clean 可信完成（OOM 未复现 + 峰值水位量化，2026-10-19）；水位 ~3.5 GiB，距 F24 锚点余量 13.2%                                                                                  | [R23.md](./R23.md)             |
+| R24  | 4608 MiB heap 档位（测量型，main 原地）               | 未开 PR       | 无分支（main @ 5557de7 测量基线，环境级单变量 NODE_OPTIONS 注入，无代码变更） | ✅ clean 可信完成（build exit 0 / 160.0s 与 R23 持平，OOM 未复现，2026-10-19）；水位 +8.4% 判据内——水位由构建图决定非堆上限                                                       | [R24.md](./R24.md)             |
+| R25  | 5120 MiB heap 档位（测量型，main 原地）               | 未开 PR       | 无分支（main @ c8b1758 测量基线，环境级单变量 NODE_OPTIONS 注入，无代码变更） | ✅ clean 可信完成（快速验证口径，build exit 0 / 161.0s 与 R23/R24 持平，OOM 未复现，2026-10-19）；峰值 WS 4139 MB +15.0% 超判据——峰值随档位抬升（FINDINGS #16）                   | [R25.md](./R25.md)             |
+| R26  | 6144 MiB heap 档位（测量型，main 原地）               | 未开 PR       | 无分支（main @ c8b1758 测量基线，环境级单变量 NODE_OPTIONS 注入，无代码变更） | ✅ clean 可信完成（快速验证口径，build exit 0 / 157.0s 与 R23/R24/R25 持平，OOM 未复现，冒烟三断言全绿，2026-10-19）；峰值 WS 4463 MB +24.0% 超判据——单调趋势确认（FINDINGS #16） | [R26.md](./R26.md)             |
 
 ## 表 2：待重测（首轮结果不可采信）
 
@@ -47,7 +49,7 @@
 | ---- | --------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------ |
 | R11  | 精确 `ssr.noExternal`（externalization 补课） | 未建 | 无证据驱动目标（R12 blanket 全绿未产生首个 SSR externalization 错误，详见 [R11.md](./R11.md)） | 捕获首个 SSR externalization 错误后重启 | [R11.md](./R11.md) |
 
-## 表 4：未启动 22 个（R22、R25-R45）
+## 表 4：未启动 20 个（R22、R27-R45）
 
 按总检报告 §4/§5 执行队列排序：
 
@@ -58,18 +60,18 @@
 
 > **R21 已完成测量（2026-10-18，分支 experiment/r21-windows-only-trace-false，变更留工作区未 commit）**：build 绿 79.8s（vs R20 213s，快 ~133s）；`.output/server/node_modules` 消失（16.6MB→8.2MB）但 F26 缺包链未触发——产物零裸导入，依赖已在构建链早期全量 inline，孤立环境三断言全绿。详见 [R21.md](./R21.md)。
 
-| ② | R25 | 未建 | 5120 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
-| ③ | R26 | 未建 | 6144 MiB heap | Windows 本机 | 高：OOM 矩阵，串行 |
-| ④ | R22 | 未建 | Linux `trace:false` | 需 Linux CI | 高：依赖 CI 协同 |
-| ⑤ | R27 | 未建 | `crawlLinks:false` | 本机 | 中 |
-| ⑥ | R28 | 未建 | `routes.clear()` | 本机 | 中 |
-| ⑦ | R29 | 未建 | 两者同时开启 | 本机 | 中 |
-| ⑧ | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url） | 本机 | 中 |
-| ⑨ | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵 | 本机 | 中 |
-| ⑩ | R34-R38 | 未建 | Vercel 多项目污染 | 需云端（Vercel） | 需云端协同，非本机 |
-| ⑪ | R45 | 未建 | Nuxt 4 整组兼容矩阵迁移 | 本机 + CI | 大变更，独立 PR |
+| ② | R22 | 未建 | Linux `trace:false` | 需 Linux CI | 高：依赖 CI 协同 |
+| ③ | R27 | 未建 | `crawlLinks:false` | 本机 | 中 |
+| ④ | R28 | 未建 | `routes.clear()` | 本机 | 中 |
+| ⑤ | R29 | 未建 | 两者同时开启 | 本机 | 中 |
+| ⑥ | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url） | 本机 | 中 |
+| ⑦ | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵 | 本机 | 中 |
+| ⑧ | R34-R38 | 未建 | Vercel 多项目污染 | 需云端（Vercel） | 需云端协同，非本机 |
+| ⑨ | R45 | 未建 | Nuxt 4 整组兼容矩阵迁移 | 本机 + CI | 大变更，独立 PR |
 
 > **R25/R26 优先级重估注记（2026-10-19，R24 完成后）**：R20/R23/R24 三轮一致——构建水位由构建图决定（峰值 ~3.5-3.9 GiB），heap 上限提升不改变水位与时长（R23/R24 build 均 160s）。R25（5120 MiB）/R26（6144 MiB）更高档位预期同结果，建议降级为**快速验证**（单轮构建 + 水位抽查即可，无需完整周期）。档位验证照 R24 用 `getHeapStatistics` 实测留证（V8 对齐 +48 MiB）。详见 [R24.md](./R24.md) 与 [FINDINGS #15](./FINDINGS.md)。
+>
+> **R25/R26 完成追记（2026-10-19）**：已按快速验证口径执行并移入表 1——build exit 0（161.0s / 157.0s）与 R23/R24 一致，但峰值 WS 4139 / 4463 MB（+15.0% / +24.0%）**超出 ±10% 判据**，#15 "水位不变"结论已被 [FINDINGS #16](./FINDINGS.md) 修正：构建行为与结局与档位无关（成立且强化），峰值水位随 heap 上限单调抬升。
 
 ## DoD（完成定义）
 
