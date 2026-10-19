@@ -121,3 +121,10 @@
 - **证据**：/tmp/r25-mem.log、/tmp/r26-mem.log（稀疏采样口径）+ [R25.md](./R25.md)、[R26.md](./R26.md) 执行记录 + [R24.md](./R24.md) 密采对照（34 拍 × 5s）。
 - **口径限制**：快速验证为构建段 5 拍 × 30s 稀疏采样（峰值取末拍），绝对峰值可能低估瞬时极值；单调趋势为 R25/R26 同口径互比 + 与 R24 密采交叉对照下可信。
 - **沉淀动作**：①#15 结论以本条为准修正（#15 已加修正指针）；②heap 档位选择对峰值 WS 的代价在容量规划时需计入；③R22 重估时同口径提示（与 FINDINGS #13 优先级重估联动）。
+
+## 17. nitropack prerender 路由全清的 `/` 回填兜底——R28 破坏面收窄 + 契约阻塞记录
+
+- **发现**（2026-10-19，R28 完成后）：`routes.clear()` 将 prerender 路由清空后，`routes.size === 0 && crawlLinks === true` 触发 nitropack@2.13.4 自动回填 `/` 种子（core/index.mjs:1987-1992 源码实锤）→ 实际 Prerendered 5 routes（1 initial + 4 crawler 资源路由 payload/ipx/i18n）而非 0；html 从基线多页收敛至仅 index.html，Content 结构化索引不在构建期产物（`api/_content` 不存在，与基线一致）。
+- **证据**：/tmp/r28-build.log `Prerendered 5 routes` 行 + `Prerendering 1 initial routes with crawler` 行 + nitropack 源码行号（core/index.mjs:1987-1992）+ 冒烟（先验 `Listening` 行 ✓；`/`、`/guide/baseline` 均 200 但为 SSR 兜底；`cache.json` 200+404shell——F47 基线签名不变），详见 [R28.md](./R28.md)。
+- **影响**：①R28 单变量（钩子形态 `routes.clear()`）的破坏面被回填机制收窄，F27/F28/F29 完整触发需 R27（`crawlLinks:false`）+R28 叠加——即 R29 的设计动机；②R27/R29 被契约阻塞：[tests/baseline-safety.test.mjs](../../../tests/baseline-safety.test.mjs) forbidden 列表无 crawlLinks 字面、[契约](../config-experiment-contract.md)允许清单亦不含该形态，L84 治理条款要求先更新权威 pattern 列表（tests/ 资产变更需用户 gate）；执行者已实证演示声明失败（not ok 6：不允许声明未知安全 pattern）。
+- **沉淀动作**：①用户授权后扩展 tests/ + contract 的权威 pattern 列表（加 `crawlLinks: false` 字面）再执行 R27/R29；②R29 判读时以本次 R28 回填机制为叠加对照锚点（对照"回填是否随 crawlLinks 关闭而消失"）。

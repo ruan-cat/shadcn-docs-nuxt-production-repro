@@ -26,6 +26,7 @@
 | R24  | 4608 MiB heap 档位（测量型，main 原地）               | 未开 PR       | 无分支（main @ 5557de7 测量基线，环境级单变量 NODE_OPTIONS 注入，无代码变更） | ✅ clean 可信完成（build exit 0 / 160.0s 与 R23 持平，OOM 未复现，2026-10-19）；水位 +8.4% 判据内——水位由构建图决定非堆上限                                                       | [R24.md](./R24.md)             |
 | R25  | 5120 MiB heap 档位（测量型，main 原地）               | 未开 PR       | 无分支（main @ c8b1758 测量基线，环境级单变量 NODE_OPTIONS 注入，无代码变更） | ✅ clean 可信完成（快速验证口径，build exit 0 / 161.0s 与 R23/R24 持平，OOM 未复现，2026-10-19）；峰值 WS 4139 MB +15.0% 超判据——峰值随档位抬升（FINDINGS #16）                   | [R25.md](./R25.md)             |
 | R26  | 6144 MiB heap 档位（测量型，main 原地）               | 未开 PR       | 无分支（main @ c8b1758 测量基线，环境级单变量 NODE_OPTIONS 注入，无代码变更） | ✅ clean 可信完成（快速验证口径，build exit 0 / 157.0s 与 R23/R24/R25 持平，OOM 未复现，冒烟三断言全绿，2026-10-19）；峰值 WS 4463 MB +24.0% 超判据——单调趋势确认（FINDINGS #16） | [R26.md](./R26.md)             |
+| R28  | `prerender:routes` 钩子中 `routes.clear()`            | 未开 PR       | experiment/r28-prerender-routes-clear（分支已提交 d088e38）                   | ✅ clean 可信完成（部分命中，2026-10-19）；Prerendered 11 → 5 routes、html 11 → 1——nitropack `/` 回填兜底收窄破坏面（FINDINGS #17）；运行时三断言靠 SSR 兜底，F47 签名不变        | [R28.md](./R28.md)             |
 
 ## 表 2：待重测（首轮结果不可采信）
 
@@ -45,11 +46,15 @@
 
 ## 表 3：前置阻塞（⏸️）
 
-| 实验 | 单变量                                        | PR   | 阻塞原因                                                                                       | 解除条件                                | 档案               |
-| ---- | --------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------ |
-| R11  | 精确 `ssr.noExternal`（externalization 补课） | 未建 | 无证据驱动目标（R12 blanket 全绿未产生首个 SSR externalization 错误，详见 [R11.md](./R11.md)） | 捕获首个 SSR externalization 错误后重启 | [R11.md](./R11.md) |
+| 实验 | 单变量                                        | PR   | 阻塞原因                                                                                                                                                                                                                                                                                                                    | 解除条件                                                       | 档案               |
+| ---- | --------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------ |
+| R11  | 精确 `ssr.noExternal`（externalization 补课） | 未建 | 无证据驱动目标（R12 blanket 全绿未产生首个 SSR externalization 错误，详见 [R11.md](./R11.md)）                                                                                                                                                                                                                              | 捕获首个 SSR externalization 错误后重启                        | [R11.md](./R11.md) |
+| R27  | `crawlLinks:false`                            | 未建 | 契约允许清单不含 crawlLinks 形态：[tests/baseline-safety.test.mjs](../../../tests/baseline-safety.test.mjs) forbidden 列表无 crawlLinks 字面（原文摘录见 [R27.md](./R27.md)），[契约](../config-experiment-contract.md) 治理条款（L84）要求先更新权威列表；执行者已实证演示声明失败（not ok 6：不允许声明未知安全 pattern） | 用户授权扩展权威 pattern 列表（tests/ 资产变更，风险分层审批） | [R27.md](./R27.md) |
+| R29  | `crawlLinks:false` + `routes.clear()` 同开    | 未建 | 同 R27（crawlLinks 形态不在允许清单）；依赖 R27 解除 + R28 回填机制作为叠加对照锚点——单变量 `routes.clear()` 的破坏面已被 nitropack `/` 回填收窄（[FINDINGS #17](./FINDINGS.md)）                                                                                                                                           | 用户授权扩展权威 pattern 列表（同 R27，tests/ 资产变更）       | 待建 R29.md        |
 
-## 表 4：未启动 20 个（R22、R27-R45）
+## 表 4：未启动 17 个（R22、R30-R45）
+
+> R27/R29 已于 2026-10-19 移入表 3（契约阻塞）；R28 已于 2026-10-19 完成移入表 1。
 
 按总检报告 §4/§5 执行队列排序：
 
@@ -61,13 +66,10 @@
 > **R21 已完成测量（2026-10-18，分支 experiment/r21-windows-only-trace-false，变更留工作区未 commit）**：build 绿 79.8s（vs R20 213s，快 ~133s）；`.output/server/node_modules` 消失（16.6MB→8.2MB）但 F26 缺包链未触发——产物零裸导入，依赖已在构建链早期全量 inline，孤立环境三断言全绿。详见 [R21.md](./R21.md)。
 
 | ② | R22 | 未建 | Linux `trace:false` | 需 Linux CI | 高：依赖 CI 协同 |
-| ③ | R27 | 未建 | `crawlLinks:false` | 本机 | 中 |
-| ④ | R28 | 未建 | `routes.clear()` | 本机 | 中 |
-| ⑤ | R29 | 未建 | 两者同时开启 | 本机 | 中 |
-| ⑥ | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url） | 本机 | 中 |
-| ⑦ | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵 | 本机 | 中 |
-| ⑧ | R34-R38 | 未建 | Vercel 多项目污染 | 需云端（Vercel） | 需云端协同，非本机 |
-| ⑨ | R45 | 未建 | Nuxt 4 整组兼容矩阵迁移 | 本机 + CI | 大变更，独立 PR |
+| ③ | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url） | 本机 | 中 |
+| ④ | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵 | 本机 | 中 |
+| ⑤ | R34-R38 | 未建 | Vercel 多项目污染 | 需云端（Vercel） | 需云端协同，非本机 |
+| ⑥ | R45 | 未建 | Nuxt 4 整组兼容矩阵迁移 | 本机 + CI | 大变更，独立 PR |
 
 > **R25/R26 优先级重估注记（2026-10-19，R24 完成后）**：R20/R23/R24 三轮一致——构建水位由构建图决定（峰值 ~3.5-3.9 GiB），heap 上限提升不改变水位与时长（R23/R24 build 均 160s）。R25（5120 MiB）/R26（6144 MiB）更高档位预期同结果，建议降级为**快速验证**（单轮构建 + 水位抽查即可，无需完整周期）。档位验证照 R24 用 `getHeapStatistics` 实测留证（V8 对齐 +48 MiB）。详见 [R24.md](./R24.md) 与 [FINDINGS #15](./FINDINGS.md)。
 >
