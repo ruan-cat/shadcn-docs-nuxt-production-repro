@@ -1,0 +1,7 @@
+{
+	"id": "R28",
+	"reason": "在 prerender:routes 钩子中调用 routes.clear() 全清 prerender 初始路由（含 content 模块注册的 cache.<ts>.json 与显式种子），量化 Content 结构化索引/缓存产物与运行时探针的副作用（F27/F28/F29 族单变量）。",
+	"allowedSafetyPatterns": {
+		"nuxtConfig": ["routes.clear()"]
+	}
+}
