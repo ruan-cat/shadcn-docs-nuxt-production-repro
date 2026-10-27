@@ -128,3 +128,13 @@
 - **证据**：/tmp/r28-build.log `Prerendered 5 routes` 行 + `Prerendering 1 initial routes with crawler` 行 + nitropack 源码行号（core/index.mjs:1987-1992）+ 冒烟（先验 `Listening` 行 ✓；`/`、`/guide/baseline` 均 200 但为 SSR 兜底；`cache.json` 200+404shell——F47 基线签名不变），详见 [R28.md](./R28.md)。
 - **影响**：①R28 单变量（钩子形态 `routes.clear()`）的破坏面被回填机制收窄，F27/F28/F29 完整触发需 R27（`crawlLinks:false`）+R28 叠加——即 R29 的设计动机；②R27/R29 被契约阻塞：[tests/baseline-safety.test.mjs](../../../tests/baseline-safety.test.mjs) forbidden 列表无 crawlLinks 字面、[契约](../config-experiment-contract.md)允许清单亦不含该形态，L84 治理条款要求先更新权威 pattern 列表（tests/ 资产变更需用户 gate）；执行者已实证演示声明失败（not ok 6：不允许声明未知安全 pattern）。
 - **沉淀动作**：①用户授权后扩展 tests/ + contract 的权威 pattern 列表（加 `crawlLinks: false` 字面）再执行 R27/R29；②R29 判读时以本次 R28 回填机制为叠加对照锚点（对照"回填是否随 crawlLinks 关闭而消失"）。
+
+> **2026-10-27 追记**：契约阻塞已解除（main @ 4211796），R27/R29 已执行完成——R27 部分破坏 / R29 完整触发，回填机制两分支对照确认，见 #18。
+
+## 18. F27/F28/F29 完整触发阶梯实锤——单变量不足、双变量达成零预渲染 + content 路由注册疑依赖 crawlLinks
+
+- **发现**（2026-10-27，R27/R29 完成后）：prerender 静态产物触发阶梯——基线 11 → R28 5（`routes.clear()` 后 nitropack `/` 回填兜底）→ R27 9（`crawlLinks:false` 无 crawler，但 3 显式种子页 + payload/ipx/i18n 完整、冒烟静态命中）→ R29 0（双开零预渲染成立）。回填机制两分支源码级对照：nitropack@2.13.4 core:1987-1992，`routes.size === 0` 时 `crawlLinks === true` → `add("/")`（R28 路径）、`false` → return（R29 路径）——R28 观测到的回填兜底随 crawlLinks 关闭而消失，完整触发路径源码级确认。F47 签名（`cache.json` 200+404shell）跨基线/R27/R28/R29 四态不变——独立于 prerender 变量。
+- **横向发现**：R27 中 content 的 `cache.<ts>.json` / `search-<ts>` 未入初始路由列表（基线/R28 语境 content v2.13.9 在 `nitro:config` 阶段 unshift 注册）——content 路由注册疑似依赖 crawlLinks 态，待源码核查（候选后续任务）。
+- **证据**：/tmp/r27-build.log（`Prerendering 5 routes` 措辞无 "with crawler" + `Prerendered 9 routes in 11.561 seconds` + 9 路由明细 = 3 页面 + 3 `_payload.json` + 2 `_ipx` + 1 `_i18n`，无失败标记无 Invalid URL）、/tmp/r29-build.log（无 `Prerendering`/`Prerendered`/`Initializing prerenderer` 行、html = 0、.output/public 仅 `_nuxt` + 2 logo）+ nitropack 源码行号（core:1987-1992）+ 三轮冒烟（R27 `/`、`/guide/baseline` 字节数与磁盘预渲染产物一致即静态命中；R29 全 SSR 兜底；`cache.json` 四态 200+404shell），详见 [R27.md](./R27.md)、[R29.md](./R29.md)。
+- **影响**：①F27 完整签名以 R29 为准（html 11→0 + 运行时全 SSR 兜底）；②R27 单变量不足以复现 F27 全貌——故障家族的触发阶梯证明"组合变量"价值（R28 部分命中 / R27 部分破坏 / R29 完整触发，三者互为对照）；③content 路由注册条件为后续核查项。
+- **沉淀动作**：①后续 F27/F28/F29 相关判读以 R29 完整签名为基准；②content v2.13.9 路由注册对 crawlLinks 态的依赖核查列为候选后续任务（待入队，候选位置：QUEUE 表 4 🔍 排查项旁）。
