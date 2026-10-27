@@ -1,0 +1,7 @@
+{
+	"id": "R29",
+	"reason": "同时叠加 crawlLinks:false 与 prerender:routes 钩子 routes.clear() 双 workaround，观测 Content 结构化索引/缓存产物与运行时探针的完整破坏面（F27/F28/F29 族双变量叠加；对照 R27/R28 单变量的回填兜底）。",
+	"allowedSafetyPatterns": {
+		"nuxtConfig": ["crawlLinks: false", "routes.clear()"]
+	}
+}
