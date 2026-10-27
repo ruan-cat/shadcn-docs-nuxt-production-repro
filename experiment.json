@@ -1,0 +1,7 @@
+{
+	"id": "R27",
+	"reason": "nitro.prerender.crawlLinks 置 false 关闭 crawler 爬链，观测 Content 结构化索引/缓存产物与运行时探针的副作用（F27/F28/F29 族单变量）。",
+	"allowedSafetyPatterns": {
+		"nuxtConfig": ["crawlLinks: false"]
+	}
+}
