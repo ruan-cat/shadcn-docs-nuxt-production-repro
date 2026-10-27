@@ -21,11 +21,11 @@
 
 ```json
 {
-  "id": "R12",
-  "reason": "量化 blanket Vite SSR noExternal 对 Nuxt server graph、产物与运行时的影响。",
-  "allowedSafetyPatterns": {
-    "nuxtConfig": ["noExternal"]
-  }
+	"id": "R12",
+	"reason": "量化 blanket Vite SSR noExternal 对 Nuxt server graph、产物与运行时的影响。",
+	"allowedSafetyPatterns": {
+		"nuxtConfig": ["noExternal"]
+	}
 }
 ```
 
@@ -33,11 +33,11 @@
 
 ```json
 {
-  "expected": {
-    "docsDependencies": {
-      "h3": null
-    }
-  }
+	"expected": {
+		"docsDependencies": {
+			"h3": null
+		}
+	}
 }
 ```
 
@@ -81,6 +81,7 @@ publicHoistPattern
 - R19：全局 hoisted linker；
 - R21/R22：`trace:false`；
 - R28/R29：`routes.clear()`；
+- R27/R29：`crawlLinks: false`（2026-10-19 扩展，用户 gate 授权，动机：R27/R29 实验需要）；
 - 后续出现的新 workaround 必须先更新权威安全 pattern 列表，再进入实验，禁止任意字符串自助放行。
 
 ## 判读原则
