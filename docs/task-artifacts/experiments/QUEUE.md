@@ -30,21 +30,22 @@
 | R27  | Content prerender 配置加入 `crawlLinks:false`         | 未开 PR       | experiment/r27-prerender-crawllinks-false（分支已提交 4d5c7e0）               | ✅ clean 可信完成（破坏面小于预期，2026-10-27）；契约 12/12、build exit 0（148s）、Prerendered 9 routes（3 页面 + 3 payload + 2 ipx + 1 i18n）、html = 3 且冒烟静态命中；仅 content API 路由缺席——单变量不足以触发 F27 全貌（FINDINGS #18） | [R27.md](./R27.md)             |
 | R29  | `crawlLinks:false` + `routes.clear()` 同开            | 未开 PR       | experiment/r29-prerender-both（分支已提交 17e87f7）                           | ✅ clean 可信完成（完整触发，2026-10-27）；契约 12/12、build exit 0（136s）、零预渲染成立（日志三行全缺席、html 11 → 0）；运行时全 SSR 兜底，F47 签名不变——F27 家族完整触达（FINDINGS #18）                                                 | [R29.md](./R29.md)             |
 
+| R18 | targeted public hoist（`publicHoistPattern:` camelCase 字面量触发契约检测） | #26（CLOSED） | experiment/r18-retry-public-hoist（分支已提交） | ✅ clean 可信完成（契约预期判违 verified，2026-10-29）；build 全程 exit 0（install 8s / build:packages 5s / docs 181s / 峰值 3559MB）；pnpm 对 camelCase 字面量零警告→检测全赖契约字面子串；运行时 content 端点 200+404shell（F47 签名，F18 印证） | [R18.md](./R18.md) |
+| R19 | `nodeLinker: hoisted` 全局 hoisted linker（F20 爆炸半径实锤） | #27（OPEN） | experiment/r19-retry-node-linker-hoisted（分支已提交） | ✅ clean 可信完成（verified，2026-10-29）；install/build:packages/docs build 全 exit 1（hoisted 破坏 `.bin` shim 相对路径解析，nuxt & typescript bin 缺失→不可构建）；契约预期判违 `nodeLinker: hoisted` | [R19.md](./R19.md) |
+
 ## 表 2：待重测（首轮结果不可采信）
 
-| 实验 | 单变量                            | PR            | 首轮结果                 | 原因                                    | 档案        |
-| ---- | --------------------------------- | ------------- | ------------------------ | --------------------------------------- | ----------- |
-| R18  | targeted public hoist             | #26（CLOSED） | exit 124（480s timeout） | 长尾超出 timeout 上限                   | 待建 R18.md |
-| R19  | `nodeLinker: hoisted`             | #27（OPEN）   | exit 124（480s timeout） | hoisted 全量重装 12m+，timeout 上限不足 | 待建 R19.md |
-| R06  | 显式升级 nuxt-og-image            | #9（CLOSED）  | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R06.md |
-| R07  | 移除 shared-core 双向消费         | #11（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R07.md |
-| R08  | 移除 workspace UI                 | #12（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R08.md |
-| R10  | UI 改 source alias                | #15（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R10.md |
-| R12  | blanket `ssr.noExternal`          | #16（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R12.md |
-| R14  | blanket Nitro inline              | #19（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R14.md |
-| R15  | Element Plus Popper alias 缺包    | #21（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R15.md |
-| R16  | app-local direct alias dependency | #23（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R16.md |
-| R17  | Nitro `traceAlias`                | #25（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R17.md |
+| 实验 | 单变量                            | PR            | 首轮结果             | 原因          | 档案        |
+| ---- | --------------------------------- | ------------- | -------------------- | ------------- | ----------- |
+| R06  | 显式升级 nuxt-og-image            | #9（CLOSED）  | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R06.md |
+| R07  | 移除 shared-core 双向消费         | #11（CLOSED） | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R07.md |
+| R08  | 移除 workspace UI                 | #12（CLOSED） | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R08.md |
+| R10  | UI 改 source alias                | #15（CLOSED） | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R10.md |
+| R12  | blanket `ssr.noExternal`          | #16（CLOSED） | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R12.md |
+| R14  | blanket Nitro inline              | #19（CLOSED） | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R14.md |
+| R15  | Element Plus Popper alias 缺包    | #21（CLOSED） | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R15.md |
+| R16  | app-local direct alias dependency | #23（CLOSED） | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R16.md |
+| R17  | Nitro `traceAlias`                | #25（CLOSED） | exit 1 + Invalid URL | 🚫 污染态判废 | 待建 R17.md |
 
 ## 表 3：前置阻塞（⏸️）
 
