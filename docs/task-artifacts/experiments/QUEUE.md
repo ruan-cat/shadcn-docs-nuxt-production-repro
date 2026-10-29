@@ -30,11 +30,12 @@
 | R27  | Content prerender 配置加入 `crawlLinks:false`         | 未开 PR       | experiment/r27-prerender-crawllinks-false（分支已提交 4d5c7e0）               | ✅ clean 可信完成（破坏面小于预期，2026-10-27）；契约 12/12、build exit 0（148s）、Prerendered 9 routes（3 页面 + 3 payload + 2 ipx + 1 i18n）、html = 3 且冒烟静态命中；仅 content API 路由缺席——单变量不足以触发 F27 全貌（FINDINGS #18） | [R27.md](./R27.md)             |
 | R29  | `crawlLinks:false` + `routes.clear()` 同开            | 未开 PR       | experiment/r29-prerender-both（分支已提交 17e87f7）                           | ✅ clean 可信完成（完整触发，2026-10-27）；契约 12/12、build exit 0（136s）、零预渲染成立（日志三行全缺席、html 11 → 0）；运行时全 SSR 兜底，F47 签名不变——F27 家族完整触达（FINDINGS #18）                                                 | [R29.md](./R29.md)             |
 
+| R18 | targeted public hoist（`publicHoistPattern:` camelCase 字面量触发契约检测） | #26（CLOSED） | experiment/r18-retry-public-hoist（分支已提交） | ✅ clean 可信完成（契约预期判违 verified，2026-10-29）；build 全程 exit 0（install 8s / build:packages 5s / docs 181s / 峰值 3559MB）；pnpm 对 camelCase 字面量零警告→检测全赖契约字面子串；运行时 content 端点 200+404shell（F47 签名，F18 印证） | [R18.md](./R18.md) |
+
 ## 表 2：待重测（首轮结果不可采信）
 
 | 实验 | 单变量                            | PR            | 首轮结果                 | 原因                                    | 档案        |
 | ---- | --------------------------------- | ------------- | ------------------------ | --------------------------------------- | ----------- |
-| R18  | targeted public hoist             | #26（CLOSED） | exit 124（480s timeout） | 长尾超出 timeout 上限                   | 待建 R18.md |
 | R19  | `nodeLinker: hoisted`             | #27（OPEN）   | exit 124（480s timeout） | hoisted 全量重装 12m+，timeout 上限不足 | 待建 R19.md |
 | R06  | 显式升级 nuxt-og-image            | #9（CLOSED）  | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R06.md |
 | R07  | 移除 shared-core 双向消费         | #11（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                           | 待建 R07.md |

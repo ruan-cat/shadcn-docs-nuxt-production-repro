@@ -15,3 +15,6 @@ packageExtensions:
   "nuxt-og-image@5.1.9":
     dependencies:
       h3: 1.15.11
+
+publicHoistPattern:
+  - "@popperjs/core"
