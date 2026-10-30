@@ -145,13 +145,36 @@ CI 必须实际启动 `.output/server/index.mjs` 并发送 HTTP 请求。
 
 **目标**：记录实际有效/无效，不把文档存在的配置项自动当成当前组合的正确修复。
 
-## F20：`nodeLinker: hoisted` 作为全局 workaround 爆炸半径过大
+## F20：`nodeLinker: hoisted` 作为全局 workaround 爆炸半径过大（2026-09-29 登记，2026-10-30 结论上修）
 
 **实验**：只改变 linker。
 
 记录：install、build memory、standalone runtime。
 
 **风险**：可能修复可见性，但同时显著扩大构建图或引入新的解析差异。
+
+### 2026-10-30 结论上修：由「性能/构建图放大」改为「**可用性灾难：hoisted 使项目不可构建**」
+
+> 依据：[FINDINGS #20](./experiments/FINDINGS.md)「R19→F20 复现：hoisted 爆炸半径实锤（不可构建，非仅性能）」；档案 [R18.md](./experiments/R18.md) / [R19.md](./experiments/R19.md)，结论均标 `verified`（2026-10-29 重测，2026-10-30 并入 main）。
+
+| 维度                              | 原假设 → 实测结论                                                                                                                                                                                                                            |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 破坏级                            | 「显著扩大构建图 / 引入解析差异」（性能与解析风险）→ **系统级不可构建**                                                                                                                                                                      |
+| `pnpm install`                    | **exit 1 / 21s**，失败于 `apps/docs prepare`：`Cannot find module '.../apps/docs/node_modules/nuxt/bin/nuxt.mjs'`                                                                                                                            |
+| `pnpm build:packages`             | **exit 1 / 2s**，`Cannot find module '.../packages/shared-core/node_modules/typescript/bin/tsc'`                                                                                                                                             |
+| `pnpm --filter @repro/docs build` | **exit 1 / 2s**，失败于 `prebuild: nuxt prepare`（同报 `nuxt/bin/nuxt.mjs` 缺失）                                                                                                                                                            |
+| 根因                              | hoisted 布局下 pnpm 把 bin 提到根 `node_modules/.bin`，但**未在 `.pnpm/<pkg>/node_modules/<pkg>/bin/` 内落地 `bin/<cmd>.mjs`**；而 `node_modules/.bin/<cmd>` shim 经 `../<pkg>/bin/<cmd>` **相对路径**解析 → 该文件缺失 → `MODULE_NOT_FOUND` |
+| 波及面                            | **系统性**（nuxt、typescript 均中招），非单包特例                                                                                                                                                                                            |
+| 「构建图放大」假设                | **不成立**——hoisted 在 prepare 生命周期即阻断 build，构建从未进入真实构建阶段；构建期峰值仅 **2011 MB**（baseline node 水位，非构建水位；R18 真实构建峰值 3559 MB 对照）                                                                     |
+| 「重装需 12m+」                   | **冷 store 假象**——warm store 实测重装仅 **21s**（1200 包全 reused、0 下载）。首轮 exit 124（480s timeout）是**误诊**，掩盖了真实的 bin 解析断裂                                                                                             |
+
+**对照：targeted `publicHoistPattern`（R18）不触发本爆炸，但暴露另一类治理盲区**
+
+- R18 写入 camelCase 字面量 `publicHoistPattern:`（非 pnpm 合法 kebab 键 `public-hoist-pattern`），pnpm 10.33.0 **零 unknown-field 警告、静默容忍** → 治理键检测**完全依赖** `tests/baseline-safety.test.mjs` 的字面子串匹配。
+- ✝️ **治理盲区**：若改用合法 kebab `public-hoist-pattern`，契约子串不匹配 → **漏检**。即 **pnpm 侧对危险 workspace 配置不提供任何校验信号**，检测全压在契约测试的字面子串上。
+- **建议（未实施，留待决策）**：契约层对已知危险配置**同时枚举 kebab 与 camelCase 两种字面**。
+
+**影响**：①PR #27 评估 hoisted 风险的严重级需重判——由「性能风险」升为「不可构建」；②首轮 R19 的 exit 124（timeout）是误诊，掩盖了真实失败模式；③F20 的实验方向**已终止**——hoisted 不再是待评估选项，结论是「**禁止作为 workaround 使用**」；④「12 分钟重装」这一流传说法被证伪（warm store 下 21s），**真正危险的是工具链断裂，不是重装时长**。
 
 ## F21：targeted `publicHoistPattern` 只作为 fallback
 

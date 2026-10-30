@@ -78,3 +78,14 @@
 3. **本轮方法论产出（对后续所有复现有效的 SOP）**：跨分支隐藏提升层残留会制造伪故障信号；复现前必须隔离 node_modules；后台任务不可用于含构建的复现流程。
 4. **待执行队列**（按序）：① r06-r17 九个分支 clean 重测 ② r18/r19 加大 timeout clean 重测 ③ R01/R11/R13 建分支执行 ④ R20-R26 Windows 资源族（高险，串行+timeout）⑤ R27-R33/R39-R44 逐批 ⑥ R34-R38 需云端协同 ⑦ R45 独立迁移 PR。
 5. 待清理项：`node_modules.stale-*` 隔离目录（bulk-delete 守卫限制，需前台分批清理）。
+
+---
+
+## 6. 追记（2026-10-30）：本报告 §4 表中两个上游旧分支已删除
+
+> 本节是**追加式追记**，§4 的历史表格与 §5 的历史结论**原文保留不改写**——它们记录的是 2026-10-17 当时的真实状态。
+
+- §4 表中的 `experiment/r19-node-linker-hoisted`（表内原标「污染态」）与 `experiment/r18-targeted-public-hoist`（表内原标「污染态」）**已于 2026-10-30 经用户授权从本地与远端删除**。
+- **删除依据（三条）**：①二者 🔴 不可合并、前提已被证伪；②基线是 2026-08-28 旧 main（不含 F47 修复），结论过时；③其结论已被 **retry 分支** `experiment/r18-retry-public-hoist` / `experiment/r19-retry-node-linker-hoisted` 完整替代，且终版档案已于 2026-10-30 并入 main（`R18.md` / `R19.md`，FINDINGS 条目重编号为 **#20**）。
+- ⚠️ **术语订正**：本报告 §4 表中标注的「**污染态**」一词，在本仓语境下专指**首轮实验的污染态伪信号**（`node_modules` 隐藏提升层残留 / timeout 假象），**不指分支本身**；两个 retry 分支从未被定性为「污染分支」，且**仍然保留**。
+- 现状索引：[BRANCH-MERGE-EVALUATION.md](../task-artifacts/experiments/BRANCH-MERGE-EVALUATION.md)（§2 总表 / §3.1.1 订正小节）、[QUEUE.md](../task-artifacts/experiments/QUEUE.md)（R18/R19 已移入表 1）、[FINDINGS.md](../task-artifacts/experiments/FINDINGS.md)（**#20**：R19→F20 复现：hoisted 爆炸半径实锤）。
