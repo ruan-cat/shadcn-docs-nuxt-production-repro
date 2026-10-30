@@ -215,4 +215,52 @@ pnpm test             # Tasks: 6 successful, 6 total / exit 0
 
 ## 7. 生产部署响应体级复验（推送后回填）
 
-> 待回填：Vercel docs / Vercel api / Cloudflare Workers docs+api 的新部署 ID 与响应体断言结果。
+提交：`e9a2105..acc4f62 main -> main`（4 笔：`06832db` 🐞 守卫 / `ad379fb` 🧪 探针+契约 / `ac75d39` 🐎 CI / `acc4f62` 📃 口径+档案）。
+
+### 7.1 部署终态
+
+| 平台               | 对象              | 部署 ID                                                                                        | 状态                                                                         |
+| ------------------ | ----------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Vercel             | docs              | `dpl_93X1QKoNhXCDVfb5AyLkBdq87rNf`                                                             | **READY**（`aliasError=null`，custom domain `…docs.vc.ruan-cat.com` 已绑定） |
+| Vercel             | api               | `dpl_FfnCCGUUw1uyNbXRM5TNJXUDQTqr`                                                             | **READY**                                                                    |
+| Cloudflare Workers | docs              | Build `8bf16dec-4583-44e4-936b-950a748fe5f9`（version `4ca04d27-955a-40ca-ac47-d60220b54eb7`） | **success**                                                                  |
+| Cloudflare Workers | api               | Build `fdf7b5ce-9214-42b7-9331-35c7d077ff15`（version `a02453a4-f838-44d1-b09c-610960d744ad`） | **success**                                                                  |
+| GitHub Actions     | run `41011466735` | 5/5 check-runs 全 success                                                                      | **success**                                                                  |
+
+> **CI 的 `Linux 完整生产构建与 artifact smoke` job 已在真实 `ubuntu-latest` 上实跑新的内容级探针并通过** → 独立复核声明的「未验证项 ①（Linux CI 实跑）」已闭环。
+> Vercel docs 构建日志：`Tasks: 3 successful, 3 total` / `Cached: 2 cached, 3 total` / `Time: 3m5.972s` / `Build Completed in /vercel/output [3m]`；产物清单确认守卫已入包：`functions/__fallback.func/chunks/routes/api/_content/_..._.mjs (935 B)` 与 `chunks/routes/api/index.mjs (932 B)`。
+
+### 7.2 远端指纹发现（不硬编码）
+
+从远端首页的 79 个 `/_nuxt/*.js` chunk 中扫描 `/api/_content/search-\d+` 得到本次部署指纹：
+
+| 平台            | 指纹            |
+| --------------- | --------------- |
+| Vercel docs     | `1793340012190` |
+| Cloudflare docs | `1793340012740` |
+
+> 两个平台的指纹**不同**（各自构建时刻不同）→ 再次印证探针绝不能硬编码指纹。
+
+### 7.3 响应体级断言（双平台逐字一致）
+
+| URL                             | Vercel docs                                                                                    | Cloudflare docs                        | 判定                                     |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------- |
+| `/api/_content/search-<ts>`     | 200 `text/plain` 4956B，`documentCount:8`、`documentIds` 含 `/guide/baseline` 与「绿色控制组」 | 200 `text/plain` 4956B，同上           | ✅ 真实内容                              |
+| `/api/_content/cache-<ts>.json` | 200 `application/json` 10025B，`contents[0]._path=/guide/baseline`                             | 200 `application/json` 10024B，同上    | ✅ 真实内容                              |
+| `/api/_content/query`           | 200 `application/json` 9745B，3 篇文档                                                         | 200 `application/json` 9745B，3 篇文档 | ✅ 真实内容                              |
+| `/api/_content/cache.json`      | **404 `application/json`**                                                                     | **404 `application/json`**             | ✅ **真 404**（修复前 200 + HTML shell） |
+| `/api/_content/search`          | **404 `application/json`**                                                                     | **404 `application/json`**             | ✅ **真 404**                            |
+| `/api/_content`                 | **404 `application/json`** 242B                                                                | **404 `application/json`** 242B        | ✅ **真 404**                            |
+| `/api/_content/`                | **404 `application/json`** 244B                                                                | **404 `application/json`** 244B        | ✅ **真 404**                            |
+| `/`                             | 200 `text/html` 107416B，title「生产级复现实验室」                                             | 200 `text/html` 107214B，同上          | ✅ 页面不回归                            |
+| `/guide/baseline/`              | 200 `text/html` 120926B，title「绿色控制组」                                                   | 200 `text/html` 120724B，同上          | ✅ 页面不回归                            |
+
+### 7.4 其它对象
+
+| 对象                                                | 结果                                                                                        |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Vercel api `/v1/health`                             | 200 `{"ok":true,"service":"independent-nitro3-api","timestamp":"2026-10-30T06:07:57.314Z"}` |
+| Cloudflare api `/v1/health`                         | 200 `{"ok":true,"service":"independent-nitro3-api","timestamp":"2026-10-30T06:07:59.138Z"}` |
+| Vercel docs 运行时错误（`get_runtime_errors`, 24h） | **No runtime errors found**                                                                 |
+
+→ **F47 第二层假阳性在 Vercel 生产与 Cloudflare Workers 两个远端同时闭环。**
