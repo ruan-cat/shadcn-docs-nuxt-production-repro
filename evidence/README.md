@@ -33,5 +33,6 @@ YYYY-MM-DD-rXX-实验名称.md
 > `experiment/r18-targeted-public-hoist` / `experiment/r19-node-linker-hoisted`，
 > main 与 retry 分支均无副本。这两个旧分支已于同日经用户授权删除，为避免
 > **销毁唯一证据载体**，先把两份归档移植入 main，再执行删除。
-> 关联：R15 机理在 FINDINGS 台账中**尚无独立条目**（已知台账缺口，见
-> [BRANCH-MERGE-EVALUATION.md §3.5](../docs/task-artifacts/experiments/BRANCH-MERGE-EVALUATION.md)）。
+> 关联：R15 机理在 FINDINGS 台账中**已有独立条目**——[FINDINGS #21](../docs/task-artifacts/experiments/FINDINGS.md)
+> 「F17 机理定案：externalize Element Plus 切断 `@popperjs/core` 的 npm alias 链」
+> （2026-10-30 用户授权 A1 补建；此前此处记载的「尚无独立条目」缺口**已消解**）。

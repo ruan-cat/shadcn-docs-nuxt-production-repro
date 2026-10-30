@@ -114,9 +114,9 @@ publicHoistPattern:
 
 ```json
 {
-	"allowedSafetyPatterns": {
-		"pnpmWorkspace": ["publicHoistPattern"]
-	}
+  "allowedSafetyPatterns": {
+    "pnpmWorkspace": ["publicHoistPattern"]
+  }
 }
 ```
 
@@ -196,8 +196,8 @@ dependencyCount = 222
 
 ```json
 {
-	"@sxzz/popperjs-es": "2.11.8",
-	"element-plus": "2.13.6"
+  "@sxzz/popperjs-es": "2.11.8",
+  "element-plus": "2.13.6"
 }
 ```
 

@@ -206,8 +206,8 @@ dependencyCount = 207
 
 ```json
 {
-	"@sxzz/popperjs-es": "2.11.8",
-	"element-plus": "2.13.6"
+  "@sxzz/popperjs-es": "2.11.8",
+  "element-plus": "2.13.6"
 }
 ```
 
@@ -295,11 +295,11 @@ HTTP 500 Server Error
 
 ```json
 {
-	"error": true,
-	"url": "http://127.0.0.1:3099/",
-	"statusCode": 500,
-	"statusMessage": "Server Error",
-	"message": "Cannot find package '@popperjs/core' imported from .../apps/docs/.output/server/node_modules/element-plus/es/hooks/use-popper/index.mjs"
+  "error": true,
+  "url": "http://127.0.0.1:3099/",
+  "statusCode": 500,
+  "statusMessage": "Server Error",
+  "message": "Cannot find package '@popperjs/core' imported from .../apps/docs/.output/server/node_modules/element-plus/es/hooks/use-popper/index.mjs"
 }
 ```
 
@@ -355,6 +355,7 @@ G10 isolated GET /                     ❌ missing @popperjs/core
 "@popperjs/core": "npm:@sxzz/popperjs-es@^2.11.7"
 ```
 
-并在完全相同的 R15 externalization topology 下重新跑 closure + isolated GET `/`；6. 如果 R16 让 output 同时出现 logical `@popperjs/core` 并恢复 isolated HTTP 200，就能建立“复现 → 精确修复”的强因果链。
+并在完全相同的 R15 externalization topology 下重新跑 closure + isolated GET `/`；
+6. 如果 R16 让 output 同时出现 logical `@popperjs/core` 并恢复 isolated HTTP 200，就能建立“复现 → 精确修复”的强因果链。
 
 当前证据不支持使用 blanket Nitro inline、全局 hoist 或 node-linker hoisted 作为默认修复；这些属于后续独立对照实验。

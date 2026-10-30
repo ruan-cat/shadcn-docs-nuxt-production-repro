@@ -27,8 +27,8 @@
 | --- | --- | --- |
 | ① Lucide 构建调研 | [real-world-incidents §8](../task-artifacts/real-world-incidents.md)（排除性结论与处理边界）+ [failure-catalog F24](../task-artifacts/failure-catalog.md)（历史量化锚点） | ✅ 已承接（2026-10-17 审计补齐） |
 | ② 复用计划（2026-09-29） | [progress.md「2026-09-29 接力核对与基础设施新增」](../task-artifacts/progress.md) + [evidence/2026-09-29](../../evidence/2026-09-29-scss-ui-cloudflare-worker-baseline.md) | ✅ 已承接 |
-| ③ Vercel 部署 plan（2026-09-30） | [progress.md「2026-09-30」两节](../task-artifacts/progress.md) + [AGENTS.md 部署事实](../../../AGENTS.md) | ✅ 已承接 |
-| ④ Vercel 部署 spec（2026-09-30） | [README Vercel 节](../../../README.md) + [evidence/2026-09-30 §1](../../evidence/2026-09-30-vercel-deploy-e2e.md) | ✅ 已承接 |
+| ③ Vercel 部署 plan（2026-09-30） | [progress.md「2026-09-30」两节](../task-artifacts/progress.md) + [AGENTS.md 部署事实](../../AGENTS.md) | ✅ 已承接 |
+| ④ Vercel 部署 spec（2026-09-30） | [README Vercel 节](../../README.md) + [evidence/2026-09-30 §1](../../evidence/2026-09-30-vercel-deploy-e2e.md) | ✅ 已承接 |
 
 ## 交叉引用
 

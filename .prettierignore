@@ -18,3 +18,14 @@ docs/history/**/*.md
 
 # pnpm 锁文件禁止任何重排（重排会改变 lockfile hash 并可能破坏解析）
 pnpm-lock.yaml
+
+# ## 本仓追加（2026-10-30 台账审计订正）
+#
+# byte-identical 上游旧分支证据归档：2026-10-30 从已删除的
+# experiment/r18-targeted-public-hoist / experiment/r19-node-linker-hoisted
+# 移植入 main 的两份原始证据。它们的字节保真是"先移植证据、再删分支"这条
+# 删除纪律的**唯一可核验凭据**——一旦被 prettier 重排，字节一致性即失效，
+# 也就无法再证明"移植副本 == 被删分支上的原件"。
+# 原始 blob：r18 = 56012656、r15 = 381f7cc4。
+evidence/2026-08-29-r18-targeted-public-hoist-insufficient.md
+evidence/2026-08-29-r15-element-plus-popper-alias.md

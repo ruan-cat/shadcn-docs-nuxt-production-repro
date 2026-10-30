@@ -92,7 +92,7 @@ ERR_MODULE_NOT_FOUND: @popperjs/core
 
 ## 8. Lucide / Iconify 已排除（2026-08-05 排除性调研，SmallAliceWeb + eams）
 
-历史场景：构建慢 / OOM 曾被假设为"Lucide barrel 导入导致"。2026-08-05 调研（全文已迁移入仓：[`docs/history/shadcn-docs-nuxt/2026-8-5-shadcn-docs-nuxt-bug/2026-08-05-shadcn-docs-nuxt-lucide-build-analysis.md`](../../history/shadcn-docs-nuxt/2026-8-5-shadcn-docs-nuxt-bug/2026-08-05-shadcn-docs-nuxt-lucide-build-analysis.md)；原始外部路径 `D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/2026-8-5-shadcn-docs-nuxt-bug/2026-08-05-shadcn-docs-nuxt-lucide-build-analysis.md` 仅作 provenance）已排除该假设：
+历史场景：构建慢 / OOM 曾被假设为"Lucide barrel 导入导致"。2026-08-05 调研（全文已迁移入仓：[`docs/history/shadcn-docs-nuxt/2026-8-5-shadcn-docs-nuxt-bug/2026-08-05-shadcn-docs-nuxt-lucide-build-analysis.md`](../history/shadcn-docs-nuxt/2026-8-5-shadcn-docs-nuxt-bug/2026-08-05-shadcn-docs-nuxt-lucide-build-analysis.md)；原始外部路径 `D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/2026-8-5-shadcn-docs-nuxt-bug/2026-08-05-shadcn-docs-nuxt-lucide-build-analysis.md` 仅作 provenance）已排除该假设：
 
 - `shadcn-docs-nuxt` 的 Lucide 能力是 `@iconify-json/lucide` + `@nuxt/icon` 的字符串图标链路（`<Icon name="lucide:...">`），不是 `lucide-vue-next` / `lucide` JS barrel；两个项目源码均无 barrel 导入。
 - 产物量级：服务端 Lucide 集合 JSON 约 0.5 MiB；客户端扫描仅 SmallAlice 5 个图标（约 1.8 KiB）、eams 20 个图标（约 8.1 KiB），与约 7 GiB OOM 峰值不在同一数量级。

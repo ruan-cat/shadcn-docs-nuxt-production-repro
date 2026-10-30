@@ -121,7 +121,7 @@ fresh lockfile，观察是否跨到 2.14.x，并明确区分 manifest 允许范�
 
 仅作为对照。
 
-### PR R19：`nodeLinker: hoisted`
+### PR R19`nodeLinker: hoisted`
 
 全局拓扑对照，不作为默认建议。
 
@@ -153,9 +153,9 @@ fresh lockfile，观察是否跨到 2.14.x，并明确区分 manifest 允许范�
 
 ## 阶段 6：Content prerender workaround 副作用
 
-### PR R27：`crawlLinks:false`
+### PR R27`crawlLinks:false`
 
-### PR R28：`routes.clear()`
+### PR R28`routes.clear()`
 
 ### PR R29：两者同时开启
 
@@ -163,13 +163,17 @@ fresh lockfile，观察是否跨到 2.14.x，并明确区分 manifest 允许范�
 
 ## 阶段 7：ESM/CJS 与交互
 
-### PR R30：复现 dayjs 入口冲突
+> **2026-10-30 收敛订正**：本阶段原列 R30 / R31 / R32 / R33 **四个独立 PR**，实际已于 2026-10-28 收敛为**单一 R31-family 实验**（mermaid 触发块一次覆盖 R30 / R33），并在 `experiment/r31-mermaid-esm-cjs` 分支落档 verified（档案已于 2026-10-30 并入 main，FINDINGS 条目 **#22**）→ **R30 / R31 / R33 三条已终结**。✝️ 同日独立复核坐实：`debug` **并非** `mermaid@11.17.2` 的传递依赖（lock mermaid 依赖块 line 12908–12931 无 `debug`）→ **R32 未被覆盖，回到未启动池**，且其单变量须重新界定（当前可证事实：主题 `vite.optimizeDeps.include: ['debug']` 为**悬空声明**）。
+>
+> 复现结论：F30 在当前生产链路为 **clean negative（未复现）**；后续方向应为「Vite dev `optimizeDeps` 缺口 / 外部化 mermaid 构建」。
 
-### PR R31：复现 mermaid 入口冲突
+### PR R30：复现 dayjs 入口冲突 —— ✅ 已由 R31-family 覆盖并终结（不单独开 PR）
 
-### PR R32：复现 debug ESM/CJS 入口问题
+### PR R31：复现 mermaid 入口冲突 —— ✅ 已执行并终结（未开 PR，档案已并入 main）
 
-### PR R33：复现 sanitize-url optimizeDeps 缺口
+### PR R32：复现 debug ESM/CJS 入口问题 —— 🆕 **未启动**（前提被证伪后回池，单变量待重新界定）
+
+### PR R33：复现 sanitize-url optimizeDeps 缺口 —— ✅ 已由 R31-family 覆盖并终结（不单独开 PR）
 
 每个 PR 记录 browser module error 与 hydration 状态，不能只截图 UI。
 
