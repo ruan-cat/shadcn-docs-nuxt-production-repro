@@ -8,8 +8,8 @@
 - Nitro `trace: false`；
 - `routes.clear()`；
 - blanket `externals.inline`；
-- `nodeLinker: hoisted`；
-- `publicHoistPattern`。
+- `nodeLinker: hoisted` / `node-linker: hoisted`；
+- `publicHoistPattern` / `public-hoist-pattern`。
 
 但 R12、R14、R19、R21、R28 等实验本身恰好需要**故意启用其中一个变量**。如果静态安全测试无条件禁止这些字符串，实验会在真正的 build/runtime 门之前被测试基础设施拦截，无法测量 Windows、Linux、Content 和 artifact 行为。
 
@@ -59,10 +59,14 @@ inline: [/.*/]
 
 ```text
 nodeLinker: hoisted
+node-linker: hoisted
 publicHoistPattern
+public-hoist-pattern
 ```
 
 未知 pattern 不能通过声明绕过安全测试。
+
+> **为什么同一个危险键要枚举 kebab 与 camelCase 两种拼写（2026-10-30 受控实测，pnpm 10.33.0）**：pnpm-workspace.yaml 的设置键**只认 camelCase**——camelCase 被接受且**零警告**，kebab 被**显式 WARN 并忽略**（`The following settings in pnpm-workspace.yaml were ignored because they are not written in camelCase`）→ **kebab 拼写本身不产生 hoist 风险**。因此双拼写枚举属于**纵深防御**（防未来 pnpm 改行为、防作者意图被静默忽略），**不是**堵「改用合法键即漏检」的已实证漏洞。真正成立的治理盲区是另一件事：**pnpm 对非法 camelCase 键零警告**（`publicHoistPattern:` 会被静默接受）→ pnpm 侧不提供任何校验信号，检测全压在契约的字面子串上。
 
 ## 约束
 

@@ -133,6 +133,9 @@ element-plus
 
 **错误信号**：`.output` 可以启动监听，但真实请求报 `ERR_MODULE_NOT_FOUND: @popperjs/core`。
 
+**机理定案（2026-10-30 补建，FINDINGS #21）**：触发条件 = **精确 externalize Element Plus**（`vite.ssr.external = ["element-plus"]`）；真实表现**不是 build 失败**，而是 **build 全绿 + standalone 正常监听 + 真实请求 HTTP 500**（`Cannot find package '@popperjs/core' imported from element-plus/es/hooks/use-popper/index.mjs`）→ 与 **F18** 的分界即在于此（只看 build 退出码会 100% 漏检）。因果链由 **R15（阳性 500）/ R16（docs 直加 Popper npm alias → 200）/ R17（Nitro `traceAlias` → 200）** 三段对照锁定：三者唯一自变量为配置差异 → externalize 切断 alias 链，alias 闭包可修复。
+详见 [FINDINGS #21](./experiments/FINDINGS.md) 与 [R15.md](./experiments/R15.md) / [R16.md](./experiments/R16.md) / [R17.md](./experiments/R17.md)。
+
 ## F18：`nuxt build` 绿色但 `.output` 不可运行
 
 CI 必须实际启动 `.output/server/index.mjs` 并发送 HTTP 请求。
@@ -170,9 +173,10 @@ CI 必须实际启动 `.output/server/index.mjs` 并发送 HTTP 请求。
 
 **对照：targeted `publicHoistPattern`（R18）不触发本爆炸，但暴露另一类治理盲区**
 
-- R18 写入 camelCase 字面量 `publicHoistPattern:`（非 pnpm 合法 kebab 键 `public-hoist-pattern`），pnpm 10.33.0 **零 unknown-field 警告、静默容忍** → 治理键检测**完全依赖** `tests/baseline-safety.test.mjs` 的字面子串匹配。
-- ✝️ **治理盲区**：若改用合法 kebab `public-hoist-pattern`，契约子串不匹配 → **漏检**。即 **pnpm 侧对危险 workspace 配置不提供任何校验信号**，检测全压在契约测试的字面子串上。
-- **建议（未实施，留待决策）**：契约层对已知危险配置**同时枚举 kebab 与 camelCase 两种字面**。
+- R18 写入 camelCase 字面量 `publicHoistPattern:`（pnpm 10.33.0 **零 unknown-field 警告、静默容忍**）→ 治理键检测**完全依赖** `tests/baseline-safety.test.mjs` 的字面子串匹配。
+- ✝️ **事实订正（2026-10-30 受控实测，pnpm 10.33.0）**：原文「若改用合法 kebab `public-hoist-pattern`，契约子串不匹配 → **漏检**」**方向相反、事实错误**。实测：`pnpm-workspace.yaml` 的设置键**只认 camelCase**——camelCase 被接受且零警告；kebab 被**显式 WARN 并忽略**（`The following settings in pnpm-workspace.yaml were ignored because they are not written in camelCase`）→ **kebab 拼写不产生 hoist 风险**，契约原本匹配的 camelCase 恰是**唯一生效拼写**。
+- **仍然成立的治理盲区**：pnpm 对**非法 camelCase 键零警告**（`publicHoistPattern:` 会被静默接受）→ pnpm 侧对危险 workspace 配置**不提供任何校验信号**，检测全压在契约测试的字面子串上。
+- **建议（已于 2026-10-30 实施，A2 项）**：契约层对已知危险配置**同时枚举 kebab 与 camelCase 两种字面** → `forbidden` 已扩为 4 项（`nodeLinker: hoisted` / `node-linker: hoisted` / `publicHoistPattern` / `public-hoist-pattern`）。**性质：纵深防御**（防未来 pnpm 改行为、防作者意图被静默忽略），**不是**堵已实证漏洞。
 
 **影响**：①PR #27 评估 hoisted 风险的严重级需重判——由「性能风险」升为「不可构建」；②首轮 R19 的 exit 124（timeout）是误诊，掩盖了真实失败模式；③F20 的实验方向**已终止**——hoisted 不再是待评估选项，结论是「**禁止作为 workaround 使用**」；④「12 分钟重装」这一流传说法被证伪（warm store 下 21s），**真正危险的是工具链断裂，不是重装时长**。
 
@@ -244,6 +248,13 @@ CI 必须实际启动 `.output/server/index.mjs` 并发送 HTTP 请求。
 - `@braintree/sanitize-url`。
 
 **表象**：暗黑模式、侧栏按钮等交互失效，看似 CSS 问题，实际是模块导入报错打断 hydration。
+
+### 2026-10-30 订正：重点依赖清单的事实校正 + 复现结论
+
+- ✝️ **`debug` 不是 `mermaid@11.17.2` 的传递依赖**（原清单把四者并列为 mermaid 入口图成员有误）。复核：`pnpm-lock.yaml` 的 mermaid 依赖块（line 12908–12931）共 22 项依赖、**无 `debug`**；安装态 mermaid `package.json` 亦无；`shadcn-docs-nuxt@1.1.9` 未直接声明；`debug@4.4.3` 实来自 `@babel/core` / `@nuxt/cli` 等**构建工具链**。→ **`dayjs` / `@braintree/sanitize-url` 才是 mermaid 传递依赖**（二者被 mermaid 触发块覆盖）；`debug` 属**独立轴**，对应实验 **R32 已回未启动池**（原「R30/R32/R33 由单一 mermaid 触发块覆盖」的收敛前提被证伪）。
+- ✝️ **主题 `vite.optimizeDeps.include: ['debug']` 是悬空声明**——它引用了客户端依赖图中**不存在**的包 → dev server 打出 `Failed to resolve dependency: debug, present in client 'optimizeDeps.include'`。该告警是「debug 不在图里」的证据，**不是**「debug 参与入口冲突」的证据。
+- **复现结论（已定案）**：在当前 `shadcn-docs-nuxt@1.1.9` + `mermaid@11.17.2` + 生产 `node-server` 构建下，插入 mermaid 触发块**不复现** F30 的 ESM/CJS 入口冲突（mermaid 正常渲染 SVG、hydration 完成、**mermaid 入口图零入口错误**）→ **clean negative（未复现）**，非「已证实存在」。dev 模式仅呈现 Vite 426 依赖重优化循环（页面 `Upgrade Required`，mermaid 因 426 从未执行）——与 F30 原文签名**不同**。
+- **后续实验方向（已更新）**：应为「**Vite dev `optimizeDeps` 缺口**」或「**外部化 mermaid 的构建**」；R32（debug 悬空声明轴）须先重新界定单变量。详见 [FINDINGS #22](./experiments/FINDINGS.md)、[R31.md](./experiments/R31.md)、[R32.md](./experiments/R32.md)。
 
 ## F31：多版本 `entities` 导致 SSR / trace 产物异常
 
@@ -407,4 +418,4 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
    - 修复：`apps/docs/server/middleware/content-query-guard.ts`——只拦**恰好一段**的 `/api/_content/query/<qid>`，缺 `_params` → **HTTP 400 + JSON 指引**；带 `_params` 放行；两段形态与裸 `/api/_content/query` 放行。语义选 400 而非伪造单文档语义——服务端无法把不透明缓存键 `qid` 可靠解析成单文档，**让端点不再说谎**比伪造更诚实。
    - **两种 `_params` 编码形态不同（易踩坑）**：query-string 形态要 **URL 编码的原始 JSON**（`decodeURIComponent` 后直接 `JSON.parse`），路径两段形态要 **base64url**。用 base64url 塞进 query-string 会被 content 模块自己打成 400「Invalid _params query」——**模块侧**报错、不是守卫报错。
 
-**本机验证**（standalone，端口 3413，产物指纹 `1793342768316`）：冷构建 EXIT=0（3/3 tasks，0 cached）；`/no-such-page-xyz` → **404**（curl 默认 Accept → `application/json`；`Accept: text/html` → Nuxt 错误页 HTML，title `404 - Page Not Found | Nuxt`），且服务端日志**无 `request error`**；`/guide` `/guide/baseline` `/` → 200 无回归；`/api/_content/query/index.md` 无 `_params` → **400 + 报文含 `_params`**，带 `_params` → **200 + 恰好 1 篇**（`_path=/guide/baseline`、title=绿色控制组）；两段形态 → 200 + 1 篇；裸 `/api/_content/query` → 200 + 全部文档；指纹路由 `cache.<integrity>.json` / `search-<integrity>` → 200 + 真实内容（`documentCount:10`）；canonical 两条 + 裸前缀两条 → 404 + application/json（第二层守卫未回归）。`pnpm probe:content` **13/13 PASS**，`pnpm test:contracts` **13/13**。
+**本机验证**（standalone，端口 3413，产物指纹 `1793342768316`）：冷构建 EXIT=0（3/3 tasks，0 cached）；`/no-such-page-xyz` → **404**（curl 默认 Accept → `application/json`；`Accept: text/html` → Nuxt 错误页 HTML，title `404 - Page Not Found | Nuxt`），且服务端日志**无 `request error`**；`/guide` `/guide/baseline` `/` → 200 无回归；`/api/_content/query/index.md` 无 `_params` → **400 + 报文含 `_params`**，带 `_params` → **200 + 恰好 1 篇**（`_path=/guide/baseline`、title=绿色控制组）；两段形态 → 200 + 1 篇；裸 `/api/_content/query` → 200 + 全部文档；指纹路由 `cache.<integrity>.json` / `search-<integrity>` → 200 + 真实内容（`documentCount:10`）；canonical 两条 + 裸前缀两条 → 404 + application/json（第二层守卫未回归）。`pnpm probe:content` **13/13 PASS**，`pnpm test:contracts` **13/13**（⚠️ 计数时点说明：该次验证时契约为 13 项；**2026-10-30 A2 双拼写加固后契约为 15/15**，以 `pnpm test:contracts` 当前输出为准）。

@@ -45,35 +45,35 @@
 
 > 「引入变更」列为 merge-base 口径；`docs` 指 `docs/**` 与 `evidence/**`。
 
-| 分支                             | 实验        | 单变量                                          | 结论                                              | 代表故障   | 引入变更                                                        | 合并评价                                                                                    | 状态 |
-| -------------------------------- | ----------- | ----------------------------------------------- | ------------------------------------------------- | ---------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---- |
-| `r01-remove-nitro3-sibling`      | R01         | 移除 apps/api sibling（docs-only 反向 control） | ✅ clean 可信完成（对照成立）                     | 拓扑对照   | `pnpm-lock.yaml`、`pnpm-workspace.yaml`                         | 不合并：反向 control，合并即让 api job 预期红                                               | 🔴   |
-| `r02-remove-docs-direct-h3`      | R02         | 删 docs 显式 h3@1.15.11                         | ✅ 故障复现（Invalid URL → 500）                  | H3 串味    | `apps/docs/package.json`、`experiment.json`、lockfile           | 不合并：合并即引入故障                                                                      | 🔴   |
-| `r03-content-caret-drift`        | R03         | Content `^2.13.9`（解除 root override）         | ✅ 故障复现                                       | caret 漂移 | `package.json`、`apps/docs/package.json`、lockfile              | 不合并：合并即引入故障                                                                      | 🔴   |
-| `r04-theme-caret-drift`          | R04         | theme `^1.1.9`                                  | ✅ 故障复现                                       | theme 漂移 | `apps/docs/package.json`、lockfile                              | 不合并：合并即引入故障                                                                      | 🔴   |
-| `r05-remove-og-image-override`   | R05         | 移除 og-image override                          | ✅ 绿对照                                         | —          | `package.json`、lockfile                                        | 不合并：对照实验，合并收益为零                                                              | 🔴   |
-| `r06-pin-og-image-5-1-13`        | R06         | 显式升级 nuxt-og-image 到 5.1.13                | ✅ 干净阴性（2026-10-29 重测 verified）           | 证明非根因 | `package.json`、lockfile                                        | 不合并：结论为「非根因」                                                                    | 🔴   |
-| `r07-remove-shared-core-edges`   | R07         | 移除 shared-core 双向消费                       | ✅ 干净阴性（重测 verified）                      | 证明非根因 | `apps/api/package.json`、api routes ×2、`packages/ui`、lockfile | 不合并                                                                                      | 🔴   |
-| `r08-remove-workspace-ui-edge`   | R08         | 移除 docs 对 workspace UI 的消费边              | ✅ 干净阴性（重测 verified）                      | 证明非根因 | `WorkspaceRuntimeProbe.vue`、`apps/docs/package.json`、lockfile | 不合并                                                                                      | 🔴   |
-| `r10-ui-source-alias`            | R10         | UI 改 source alias                              | ✅ 干净阴性（重测 verified）                      | 证明非根因 | `ci.yaml`、`nuxt.config.ts`、`probes/`                          | 不合并                                                                                      | 🔴   |
-| `r12-blanket-ssr-noexternal`     | R12         | blanket `ssr.noExternal`                        | ✅ 干净阴性（重测 verified）                      | 证明非根因 | `nuxt.config.ts`、`tests/` ×2                                   | 不合并 + blanket 违反基线纪律                                                               | 🔴   |
-| `r13-precise-nitro-inline`       | R13         | 精确 `nitro.externals.inline`                   | ✅ clean 可信完成（排除性证据）                   | —          | `nuxt.config.ts`、`experiment.json`                             | 不合并：结论是「排除」                                                                      | 🔴   |
-| `r14-blanket-nitro-inline`       | R14         | blanket Nitro inline                            | ✅ verified（默认 heap `exit 134` OOM，8 GiB 绿） | F15        | `nuxt.config.ts`、`experiment.json`                             | 不合并 + blanket 违规 + 放大内存越过 4 GiB                                                  | 🔴   |
-| `r15-element-plus-external`      | R15         | 精确 externalize Element Plus                   | ✅ **真阳性：真实复现 F17**                       | **F17**    | `nuxt.config.ts`、`experiments/control.json`、`tests/`          | 不合并：F17 的引入源，合并即引入故障                                                        | 🔴   |
-| `r16-direct-popper-alias`        | R16         | docs 直加 Popper npm alias                      | ✅ 干净阴性 + F17 机理对照                        | F17 机理   | `nuxt.config.ts`、`apps/docs/package.json`、lockfile            | **条件合并**：见 §3.5                                                                       | 🟡   |
-| `r17-nitro-trace-alias`          | R17         | Nitro `traceAlias`                              | ✅ 干净阴性 + F17 机理对照                        | F17 机理   | `nuxt.config.ts`、`tests/`、`control.json`                      | **条件合并**：见 §3.5                                                                       | 🟡   |
-| `r18-targeted-public-hoist`      | R18（旧）   | targeted public hoist                           | ❌ insufficient（前提被证伪）                     | F18 / F20  | `nuxt.config.ts`、`pnpm-workspace.yaml`、lockfile               | 不合并：前提证伪 + 带契约危险键（**分支已于 2026-10-30 删除**）                             | 🔴   |
-| `r19-node-linker-hoisted`        | R19（旧）   | `nodeLinker: hoisted`                           | ❌ 前提被推翻（致不可构建）                       | F20        | `nuxt.config.ts`、`pnpm-workspace.yaml`、lockfile               | 不合并：使 workspace 整体不可构建（**分支已于 2026-10-30 删除**）                           | 🔴   |
-| `r18-retry-public-hoist`         | R18（重测） | `publicHoistPattern:` camelCase 字面量          | ✅ verified（契约预期判违 + 治理盲区）            | F18 / F47  | `pnpm-workspace.yaml`                                           | 代码 🔴 / 档案 🟢，见 §4                                                                    | 🟡   |
-| `r19-retry-node-linker-hoisted`  | R19（重测） | `nodeLinker: hoisted`                           | ✅ verified（不可构建，F20 实锤）                 | F20        | `pnpm-workspace.yaml`                                           | 代码 🔴 / 档案 🟢，见 §4                                                                    | 🟡   |
-| `r21-windows-only-trace-false`   | R21         | Windows-only `trace:false`                      | ✅ 机制测量（build 快 ~133s，F26 未触发）         | F26        | `nuxt.config.ts`、`experiment.json`                             | 条件合并：仅 Windows 有效，跨平台风险高，须 Linux 复核                                      | 🟡   |
-| `r27-prerender-crawllinks-false` | R27         | `crawlLinks:false`                              | ✅ 部分破坏（Prerendered 9）                      | F27        | `nuxt.config.ts`、`experiment.json`                             | 不合并：破坏 prerender                                                                      | 🔴   |
-| `r28-prerender-routes-clear`     | R28         | `routes.clear()`                                | ✅ 部分命中（Prerendered 5）                      | F27        | `nuxt.config.ts`、`experiment.json`                             | 不合并                                                                                      | 🔴   |
-| `r29-prerender-both`             | R29         | `crawlLinks:false` + `routes.clear()`           | ✅ 完整触发（Prerendered 0）                      | F27        | `nuxt.config.ts`、`experiment.json`                             | 不合并                                                                                      | 🔴   |
-| `r31-mermaid-esm-cjs`            | R31-family  | mermaid 触发（覆盖 R30/R32/R33）                | ✅ verified（clean negative，F30 未复现）         | F30        | `1.baseline.md` + 4 份档案                                      | **档案 🟢 已并入 main（2026-10-30，FINDINGS #22）**，分支保留作档案源，见 §3.1              | 🟢   |
-| `integrate-r18-r19`              | 预备集成    | R18/R19 档案 + FINDINGS #20 + QUEUE             | ✅ 已验证（契约 12/12、零污染）                   | —          | 4 个 docs 文件                                                  | **✅ 已并入 main（2026-10-30 用户授权）**，见 §3.6；**分支保留**（重编号现场证据，见 §3.7） | 🟢   |
+| 分支                             | 实验        | 单变量                                                            | 结论                                              | 代表故障   | 引入变更                                                        | 合并评价                                                                                               | 状态 |
+| -------------------------------- | ----------- | ----------------------------------------------------------------- | ------------------------------------------------- | ---------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---- |
+| `r01-remove-nitro3-sibling`      | R01         | 移除 apps/api sibling（docs-only 反向 control）                   | ✅ clean 可信完成（对照成立）                     | 拓扑对照   | `pnpm-lock.yaml`、`pnpm-workspace.yaml`                         | 不合并：反向 control，合并即让 api job 预期红                                                          | 🔴   |
+| `r02-remove-docs-direct-h3`      | R02         | 删 docs 显式 h3@1.15.11                                           | ✅ 故障复现（Invalid URL → 500）                  | H3 串味    | `apps/docs/package.json`、`experiment.json`、lockfile           | 不合并：合并即引入故障                                                                                 | 🔴   |
+| `r03-content-caret-drift`        | R03         | Content `^2.13.9`（解除 root override）                           | ✅ 故障复现                                       | caret 漂移 | `package.json`、`apps/docs/package.json`、lockfile              | 不合并：合并即引入故障                                                                                 | 🔴   |
+| `r04-theme-caret-drift`          | R04         | theme `^1.1.9`                                                    | ✅ 故障复现                                       | theme 漂移 | `apps/docs/package.json`、lockfile                              | 不合并：合并即引入故障                                                                                 | 🔴   |
+| `r05-remove-og-image-override`   | R05         | 移除 og-image override                                            | ✅ 绿对照                                         | —          | `package.json`、lockfile                                        | 不合并：对照实验，合并收益为零                                                                         | 🔴   |
+| `r06-pin-og-image-5-1-13`        | R06         | 显式升级 nuxt-og-image 到 5.1.13                                  | ✅ 干净阴性（2026-10-29 重测 verified）           | 证明非根因 | `package.json`、lockfile                                        | 不合并：结论为「非根因」                                                                               | 🔴   |
+| `r07-remove-shared-core-edges`   | R07         | 移除 shared-core 双向消费                                         | ✅ 干净阴性（重测 verified）                      | 证明非根因 | `apps/api/package.json`、api routes ×2、`packages/ui`、lockfile | 不合并                                                                                                 | 🔴   |
+| `r08-remove-workspace-ui-edge`   | R08         | 移除 docs 对 workspace UI 的消费边                                | ✅ 干净阴性（重测 verified）                      | 证明非根因 | `WorkspaceRuntimeProbe.vue`、`apps/docs/package.json`、lockfile | 不合并                                                                                                 | 🔴   |
+| `r10-ui-source-alias`            | R10         | UI 改 source alias                                                | ✅ 干净阴性（重测 verified）                      | 证明非根因 | `ci.yaml`、`nuxt.config.ts`、`probes/`                          | 不合并                                                                                                 | 🔴   |
+| `r12-blanket-ssr-noexternal`     | R12         | blanket `ssr.noExternal`                                          | ✅ 干净阴性（重测 verified）                      | 证明非根因 | `nuxt.config.ts`、`tests/` ×2                                   | 不合并 + blanket 违反基线纪律                                                                          | 🔴   |
+| `r13-precise-nitro-inline`       | R13         | 精确 `nitro.externals.inline`                                     | ✅ clean 可信完成（排除性证据）                   | —          | `nuxt.config.ts`、`experiment.json`                             | 不合并：结论是「排除」                                                                                 | 🔴   |
+| `r14-blanket-nitro-inline`       | R14         | blanket Nitro inline                                              | ✅ verified（默认 heap `exit 134` OOM，8 GiB 绿） | F15        | `nuxt.config.ts`、`experiment.json`                             | 不合并 + blanket 违规 + 放大内存越过 4 GiB                                                             | 🔴   |
+| `r15-element-plus-external`      | R15         | 精确 externalize Element Plus                                     | ✅ **真阳性：真实复现 F17**                       | **F17**    | `nuxt.config.ts`、`experiments/control.json`、`tests/`          | 不合并：F17 的引入源，合并即引入故障                                                                   | 🔴   |
+| `r16-direct-popper-alias`        | R16         | docs 直加 Popper npm alias                                        | ✅ 干净阴性 + F17 机理对照                        | F17 机理   | `nuxt.config.ts`、`apps/docs/package.json`、lockfile            | **默认不合并**（§3.5 判读为「修一个基线并不存在的病」；原写「条件合并」与 §3.5 冲突，2026-10-30 订正） | 🔴   |
+| `r17-nitro-trace-alias`          | R17         | Nitro `traceAlias`                                                | ✅ 干净阴性 + F17 机理对照                        | F17 机理   | `nuxt.config.ts`、`tests/`、`control.json`                      | **默认不合并**（同 R16，§3.5；三条件未触发）                                                           | 🔴   |
+| `r18-targeted-public-hoist`      | R18（旧）   | targeted public hoist                                             | ❌ insufficient（前提被证伪）                     | F18 / F20  | `nuxt.config.ts`、`pnpm-workspace.yaml`、lockfile               | 不合并：前提证伪 + 带契约危险键（**分支已于 2026-10-30 删除**）                                        | 🔴   |
+| `r19-node-linker-hoisted`        | R19（旧）   | `nodeLinker: hoisted`                                             | ❌ 前提被推翻（致不可构建）                       | F20        | `nuxt.config.ts`、`pnpm-workspace.yaml`、lockfile               | 不合并：使 workspace 整体不可构建（**分支已于 2026-10-30 删除**）                                      | 🔴   |
+| `r18-retry-public-hoist`         | R18（重测） | `publicHoistPattern:` camelCase 字面量                            | ✅ verified（契约预期判违 + 治理盲区）            | F18 / F47  | `pnpm-workspace.yaml`                                           | 代码 🔴 / 档案 🟢，见 §4                                                                               | 🟡   |
+| `r19-retry-node-linker-hoisted`  | R19（重测） | `nodeLinker: hoisted`                                             | ✅ verified（不可构建，F20 实锤）                 | F20        | `pnpm-workspace.yaml`                                           | 代码 🔴 / 档案 🟢，见 §4                                                                               | 🟡   |
+| `r21-windows-only-trace-false`   | R21         | Windows-only `trace:false`                                        | ✅ 机制测量（build 快 ~133s，F26 未触发）         | F26        | `nuxt.config.ts`、`experiment.json`                             | 条件合并：仅 Windows 有效，跨平台风险高，须 Linux 复核                                                 | 🟡   |
+| `r27-prerender-crawllinks-false` | R27         | `crawlLinks:false`                                                | ✅ 部分破坏（Prerendered 9）                      | F27        | `nuxt.config.ts`、`experiment.json`                             | 不合并：破坏 prerender                                                                                 | 🔴   |
+| `r28-prerender-routes-clear`     | R28         | `routes.clear()`                                                  | ✅ 部分命中（Prerendered 5）                      | F27        | `nuxt.config.ts`、`experiment.json`                             | 不合并                                                                                                 | 🔴   |
+| `r29-prerender-both`             | R29         | `crawlLinks:false` + `routes.clear()`                             | ✅ 完整触发（Prerendered 0）                      | F27        | `nuxt.config.ts`、`experiment.json`                             | 不合并                                                                                                 | 🔴   |
+| `r31-mermaid-esm-cjs`            | R31-family  | mermaid 触发（覆盖 **R30 / R33**；✝️ R32 因前提证伪已回未启动池） | ✅ verified（clean negative，F30 未复现）         | F30        | `1.baseline.md` + 4 份档案                                      | **档案 🟢 已并入 main（2026-10-30，FINDINGS #22）**，分支保留作档案源，见 §3.1                         | 🟢   |
+| `integrate-r18-r19`              | 预备集成    | R18/R19 档案 + FINDINGS #20 + QUEUE                               | ✅ 已验证（契约 15/15、零污染）                   | —          | 4 个 docs 文件                                                  | **✅ 已并入 main（2026-10-30 用户授权）**，见 §3.6；**分支保留**（重编号现场证据，见 §3.7）            | 🟢   |
 
-> 无分支的实验（main 原地测量 / 未启动）：R09（PR #14 已 MERGED）、R11（前置阻塞）、R20 / R23 / R24 / R25 / R26（main 原地测量，结论已在 FINDINGS #14–#16）、R22 与 R34–R45（未启动，详见 QUEUE 表 4）。
+> 无分支的实验（main 原地测量 / 未启动）：R09（PR #14 已 MERGED）、R11（前置阻塞）、R20 / R23 / R24 / R25 / R26（main 原地测量，结论已在 FINDINGS #14–#16）、R22 / **R32** / R34–R45（未启动，详见 QUEUE 表 4 —— 未启动池共 14 个）。
 
 ---
 
@@ -88,7 +88,7 @@
 | `r18-retry-public-hoist`        | `R18.md` → verified 终版（含 FINDINGS #20 交叉引用）        | 只取档案，**不得**带入 `pnpm-workspace.yaml`；**分支保留作档案源，不删除**（依据 §1.3 / §3.1.1）                                                                                                                                                                        |
 | `r19-retry-node-linker-hoisted` | `R19.md` → verified 终版 + `FINDINGS.md` #20                | 同上                                                                                                                                                                                                                                                                    |
 | `r31-mermaid-esm-cjs`           | `R30.md`–`R33.md` → R31-family 收敛终版 + `FINDINGS.md` #22 | **已于 2026-10-30 并入 main**（用户授权 A4）：只取 4 份档案，**不带入** `1.baseline.md` 的 mermaid 触发块（那属复现用内容，不进正式内容）；分支侧原占 #19 的条目已改号 #22，`R31.md` / `R30.md` / `R32.md` / `R33.md` 共 5 处引用同步改号；**分支保留作档案源，不删除** |
-| `integrate-r18-r19`             | R18/R19 档案 + FINDINGS #20 + QUEUE 迁移，**已验证**        | 契约 12/12 + 基线零污染已复验；**第 7 步重编号已执行**（2026-10-30，分支侧那条改为 #20，见 §4 第 7 步）；**终版档案已于 2026-10-30 并入 main**（用户授权）；**分支保留**（重编号操作现场证据，见 §3.7）                                                                 |
+| `integrate-r18-r19`             | R18/R19 档案 + FINDINGS #20 + QUEUE 迁移，**已验证**        | 契约 12/12 + 基线零污染已复验（**注：该次复验时契约为 12 项；2026-10-30 A2 后为 15/15**）；**第 7 步重编号已执行**（2026-10-30，分支侧那条改为 #20，见 §4 第 7 步）；**终版档案已于 2026-10-30 并入 main**（用户授权）；**分支保留**（重编号操作现场证据，见 §3.7）     |
 
 合并性质 = 文档替换，**零运行时风险**，且直接消除 main 的过期占位结论。**这是未来统一合并时优先级最高的一档。**
 
@@ -100,10 +100,11 @@
 > - 两个 retry 分支带 `publicHoistPattern:` / `nodeLinker: hoisted` 是**实验的单变量设计本身**（`AGENTS.md` SOP 第 6 步：「只加单变量、**不改为过契约**」），是**预期对照结论**，不是失败。
 > - **R18/R19 的必要测试任务已完成并终局**（DoD 全勾、结论 `verified`、台账 §2 结论列「✅ verified」），**无需重跑任何测试**。
 > - 这两个分支是 **verified 终版 `R18.md` / `R19.md` 的唯一载体**——main 上仍是「⏳待重测」占位版。删分支 = 销毁唯一证据源，且与本台账 §1.3「所有 CLOSED 的实验 PR — 其分支**保留作证据**」冲突。
+>   - ✝️ **2026-10-30 状态订正（与 §3.1 对齐）**：上句描述的是**并入 main 之前**的状态。**终版档案已于 2026-10-30 并入 main**（§3.1 表 / §3.6），故这两个分支**不再是终版档案的唯一载体**。**保留结论不变，但理由已换**：改为依 §1.3「CLOSED 实验 PR 分支保留作证据」+ §3.7「重编号操作现场证据」保留，而非「唯一载体」。（旧表述保留不改写，仅补订正。）
 > - **结论：保留分支。** 处置方式是 §3.1「**只取档案、不得带入 `pnpm-workspace.yaml`**」，不是删除。「关闭 PR ≠ 删除分支」在本仓是既定纪律。
 >
 > 若要减枝，唯一可安全删除的是**上游旧分支** `experiment/r18-targeted-public-hoist`(`d319177`) / `experiment/r19-node-linker-hoisted`(`916c0cb`)——它们 🔴、前提已被证伪、基线是 2026-08-28 旧 main（不含 F47 修复），结论已被 retry 分支完整替代。但这是**独立的证据归档决策**。→ **已执行（2026-10-30，用户授权）**：两个上游旧分支已从**本地与远端**删除（本地 `git branch -D`、远端 `git push origin --delete`）；删除前已核对三条依据——①二者 🔴、前提已被证伪；②基线是 2026-08-28 旧 main（不含 F47 修复）；③结论已被 retry 分支完整替代，且终版档案已于 2026-10-30 并入 main。**注意：本节的两个 retry 分支不受影响，仍保留。**
-> ⚠️ **删除前发现并已处置的唯一证据风险**：两个旧分支里各带**只此一份**的实验证据归档——`evidence/2026-08-29-r15-element-plus-popper-alias.md`（R15 复现 F17，361 行）与 `evidence/2026-08-29-r18-targeted-public-hoist-insufficient.md`（R18 首轮 insufficient，362 行）——**main 与两个 retry 分支都没有副本**。若直接删分支 = 销毁唯一证据载体。故执行顺序为「**先移植两份归档入 main → 再删分支**」；移植后的落位与索引见 [evidence/README.md](../../../evidence/README.md)。
+> ⚠️ **删除前发现并已处置的唯一证据风险**：两个旧分支里各带**只此一份**的实验证据归档——`evidence/2026-08-29-r15-element-plus-popper-alias.md`（R15 复现 F17，361 行）与 `evidence/2026-08-29-r18-targeted-public-hoist-insufficient.md`（R18 首轮 insufficient，362 行）——**main 与两个 retry 分支都没有副本**。若直接删分支 = 销毁唯一证据载体。故执行顺序为「**先移植两份归档入 main → 再删分支**」；移植后的落位与索引见 [evidence/README.md](../../../evidence/README.md)。**（该移植已于 2026-10-30 完成，两份归档现存于 main → 证据唯一性风险已消解。）**
 
 ### 3.2 🔴 不可合并：故障复现型（R02 / R03 / R04 / R15）
 
@@ -121,7 +122,7 @@
 | `r18-*`                    | `pnpm-workspace.yaml` 写入 `publicHoistPattern`  | 契约测试 `baseline-safety` 直接判违（子串匹配）                         |
 | `r19-*`                    | `pnpm-workspace.yaml` 写入 `nodeLinker: hoisted` | 同上判违；且实测使 workspace **整体不可构建**                           |
 
-> R18 的治理盲区（已沉淀于 FINDINGS #20 发现 4）：pnpm 10.33.0 对 camelCase `publicHoistPattern` **零警告静默容忍**，检测完全依赖契约测试字面子串；若未来有人改用合法 kebab `public-hoist-pattern`，契约将**漏检**。这属于**契约测试自身**的待改进项，与分支是否合并无关。
+> R18 的治理盲区（已沉淀于 FINDINGS #20 发现 4）：pnpm 10.33.0 对 camelCase `publicHoistPattern` **零警告静默容忍**，检测完全依赖契约测试字面子串。✝️ **2026-10-30 订正**：原文后半句「若未来有人改用合法 kebab `public-hoist-pattern`，契约将**漏检**」**不成立**——实测 pnpm-workspace.yaml **只认 camelCase**，kebab 拼写会被**显式 WARN 并忽略**（不产生 hoist 风险），camelCase 才是**唯一生效拼写**。契约已按**纵深防御**同时枚举双拼写（`forbidden` 4 项，A2 已实施）。
 
 ### 3.5 🟡 条件合并：F17 的机理与「修复」路径（R15 / R16 / R17）——关键辨析
 
@@ -133,13 +134,22 @@
 
 - **R15**：F17 的引入源 → 🔴 不可合并。
 - **R16 / R17**：在 R15 基础上不再复现 F17，**修的是一个基线并不存在的病**。合并它们 = 给基线加无证据驱动的 workaround（违反基线纪律）。→ 默认 **不合并**。
-- 但 R16 / R17 是**机理证据**：它们锁定了「externalize Element Plus → 破坏 alias runtime closure」这条因果链，是 F17 的权威解释。这份价值已经沉淀在 `R15.md` / `R16.md` / `R17.md` + `evidence/**`，**不需要靠代码合并来承载**。⚠️ **本处原写「+ `FINDINGS #19`」是一处错误指针**（2026-10-30 订正）：F17 机理在 FINDINGS 台账中**当时尚无独立条目**——main 的 `#19` 是「F47 第二层定案」、原分支侧的 `#19`（现 `#20`）是「R19→F20 复现」，**两者都与 F17 无关**。→ **该缺口已于 2026-10-30 补齐（用户授权 A1）**：F17 机理现已收敛为 **FINDINGS #21**「F17 机理定案：externalize Element Plus 切断 `@popperjs/core` 的 npm alias 链（build 全绿 + 运行时 500）」，本处指针应指向 **#21**。
+- 但 R16 / R17 是**机理证据**：它们锁定了「externalize Element Plus → 破坏 alias runtime closure」这条因果链，是 F17 的权威解释。这份价值已经沉淀在 `R15.md` / `R16.md` / `R17.md` + `evidence/**`，**不需要靠代码合并来承载**。⚠️ **本处原写「+ `FINDINGS #19`」是一处错误指针**（2026-10-30 订正）：F17 机理在 FINDINGS 台账中**当时尚无独立条目**——main 的 `#19` 是「F47 第二层定案」、原分支侧的 `#19`（现 `#20`）是「R19→F20 复现」，**两者都与 F17 无关**。→ **该缺口已于 2026-10-30 补齐（用户授权 A1）**：F17 机理现已收敛为 [FINDINGS #21](./FINDINGS.md)「F17 机理定案：externalize Element Plus 切断 `@popperjs/core` 的 npm alias 链（build 全绿 + 运行时 500）」——**本处指针已落地为实际链接**（此前只写「应指向 #21」的文字承诺）。
 
 **未来若确需合并，触发条件与前置条件**（三者同时满足才动）：
 
 1. 基线将来**主动引入** `element-plus` externalize（即 F17 真实成为基线故障）；
 2. 在该基线上重跑 R16 或 R17 二选一，并做 runtime 响应体断言 + `pnpm test:contracts` 全绿；
 3. 只取 `nuxt.config.ts` 的最小配置变更，**不带** lockfile 漂移。
+
+### 3.5.1 🟡 条件合并：Windows-only `trace:false`（R21）——测量型结论的合并边界
+
+> **补建（2026-10-30，独立复核发现 §3 原缺 R21 归属）**：`r21-windows-only-trace-false` 在 §2 总表有行、但 §3 无对应分类小节 —— 属台账结构缺口，此处补齐。
+
+- **结论性质**：R21 是**测量型**（副作用判读，非修复验证）：Windows-only `trace:false` 使 build 快 ~133s（79.8s vs R20 213s）、`.output/server/node_modules` 16.6MB → 8.2MB，但 **F26 缺包链未被触发**（产物零裸导入，依赖已在构建链早期全量 inline）→ 孤立环境三断言全绿。
+- **为什么默认不合并**：`trace:false` 是**平台相关**的配置（仅 Windows 生效），合入 main 会在 Linux CI 上引入**无效变量**并污染跨平台对比口径；且 F26 未触发 → **没有任何证据表明它修复了任何东西**（属「结论为排除」型）。
+- **条件合并的前置条件（三者同时满足才动）**：①在 **Linux** 上重跑同一测量并确认收益可复现；②确认 `trace:false` 在 Linux 上**不改变产物闭包**（否则等于关掉了一个 Linux 需要的保护）；③只取 `nuxt.config.ts` 的最小条件化配置（如 `process.platform === 'win32'` 守卫），**不带** lockfile 漂移与 `experiment.json`。
+- **与 §3.5（R16/R17）的区别**：R16/R17 修的是「基线并不存在的病」；R21 是「修一个尚未发生的病（F26 未复现）」——两者同样**默认不合并**，但 R21 的额外风险是**跨平台语义污染**。
 
 ### 3.6 ⚪ 已终结 / 🟢 预备就绪
 
@@ -191,9 +201,9 @@
    git checkout <branch> -- docs/task-artifacts/experiments/FINDINGS.md
 3. # 严禁带入 pnpm-workspace.yaml / pnpm-lock.yaml / nuxt.config.ts
 4. 手工合并 QUEUE.md（表 1 插入 R18/R19 行、表 2 移除对应行、排期 note 同步）
-5. pnpm test:contracts                     # 期望 13/13
-6. git grep -n -E 'nodeLinker: hoisted|publicHoistPattern' -- pnpm-workspace.yaml apps packages
-                                               # 期望零命中
+5. pnpm test:contracts                     # 期望 15/15（2026-10-30 A2 双拼写加固后）
+6. git grep -n -E 'nodeLinker: hoisted|node-linker: hoisted|publicHoistPattern|public-hoist-pattern' -- pnpm-workspace.yaml apps packages
+                                               # 期望零命中（camelCase 与 kebab 双拼写都要扫）
 7. 核对 FINDINGS 编号 1–N 连续、无重号
    # ⚠️ 2026-10-30 强制前置：main 已于本日占用 #19 记录「F47 第二层定案」
    #   （见 FINDINGS.md #19 末尾的「编号保留说明」）。本分支自带的 #19
@@ -243,11 +253,11 @@
 - [ ] 剥离 `pnpm-workspace.yaml` 的 `nodeLinker: hoisted` / `publicHoistPattern`
 - [ ] 剥离 blanket 类配置（`ssr.noExternal` / Nitro inline）与 `routes.clear()` / `crawlLinks:false`
 - [ ] 锁文件默认**不合并**；仅当分支属真实修复型且已复验 runtime 时才单独评估
-- [ ] `pnpm test:contracts` 全绿（期望 13/13）
+- [ ] `pnpm test:contracts` 全绿（期望 **15/15**）
 - [ ] **runtime 响应体内容断言**（Content cache / search 命中），不得只看 HTTP 200（F18 / F47 假阳性）
 - [ ] `git grep` 复扫基线污染键
 - [ ] FINDINGS 编号连续、无重号；QUEUE 与 FINDINGS 交叉引用一字不差
-- [ ] 合并后 `git checkout main` 并重跑 `pnpm install --frozen-lockfile`，复验 `.pnpm` 数量 ≈ 1210、`nuxt.mjs` / `tsc` 存在
+- [ ] 合并后 `git checkout main` 并重跑 `pnpm install --frozen-lockfile`，复验 `.pnpm` 数量 ≈ **1209**、`nuxt.mjs` / `tsc` 存在
 
 ---
 

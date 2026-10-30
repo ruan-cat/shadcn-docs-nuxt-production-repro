@@ -110,6 +110,7 @@
 - 实验 PR 按"失败不合并"政策已 CLOSED：#4 R02、#6 R05、#7 R06、#8 R04、#9 R03、#11 R07、#12 R08、#15 R10、#16 R12、#19 R14、#21 R15、#23 R16、#25 R17、#26 R18。
 - **PR #27（R19 全局 hoisted node linker 对照）当前 OPEN**，为唯一在途实验 PR。
 - 本文件实验清单中的 R01（docs-only 反向 control）尚未开 PR；R20-R45 未启动。
+  - ⚠️ **该状态已失效（2026-10-30 追记）**：R01 仍「未开 PR」属**已复核的闭环决策**（A3 项，维持现状不补开 PR，其分支已在远端）；**R20-R45 已大部分执行完毕** —— R20/R23/R24/R25/R26 为 main 原地测量、R21/R27/R28/R29/R31-family 已完成、R06–R17 已于 2026-10-29/30 全部 SOP 干净重测并落档 `verified`；**未启动池现为 14 个**（R22 / R32 / R34–R45）。权威状态见 [experiments/QUEUE.md](./experiments/QUEUE.md)。
 
 ### 本轮新增（基线基础设施，非故障实验）
 
@@ -171,6 +172,7 @@
 - [x] 仓库现状核对：HEAD `3f67f36`、工作区干净、failure-catalog F47 分层定案在位——仓库状态与会话终态一致
 - [x] 接力上下文文档化：新建 [session-relay.md](./session-relay.md)（唤起命令、坑位、核验记录、任务状态快照）；README 工件清单同步
 - 未变项（与备份警示一致）：F47 第二层运行时实验未启动；PR #27（R19）仍 OPEN；R01 与 R20-R45 未启动
+  - ⚠️ **该状态已失效（2026-10-30 追记）**：F47 第二层**已定案并修复**（第二/三层）、PR #27 **已 CLOSED**、R01 之外的实验**已大部分执行完毕**（未启动池现为 14 个：R22 / R32 / R34–R45）。本行原文保留为 2026-10-16 时点的快照，**不得据此判断当前状态**；现行状态见 [experiments/QUEUE.md](./experiments/QUEUE.md) 与 [experiments/FINDINGS.md](./experiments/FINDINGS.md)。
 
 ### 同日 push `788630b` 生产部署监听与生产级验证
 
@@ -297,6 +299,7 @@
   - ⚠️ **受控实测推翻了原结论**：临时工作区实验（以传递依赖 `is-odd@3.0.1` → `is-number` 是否被提升到根 `node_modules/` 为判据）证明——`publicHoistPattern:`（camelCase）被 pnpm 接受且**真的生效**；`public-hoist-pattern:`（kebab）被 pnpm **显式 WARN 并忽略**（`ignored because they are not written in camelCase`）。→ `FINDINGS #20` 发现 4 原括注「非 pnpm 合法 kebab 键」**方向相反**，已在 #20 内订正；A2 的性质由「堵已实证漏洞」改为「**纵深防御**」。
 - [x] **A3：R01/R13「未开 PR」复核**——结论：**不是缺口，是已复核的闭环决策**（阴性/排除性实验补开 PR 只制造无信息量噪声）；维持现状不补开 PR，已在 QUEUE 表 1 下加注记登记该口径。顺带订正分支名笔误：`r01-remove-nitro-sibling` → **`r01-remove-nitro3-sibling`**（QUEUE + R01.md 两处）。
 - [x] **A4：R31-family 档案并入 main**——只取 `R31.md` 终版 + `R30/R32/R33` 状态行共 4 份档案；**未带入** `1.baseline.md` 的 mermaid 复现触发块；**未整文件取入**分支的 `failure-catalog.md`（经比对，分支版比 main 旧、缺 F20 上修与 F29 订正）；分支侧原占 #19 的条目改号 **#22**，5 处引用同步改号；QUEUE 表 1 新增 R31-family 行；R21 一并由表 4 移入表 1，表 4 收敛为 **12 个（R22 + R34-R45）**。
+  - ✝️ **2026-10-30 二次订正（台账审计后）**：上句的「表 4 = 12 个」**已作废**——`debug` 经复核**非** `mermaid@11.17.2` 的传递依赖（lock mermaid 依赖块 line 12908–12931 无 `debug`），故「R30/R32/R33 由单一 mermaid 触发块覆盖」的收敛前提被证伪 → **R32 回到未启动池**，表 4 现为 **14 个（R22 / R32 / R34-R45）**，未启动+阻塞池 20 → 15。另：R06–R17 共 9 行此前仍滞留在 QUEUE 表 2（与表定义矛盾），已迁入表 1。详见 [experiments/QUEUE.md](./experiments/QUEUE.md) 表 4 与 [experiments/FINDINGS.md](./experiments/FINDINGS.md) #22。
 - [x] **B1：4 个仅本地分支已推送远端备份**——`r21-windows-only-trace-false`(d7a0113) / `r27-prerender-crawllinks-false`(4d5c7e0) / `r28-prerender-routes-clear`(d088e38) / `r29-prerender-both`(17e87f7)；推送后**本地 = 远端 = 23 个** `experiment/*`，SHA 逐一核对一致（`experiment/*` push **不触发生产部署**）。
 - [x] **B2：`integrate-r18-r19` 保留登记**——新增 `BRANCH-MERGE-EVALUATION.md` **§3.7**：保留（依 §1.3；它是「#19→#20 重编号」的唯一操作现场记录），并写明**删除的前置条件**；同时更新总表两行与「关键事实」段（该段仍称 main 的 R18/R19/R30–R33 为占位版，**已过期**）。
 - [x] **B3：嵌套 `node_modules/node_modules/` 已隔离**——体检确认外层 store 健康（`.pnpm` 1209 / `nuxt.mjs` ✓ / `tsc` ✓ / 4 个包级 ✓）→ 按 AGENTS §0.5.1 **不动外层**；嵌套目录经实测为**僵尸虚拟 store**（76996 文件 / 580 MB / 内含自己的 `.pnpm` 1170 项），且外层 `.pnpm` 指向它的符号链接数 = **0**（扫描命中项全是 **HardLink 同 inode 兄弟**，不是依赖）。已 `Rename-Item` 就地隔离为 `node_modules/node_modules.stale-20261030-155656`（位于 gitignored 目录内，`git status` 干净）。⚠️ **移出仓库到 `D:\nm-trash\` 被运行时硬安全策略拦截**（禁止递归写/删目标落在工作区外）→ 残留由用户或主代理处置：`Move-Item -LiteralPath '<repo>\node_modules\node_modules.stale-20261030-155656' -Destination 'D:\nm-trash\node_modules.stale-nested-20261030-155656'`。

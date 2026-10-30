@@ -83,7 +83,7 @@
 ### 0. 前置：永远先独立核验 `node_modules` 健康度（防伪信号第一关）
 
 - 开工前**不要盲信上一次"环境已 clean"的声明**，必须独立核验：
-  - `ls node_modules/.pnpm | wc -l` 应 ≈ 1200（正常 ~1210）。若为 1 或远小于此，说明上次实验（尤其 `nodeLinker: hoisted`）留下了扁平破损布局，须先修复。
+  - `ls node_modules/.pnpm | wc -l` 应 ≈ 1200（正常 **1209**）。若为 1 或远小于此，说明上次实验（尤其 `nodeLinker: hoisted`）留下了扁平破损布局，须先修复。
   - `apps/docs/node_modules/nuxt/bin/nuxt.mjs` 与 `packages/shared-core/node_modules/typescript/bin/tsc` 必须存在；缺失即破损。
 - 异常时先恢复再开工，**完整操作见 0.5**：`node_modules` 隔离（**必须命名 `node_modules.stale-<date>`**——`.gitignore:24` 只覆盖 `node_modules.stale-*`，`node_modules.broken-*` 不会被忽略、会污染 `git status`；且**根 + 4 个 workspace 包级 `node_modules` 要一起移**，包级是指向根 `.pnpm` 的绝对 junction，根一动就悬空）→ `pnpm install --frozen-lockfile`（timeout 600）→ 复验 `.pnpm` 恢复 ~1200、nuxt.mjs/tsc 恢复。
 
@@ -106,7 +106,7 @@ Test-Path 'packages/shared-core/node_modules/typescript/bin/tsc'
 
 # ③ 当前分支有没有动 linker 设置（这会让布局不可信）
 git diff main -- pnpm-workspace.yaml
-Select-String -Path 'pnpm-workspace.yaml' -Pattern 'nodeLinker|publicHoistPattern' -Encoding UTF8
+Select-String -Path 'pnpm-workspace.yaml' -Pattern 'nodeLinker|node-linker|publicHoistPattern|public-hoist-pattern' -Encoding UTF8
 
 # ④ 上一轮隔离目录是否还在（还在 = 上一轮没收尾）
 Get-ChildItem -Directory -Filter 'node_modules.stale-*' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
@@ -264,7 +264,7 @@ Get-ChildItem -Path 'apps','packages' -Directory -Filter 'node_modules.stale-*' 
 - [ ] `.pnpm` 目录数 ≈ 1209（≥1000），不是 1、不是几十
 - [ ] `apps/docs/node_modules/nuxt/bin/nuxt.mjs` 存在
 - [ ] `packages/shared-core/node_modules/typescript/bin/tsc` 存在
-- [ ] `git diff main -- pnpm-workspace.yaml` 无输出（无 `nodeLinker` / `publicHoistPattern`）
+- [ ] `git diff main -- pnpm-workspace.yaml` 无输出（无 `nodeLinker` / `node-linker` / `publicHoistPattern` / `public-hoist-pattern`，camelCase 与 kebab **双拼写**都要查）
 - [ ] 根 + `apps/api` + `apps/docs` + `packages/shared-core` + `packages/ui` 共 5 个 `node_modules` 都在，链接不悬空
 - [ ] 本轮隔离目录已登记（名称 + 去向），命名全是 `node_modules.stale-*`
 - [ ] `git status --short` 干净（无未忽略的 `node_modules.stale-*` / `dist.pre-fix` 残留）
@@ -294,7 +294,9 @@ Get-ChildItem -Path 'apps','packages' -Directory -Filter 'node_modules.stale-*' 
 
 ### 5. 契约与响应体断言是事实，不是意见
 
-- 契约测试（`tests/baseline-safety.test.mjs`）把 `pnpm-workspace.yaml` 当**纯文本**子串匹配：`forbidden = ["nodeLinker: hoisted", "publicHoistPattern"]` 是 camelCase 字面量（非 pnpm 合法 kebab 键）。pnpm 对非法键零警告 → 这是**治理盲区**，命中即违约，须如实记录，不得因"pnpm 没报错"而判绿。
+- 契约测试（`tests/baseline-safety.test.mjs`）把 `pnpm-workspace.yaml` 当**纯文本**子串匹配：`forbidden = ["nodeLinker: hoisted", "node-linker: hoisted", "publicHoistPattern", "public-hoist-pattern"]`（camelCase + kebab **双拼写**，2026-10-30 起 4 项）。
+- **事实纠正（2026-10-30 受控实测，pnpm 10.33.0）**：`pnpm-workspace.yaml` 的设置键**只认 camelCase**——camelCase 拼写被接受且**零警告**；kebab 拼写被**显式 WARN 并忽略**（`The following settings in pnpm-workspace.yaml were ignored because they are not written in camelCase`）→ **kebab 拼写不产生 hoist 风险**。因此契约枚举 kebab 属**纵深防御**（防未来 pnpm 改行为、防作者意图被静默忽略），**不是**堵「改用合法 kebab 即漏检」的已实证漏洞——旧版本此处结论方向相反，已订正，勿再引用旧表述。
+- **仍然成立的治理盲区**：pnpm 对**非法 camelCase 键零警告**（如 `publicHoistPattern:` 会被接受）→ pnpm 侧对危险 workspace 配置**不提供任何校验信号**，检测全压在契约测试的字面子串上；命中即违约，须如实记录，**不得因「pnpm 没报错」而判绿**。
 - 冒烟验收必须做**响应体内容断言**（Content cache/search 命中），不只看 HTTP 200——F47 证明 node-server/worker/Vercel 均存在 200 假阳性。
 
 ### 6. 污染态判废项重测：不复用旧分支、隔离、串行
