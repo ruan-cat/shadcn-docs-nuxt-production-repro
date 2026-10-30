@@ -1,0 +1,7 @@
+{
+	"id": "R22",
+	"reason": "在 Linux 生产构建链上开启 Nitro externals.trace=false，检验 F26 缺包链是否在 Linux 触发，并给出与 Windows R21 的平台对照。",
+	"allowedSafetyPatterns": {
+		"nuxtConfig": ["trace: false"]
+	}
+}

@@ -26,6 +26,12 @@ export default defineNuxtConfig({
 	},
 
 	nitro: {
+		// R22 单变量：Linux 侧开启 Nitro externals.trace=false，
+		// 检验 F26 缺包链是否在 Linux 触发（Windows 侧 R21 已证 trace 拷贝层消失但缺包链未触发）。
+		// 契约要求本 pattern 由根 experiment.json 显式声明（见 tests/baseline-safety.test.mjs）。
+		externals: {
+			trace: false,
+		},
 		prerender: {
 			crawlLinks: true,
 			// F47 机制：content 模块把带时间戳的 API 变体（cache.<ts>.json / search-<ts>）
