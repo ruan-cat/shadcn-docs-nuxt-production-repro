@@ -201,6 +201,12 @@ metadata:
 - 适用场景：Vercel 构建报 `[commonjs--resolver] Failed to resolve entry for package "X"`，或 turbo 报 `no output files found for task X#build`；同 SHA 的 CI / Cloudflare / 本地全绿而只有 Vercel 红。
 - 关键约束：`tsc` incremental 模式下 tsbuildinfo 存在即 **exit 0 零 emit**（哪怕输出缺失）；tsbuildinfo 落在 `node_modules/.cache/` 会被 Vercel 跨构建还原 → 以 `tsc` 产出运行时产物的包，build 必须带 `--incremental false`；取构建日志首个 error 行，别拿 `errorCode` 或"其他环境绿"当根因。
 
+### F47 第二层定案：探针请求了 dev-only 路径名，catch-all 把「路由不存在」渲染成 HTTP 200（2026-10-30）
+
+- 详细案例：`2026-10-30-f47-content-api-false-positive.md`
+- 适用场景：任何 API 返回 **HTTP 200 但响应体是 HTML 错误页**；或「本机 control 与远端表现完全一致」却被归因为平台差异；或验收契约里写死了 dev-only 路径（如 Nuxt Content v2 生产构建的 `/api/_content/cache.<buildIntegrity>.json` / `search-<buildIntegrity>`，无后缀路径只在 dev 模式存在）。
+- 关键约束：Nuxt Content v2 生产构建的 API 路由名带 `Date.now()` 构建指纹，**契约必须从构建产物发现真实路由，不得硬编码路径或指纹**；catch-all 页面只渲染 404 UI 而不抛 `createError` → 未注册路径返回 **200**，故必须给未注册路径加真 404 守卫并做**反向断言**；「状态码 200 + 零错误日志」**不是**通过证据（可能根本没有 handler 被调用）；验收断言要落到具体文档 `_path`/`title`，只断言「非空」「含某个词」同样是弱门。
+
 ## 14. 本仓库落点覆盖
 
 - 本仓库的 bug 经验优先记录在当前技能目录：`.agents/skills/fix-bug/record-bug-fix-memory/*.md`

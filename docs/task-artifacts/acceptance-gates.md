@@ -60,19 +60,33 @@ Windows workaround 绿色 != Vercel 可部署
 
 ## G4：Content 功能门
 
-必须请求：
+必须请求**生产构建实际注册**的 Content API 路由。
 
-```text
-/api/_content/cache.json
-/api/_content/search
-```
+> ⚠️ 2026-10-30 契约订正：content v2 在**生产构建**下会给 API 路由名追加构建指纹
+> （`cache.<buildIntegrity>.json` / `search-<buildIntegrity>`，指纹来自 `buildIntegrity = Date.now()`，
+> **每次构建都变**），无后缀的 `/api/_content/cache.json` 与 `/api/_content/search`
+> **只在 dev 模式存在**。请求它们只会落到 catch-all 页面渲染器，得到「HTTP 200 + HTML 404 shell」，
+> 与「Content API 故障」不可区分——这正是 F47 第二层的成因（见 failure-catalog F47 的 2026-10-30 根因订正）。
+
+路由来源（**不得硬编码指纹**）：
+
+- 从构建产物读取 —— 扫 `.output/server/**/*.mjs` 的 Nitro 路由表抓真实路由名，或读 `runtimeConfig.public.content.integrity`。
 
 要求：
 
 - HTTP 200；
-- 返回非空、结构可解析数据；
+- `Content-Type` 不是 `text/html`；
+- 响应体可 `JSON.parse`，且结构可解析（cache → `contents`；search → `documentIds`；query → 数组）；
+- 响应体含**具体文档**的 `_path` 与 `title`（如 `_path === "/guide/baseline"`、`title === "绿色控制组"`）——
+  **不能只断言「非空」或「含某个词」**（`/api/_content/query/index.md` 无 `_params` 时回退空 query 返回全部文档，是弱门）；
 - 不出现 `ERR_INVALID_URL`；
 - 不出现 H3 export mismatch。
+
+**反向断言（防假阳性，必做）**：未注册的 canonical 路径 `/api/_content/cache.json` 与 `/api/_content/search`
+必须返回**真实非 200**（404），**不得**返回 `HTTP 200 + HTML 404 shell`。
+
+> F47 教训：状态码 200 + 空错误日志会把「路由不存在 / Content API 故障」误判为通过。
+> 只断言 `response.ok` 的探针对 404 shell 恒绿。
 
 ## G5：docs production build 门
 
@@ -164,13 +178,13 @@ Windows 结果必须独立列出：
 
 ## 结论等级
 
-| 等级 | 含义 |
-| --- | --- |
-| L0 | 仅观察到现象，无稳定复现 |
-| L1 | 单次本地复现 |
-| L2 | 单变量 PR + CI 复现 |
-| L3 | 两个平台或 fresh runner 重复复现 |
-| L4 | 已定位首个失败门和实际解析/产物证据 |
-| L5 | 有 control、failure、fix 三组独立对照 |
+| 等级 | 含义                                  |
+| ---- | ------------------------------------- |
+| L0   | 仅观察到现象，无稳定复现              |
+| L1   | 单次本地复现                          |
+| L2   | 单变量 PR + CI 复现                   |
+| L3   | 两个平台或 fresh runner 重复复现      |
+| L4   | 已定位首个失败门和实际解析/产物证据   |
+| L5   | 有 control、failure、fix 三组独立对照 |
 
 对上游提交 issue 时，优先使用 L4/L5 证据。

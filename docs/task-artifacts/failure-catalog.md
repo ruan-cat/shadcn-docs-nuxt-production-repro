@@ -198,12 +198,18 @@ CI 必须实际启动 `.output/server/index.mjs` 并发送 HTTP 请求。
 
 ## F29：Content cache/search API 是必须的功能探针
 
-必须分别请求：
+必须分别请求**生产构建实际注册**的 Content API 路由（带构建指纹）：
 
-- `/api/_content/cache.json`；
-- `/api/_content/search`。
+- `/api/_content/cache.<buildIntegrity>.json`；
+- `/api/_content/search-<buildIntegrity>`。
 
-首页 200 不能替代这两个接口的 200。
+> **2026-10-30 订正**：原文写的 `/api/_content/cache.json` 与 `/api/_content/search` 是 **dev 模式专用路径**，
+> 生产构建里不是注册的路由 —— 请求它们只会落到 catch-all 页面渲染器，得到「HTTP 200 + HTML 404 shell」，
+> 与「Content API 故障」不可区分（成因与证据见 F47 的 2026-10-30 根因订正）。
+> 指纹来源 `buildIntegrity = Date.now()`，**每次构建都变**，不得硬编码，须从构建产物发现。
+
+首页 200 不能替代这两个接口的 200；且**只断言状态码 200 不足以判通过** —— 必须做响应体内容断言
+（`JSON.parse` 成功 + 含具体文档的 `_path`/`title`），并对未注册的 canonical 路径断言**真实非 200**。
 
 ## F30：ESM/CJS 入口冲突导致 hydration 整体中断
 
@@ -304,6 +310,8 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
 
 ## F47：Nuxt Content v2 运行时 API 在 vercel / cloudflare_module preset 下失效并以 200 假阳性呈现（2026-09-29 登记，2026-09-30 Vercel 对照升级）
 
+> ⚠️ **2026-10-30 根因订正（第二层）**：本条标题与下述矩阵沿用**原始登记措辞**，保留不改写；但第二层根因**与 preset 无关**，preset 维度结论**已作废**。真实成因是**验收契约写错了 URL**——请求了 content v2 的 dev-only canonical 路径（`/api/_content/cache.json`、`/api/_content/search`），生产构建里它们根本不是路由，落到上游 layer 的 catch-all 被渲染成「200 + HTML 404 shell」。矩阵的真实含义是「canonical URL 在任何 preset 都不是路由」。**订正全文见本节末「2026-10-30 根因订正（第二层）」小节**，横向发现见 [FINDINGS #19](./experiments/FINDINGS.md)。
+
 **现象**：非 node-server preset 的生产构建中，预渲染页面（`/`、`/guide/baseline`）正常返回真实内容，但 `/api/_content/cache.json` 与 `/api/_content/search` 返回 **HTTP 200 且响应体为 404 错误页 HTML**——catch-all 兜底渲染，构建/运行日志零错误。
 
 **三 preset 四平台对比矩阵**（同构建链路）：
@@ -326,3 +334,36 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
   第二层根因实验方向：content 运行时 DB 初始化路径（node:sqlite/better-sqlite3/serverAsset）在两个运行时中的失败点对比（套用 R19 模板，独立 PR）。
 
 **2026-10-18 本机 node-server 响应体级实测（R01 受控对照附带发现，FINDINGS #9）**：本机 Windows node-server 构建产物冒烟中 `/api/_content/cache.json` 呈现 200+404shell（实验组与对照组一致，排除拓扑变量因果）；且复核 `probes/artifact-smoke.ts` 确认 CI 的 Content artifact smoke 仅断言 `response.ok`、从未做响应体检查——矩阵中"node-server ✅"的原始证据强度应修正为"HTTP 200 已验证、响应体内容未验证"。第二层是否覆盖 node-server（全 preset）待 Linux 响应体级复验定案；定案前本节矩阵结论保持不变。
+
+### 2026-10-30 根因订正（第二层）：「serverless 运行时 DB/存储初始化失败」假设**被证伪**
+
+本机 node-server control、Vercel 生产、Cloudflare 远端**三处逐字一致**的 200+404shell，真实成因**不是运行时故障**，而是**验收契约写错了 URL**：
+
+1. **模块源码**：`@ztl-uwu/nuxt-content@2.13.9` 的 `dist/module.mjs:207/238/243`——
+   `buildIntegrity = nuxt.options.dev ? void 0 : Date.now()`；生产构建下路由名为
+   `cache.${buildIntegrity}.json` / `search-${buildIntegrity}`，**无后缀路径只在 dev 模式存在**。
+2. **产物路由表实锤**（`.output/server/chunks/_/nitro.mjs:9932-9949`）：注册的是
+   `/api/_content/cache.1793336652904.json`、`/api/_content/search-1793336652904`、
+   `/api/_content/query/:qid/**:params`、`/api/_content/navigation`，
+   **没有** `/api/_content/cache.json`、`/api/_content/search`。
+3. **假阳性的产生机制**：未匹配路径落到 `handlers` 末位的 catch-all `/**`（同文件 `:9948`）→ Nuxt renderer
+   → 上游 layer `pages/[...slug].vue` 在内容未命中时**内联渲染「404」文案但不抛 `createError`**
+   → 页面渲染成功即 **HTTP 200**。**handler 从未被调用，不存在「崩溃」**，也不存在 Nitro 错误处理改写状态码。
+4. **产物自洽、应用客户端无恙**：`runtimeConfig.public.content.integrity` 暴露指纹，客户端据此拼接带指纹路径
+   （`chunks/build/server.mjs` 的 `searchRoute`、`chunks/build/client-db-*.mjs` 的 `cache.${integrity}.json`）；
+   **只有外部探针在用 dev 路径**。
+5. **带指纹路径实测完全正常**：本机 node-server 与 Vercel 生产**均返回 200 + 真实 JSON**
+   （cache：`contents` 3 篇，含「绿色控制组」；search：`documentCount:8`、`documentIds` 8 条命中「绿色控制组」）
+   → **content 运行时 DB/存储在 serverless 正常**，旧假设作废；
+   **本节原第 326 行的实验方向（node:sqlite / better-sqlite3 / serverAsset 初始化路径对比）打偏**，不再作为后续方向。
+
+**因此第二层的性质是「验收契约 / 探针的假阳性」，而非平台运行时故障。** 修复方向随之改为：
+让未注册的 Content API 路径返回**真实 404** + 探针改为**从产物发现真实指纹路由并做响应体内容断言**，
+而不是继续追查 serverless 运行时。
+
+**矩阵订正**：`node-server` 行原记的「✅ 200 且非空」是**弱断言假象**（探针只断言 `response.ok`）；
+其真实行为与 `vercel` / `cloudflare_module` 两行**完全一致**（同样 200+404shell），
+故第二层**与 preset 无关**，矩阵的 preset 维度结论作废；矩阵的真实含义是「canonical URL 在任何 preset 都不是路由」。
+
+**附带暴露的第二个潜在假阳性门**：`/api/_content/query/index.md` 在**无 `_params` 查询参数**时回退为空 query，
+`.find()` 返回**全部文档**（实测 3 篇），**它根本不校验 `index.md` 本身**——只断言「响应体含『绿色控制组』」同样是弱门。

@@ -163,10 +163,17 @@
    git checkout <branch> -- docs/task-artifacts/experiments/FINDINGS.md
 3. # 严禁带入 pnpm-workspace.yaml / pnpm-lock.yaml / nuxt.config.ts
 4. 手工合并 QUEUE.md（表 1 插入 R18/R19 行、表 2 移除对应行、排期 note 同步）
-5. pnpm test:contracts                     # 期望 12/12
+5. pnpm test:contracts                     # 期望 13/13
 6. git grep -n -E 'nodeLinker: hoisted|publicHoistPattern' -- pnpm-workspace.yaml apps packages
                                                # 期望零命中
 7. 核对 FINDINGS 编号 1–N 连续、无重号
+   # ⚠️ 2026-10-30 强制前置：main 已于本日占用 #19 记录「F47 第二层定案」
+   #   （见 FINDINGS.md #19 末尾的「编号保留说明」）。本分支自带的 #19
+   #   （R19→F20 复现：hoisted 爆炸半径实锤）**必须重编号**，二选一：
+   #     ① 先把本分支并入 main，再把 main 的 F47 条目顺延为 #20
+   #        （同步改 FINDINGS.md #9 指向 #20 的锚点、以及 #19→#20 的反向引用）；
+   #     ② 或本分支那条改为 #20，并同步改本文件 5 处「FINDINGS #19」引用。
+   #   **不要两边都叫 #19。**
 ```
 
 （`experiment/integrate-r18-r19` 已完整跑完上述步骤并复验通过，可直接作为参考实现。）
@@ -206,7 +213,7 @@
 - [ ] 剥离 `pnpm-workspace.yaml` 的 `nodeLinker: hoisted` / `publicHoistPattern`
 - [ ] 剥离 blanket 类配置（`ssr.noExternal` / Nitro inline）与 `routes.clear()` / `crawlLinks:false`
 - [ ] 锁文件默认**不合并**；仅当分支属真实修复型且已复验 runtime 时才单独评估
-- [ ] `pnpm test:contracts` 全绿（期望 12/12）
+- [ ] `pnpm test:contracts` 全绿（期望 13/13）
 - [ ] **runtime 响应体内容断言**（Content cache / search 命中），不得只看 HTTP 200（F18 / F47 假阳性）
 - [ ] `git grep` 复扫基线污染键
 - [ ] FINDINGS 编号连续、无重号；QUEUE 与 FINDINGS 交叉引用一字不差
