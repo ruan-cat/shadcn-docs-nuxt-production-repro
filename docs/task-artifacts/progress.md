@@ -364,4 +364,12 @@
   - **未归因（诚实登记）**：control 为何在相同 module 代码下写入 JSON；`nitropack` 2.13.4→2.13.5 的 `bundledStorage` 注入与 `createStorage` 逻辑逐字等价，但 `core/index.mjs` 整体重构 ⇒ **未逐行定位**。下一步建议 **R46**：control 不动、仅把 lockfile 的 `nitropack` 单点 bump 到 2.13.5 ⇒ 可判定根因在 nitro 2.13.5 还是在 Nuxt 4 世代本身。
   - 证据：[experiments/R45.md](./experiments/R45.md)、[evidence/2026-10-30-r45-nuxt4-generation-migration.md](../evidence/2026-10-30-r45-nuxt4-generation-migration.md)；FINDINGS #28。
 
+- [x] **R34（两项目无根 `vercel.json`，部署 control，✅ 判绿 / 零新增部署）**：本实验**不改仓库任何文件** ⇒ 无变量漂移、未开 PR、未 push。以 Vercel **只读** API + 自定义域名抓取核验既有部署：
+  - **F38**：仓库根 / `apps/docs` / `apps/api` **三处均无 `vercel.json`** ✓
+  - **F39 单槽**：`apps/docs/.vercel/project.json` → `prj_nRhiR3d9kkcWp8U9prKNUh5cHdt1`、`apps/api/.vercel/project.json` → `prj_AAGUVMU0BfCce4ydRp8MmTdAYc5b`，两目录**各仅一个 `project.json`** ✓
+  - **双部署 READY**：docs `dpl_8TfQgjTwSNzgNxxkiQ4m6HMnAvUs` / api `dpl_6vHNn7PUNy6vBiqsUcV1SRPW2AcT`，**同 commit `41cd215`、同分支 `main`** ✓
+  - **云端构建**：install `pnpm install --frozen-lockfile`、`Scope: all 5 workspace projects`、turbo build（3 packages in scope）✓
+  - **运行时内容断言**（非 200 假阳性）：docs 首页含「生产级复现实验室」**7 处**；api `/v1/health` `ok:true`；api `/v1/runtime` = `nitro3-h3v2` / `node v22.23.4` / `platform linux` ✓；api 根 404 为 Nitro 自身错误体（**预期**）
+  - **零新增部署** ⇒ 不消耗部署额度；R35/R36 的无污染对照基线已就位。
+  - 证据：[experiments/R34.md](./experiments/R34.md)、[evidence/2026-10-30-r34-vercel-control-readonly.md](../evidence/2026-10-30-r34-vercel-control-readonly.md)；FINDINGS #29。
 - [ ] **R34-R38（Vercel 多项目污染组）**：⛔ **待用户确认**——需真实部署（额度）；R35/R36 涉及是否允许在分支上违反 F38「不做根 vercel.json」既定决策。
