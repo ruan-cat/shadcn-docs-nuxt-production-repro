@@ -28,7 +28,7 @@
 		"probe:all": "pnpm probe:deps && pnpm probe:h3 && pnpm probe:ui",
 		"format": "prettier --experimental-cli --write --no-parallel .",
 		"prepare": "simple-git-hooks",
-		"clean": "rimraf apps/**/.nuxt apps/**/.output apps/**/.vercel packages/**/dist .turbo"
+		"clean": "rimraf apps/**/.nuxt apps/**/.output apps/**/.vercel packages/**/dist packages/**/node_modules/.cache .turbo"
 	},
 	"devDependencies": {
 		"@prettier/plugin-oxc": "^0.2.3",
