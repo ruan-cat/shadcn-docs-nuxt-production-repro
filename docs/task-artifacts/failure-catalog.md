@@ -367,3 +367,21 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
 
 **附带暴露的第二个潜在假阳性门**：`/api/_content/query/index.md` 在**无 `_params` 查询参数**时回退为空 query，
 `.find()` 返回**全部文档**（实测 3 篇），**它根本不校验 `index.md` 本身**——只断言「响应体含『绿色控制组』」同样是弱门。
+
+### 2026-10-30 根因订正（第三层）：两个真实缺陷已修——页面 catch-all 真 404 + query 空查询弱门
+
+第二层把「200 假阳性」定位到**验收契约写错 URL**（只打 dev-only 路径）。但把契约改对之后，**两处真实的生产行为缺陷暴露出来并已修复**：
+
+1. **页面 catch-all 的 200 掩码（真实缺陷，已修）**
+   - 根因在上游 layer `shadcn-docs-nuxt@1.1.9` 的 `pages/[...slug].vue`：`!page?.body` 时**内联渲染一段 404 UI 但不抛 `createError`** → 渲染成功即 HTTP 200 + HTML 404 shell。**任何不存在的页面路径都返回 200**（如 `/no-such-page-xyz`）。
+   - 修复：`apps/docs/middleware/content-page-not-found.ts`（**命名中间件**，经 `nuxt.config.ts` 的 `hooks["pages:extend"]` 挂到 layer 的 catch-all 路由 `/:slug(.*)*`），判定条件与 layer **逐字一致**（`!page?.body`），只把「渲染友好 404 页」升级为**真实 HTTP 404**。
+   - 顺序前提（已从 Nuxt 源码确认）：content 模块 documentDriven 插件用 `addRouteMiddleware(async fn)` 注册**全局**中间件（`addRouteMiddleware` 中 `typeof name !== "string"` 即 global），Nuxt 执行顺序「全局 → 命名」（`nuxt/dist/pages/runtime/plugins/router.js` 同一 Set 先塞 global 再塞 route meta）→ 命名中间件跑到时文档已解析完毕。写成全局中间件会把**全站**误判 404。
+   - **观测性坑**：守卫刻意**不设** `fatal: true`。Nitro 判定 `isSensitive = error.unhandled || error.fatal`（`nitropack@2.13.4` `dist/core/index.mjs`），`fatal` 为真会把**每个 404** 记成 `[request error] [fatal]` → 污染运行时错误监控、打破「运行时错误零命中」验收门。404 是正常业务结果，不该进错误通道。
+   - **附带暴露的死链**：上游 layer 侧边栏链接栏目根路径 `/guide`，此前被 200 掩码掩盖；掩码移除后 crawler 立刻发现 → **预渲染构建失败**。处置是**补落地页** `apps/docs/content/1.guide/0.index.md`（而非放宽 `nitro.prerender.failOnError`）。
+
+2. **Content query 空查询弱门（真实缺陷，已修）**
+   - 根因在 content 模块侧：`dist/runtime/utils/query.js` 里 `qid` **只是 `_params` 的缓存键**，从不进入 where 条件；无 `_params` 时 `query.first === false` → `.find()` → 返回**全部文档**。`/api/_content/query/index.md` 声称按 id 取单文档，实际返回全集。
+   - 修复：`apps/docs/server/middleware/content-query-guard.ts`——只拦**恰好一段**的 `/api/_content/query/<qid>`，缺 `_params` → **HTTP 400 + JSON 指引**；带 `_params` 放行；两段形态与裸 `/api/_content/query` 放行。语义选 400 而非伪造单文档语义——服务端无法把不透明缓存键 `qid` 可靠解析成单文档，**让端点不再说谎**比伪造更诚实。
+   - **两种 `_params` 编码形态不同（易踩坑）**：query-string 形态要 **URL 编码的原始 JSON**（`decodeURIComponent` 后直接 `JSON.parse`），路径两段形态要 **base64url**。用 base64url 塞进 query-string 会被 content 模块自己打成 400「Invalid _params query」——**模块侧**报错、不是守卫报错。
+
+**本机验证**（standalone，端口 3413，产物指纹 `1793342768316`）：冷构建 EXIT=0（3/3 tasks，0 cached）；`/no-such-page-xyz` → **404**（curl 默认 Accept → `application/json`；`Accept: text/html` → Nuxt 错误页 HTML，title `404 - Page Not Found | Nuxt`），且服务端日志**无 `request error`**；`/guide` `/guide/baseline` `/` → 200 无回归；`/api/_content/query/index.md` 无 `_params` → **400 + 报文含 `_params`**，带 `_params` → **200 + 恰好 1 篇**（`_path=/guide/baseline`、title=绿色控制组）；两段形态 → 200 + 1 篇；裸 `/api/_content/query` → 200 + 全部文档；指纹路由 `cache.<integrity>.json` / `search-<integrity>` → 200 + 真实内容（`documentCount:10`）；canonical 两条 + 裸前缀两条 → 404 + application/json（第二层守卫未回归）。`pnpm probe:content` **13/13 PASS**，`pnpm test:contracts` **13/13**。

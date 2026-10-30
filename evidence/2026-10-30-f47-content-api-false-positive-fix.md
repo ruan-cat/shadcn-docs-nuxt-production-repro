@@ -264,3 +264,127 @@ pnpm test             # Tasks: 6 successful, 6 total / exit 0
 | Vercel docs 运行时错误（`get_runtime_errors`, 24h） | **No runtime errors found**                                                                 |
 
 → **F47 第二层假阳性在 Vercel 生产与 Cloudflare Workers 两个远端同时闭环。**
+
+---
+
+## 8. F47 第三层：页面 catch-all 真 404 + Content query 空查询弱门（2026-10-30）
+
+> 触发：第二层把「200 假阳性」定位到**验收契约写错 URL** 后，把契约改对，**两处真实的生产行为缺陷暴露出来**。本节是这两处缺陷的取证、修复与验证记录。
+
+### 8.1 缺陷一：页面 catch-all 的 200 掩码
+
+| 项                 | 内容                                                                                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 现象               | **任何不存在的页面路径都返回 HTTP 200 + HTML 404 shell**（如 `/no-such-page-xyz`）                                                                    |
+| 根因位置           | **上游 layer** `shadcn-docs-nuxt@1.1.9` 的 `pages/[...slug].vue`（100 行）                                                                            |
+| 根因机制           | `v-if="!page?.body"` 分支**内联渲染**一段 404 UI（`<h3>404</h3>` + 提示文案），**不抛 `createError`** → 渲染成功即 200。判定条件与 layer **逐字一致** |
+| 为何不是运行时故障 | handler 从未被调用；页面渲染正常完成；无异常、无错误日志                                                                                              |
+| 修复归属           | **main**（app 可用 `pages:extend` + 命名中间件覆盖，**无需改上游 layer**）                                                                            |
+
+**方案（三条约束，全部有源码依据）**：
+
+1. **零模板复制**：不复制上游 100 行模板。layer 的 `package.json` 有 `exports` 字段 → 子路径 import 被封死；硬编码 pnpm 哈希路径太脆。
+2. **必须用命名中间件、不能用全局中间件**：
+   - content 模块的 documentDriven 插件用 `addRouteMiddleware(async fn)` 注册中间件；Nuxt 源码 `addRouteMiddleware`：`const global = options.global || typeof name !== "string"` → **名字非字符串即视为 global**；
+   - Nuxt 执行顺序：`nuxt/dist/pages/runtime/plugins/router.js` 的 `middlewareEntries = new Set([...globalMiddleware, ...nuxtApp._middleware.global])` → 先塞全局，**再**塞 route meta 的命名中间件（`component.meta.middleware`），按插入序执行 → **命名中间件跑到时文档已解析完毕**；
+   - 若写成全局中间件，它会跑在 documentDriven 之前、`useContentState().pages` 还是空的 → **把全站误判成 404**。
+3. **不能用 `useContent()`**：它的 `page` 是按 `useRoute().path` 派生的 ComputedRef，而 Nuxt 明确警告「在 middleware 里调用 `useRoute()` 会给出误导性结果」（`nuxt/dist/app/composables/router.js`：应改用 `(to, from)` 参数）→ 改按 `to.path` 直读 `useContentState().pages`（键与 documentDriven 写入时完全一致）。
+
+**守卫不允许静默失效**：`pages:extend` 找不到 catch-all 时**直接抛错中止构建**——守卫一旦悄悄消失，F47 的 200 掩码原样回归，而回归时 CI 仍是绿的（200 假阳性）。
+
+### 8.2 附带暴露的死链：`/guide` 栏目落地页缺失
+
+移除 200 掩码后，首轮冷构建**失败**（exit 1）：
+
+```plain
+[nitro]  ├─ /guide (205ms)
+[nitro]  │   ├── [404] Page Not Found
+[nitro]  │   └── Linked from /guide/failure-domains
+[nitro]  │   └── Linked from /guide/baseline
+ERROR  Exiting due to prerender errors.
+```
+
+crawler 从侧边栏导航发现了栏目根路径 `/guide`——该路径**没有对应文档**，此前被 200 掩码掩盖（返回「200 + HTML 404 shell」，看起来一直「正常」）。
+
+**处置选择**：**补落地页** `apps/docs/content/1.guide/0.index.md`（`_path` 推导：content v2 `refineUrlPart` 把 `index` 段清空 → `/guide`），**而不是**放宽 `nitro.prerender.failOnError`（后者是 blanket 式放松，违反基线纪律）。`0.` 前缀让落地页在导航 children 里排第一位。`nuxt.config.ts` 的 prerender 种子同步补 `/guide`。
+
+### 8.3 缺陷二：Content query 空查询弱门
+
+| 项                          | 内容                                                                                                                                                                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 现象                        | `/api/_content/query/index.md`（**无 `_params`**）返回**全部文档**，而端点语义是「按 id 取单文档」                                                                                                                                     |
+| 根因位置                    | **content 模块侧**（`@ztl-uwu/nuxt-content@2.13.9`）                                                                                                                                                                                   |
+| 根因机制                    | `dist/runtime/utils/query.js`：`qid` **只是 `_params` 的缓存键**，从不进入 where 条件；无 `_params` 时 `query.first === false` → `.find()` → 返回**全部文档**                                                                          |
+| 修复方式                    | 新增 `apps/docs/server/middleware/content-query-guard.ts`：只拦**恰好一段**的 `/api/_content/query/<qid>`，缺 `_params` → **HTTP 400 + JSON 指引**；带 `_params` 放行；`/query/<qid>/<params>` 两段形态与裸 `/api/_content/query` 放行 |
+| 为何选 400 而非解析出单文档 | 服务端无法把**不透明缓存键** `qid` 可靠解析成单文档；让端点**不再说谎**（显式报错）比伪造单文档语义更诚实                                                                                                                              |
+
+**两种 `_params` 编码形态不同（本次实测踩坑）**：
+
+| 形态                                     | 编码                    | 服务端处理                                                                    |
+| ---------------------------------------- | ----------------------- | ----------------------------------------------------------------------------- |
+| `/query/<qid>?_params=…`（query-string） | **URL 编码的原始 JSON** | `parseJSONQueryParams(decodeURIComponent(query._params))` → 直接 `JSON.parse` |
+| `/query/<qid>/<params>`（路径两段）      | **base64url**           | `decodeQueryParams(params)` → base64url 解码 → `JSON.parse`                   |
+
+用 base64url 塞进 query-string 会被 **content 模块自己**打成 400「Invalid _params query」——那是**模块侧**报错、不是守卫报错，极易误判成守卫误伤。
+
+### 8.4 观测性修正：404 不得进运行时错误通道
+
+首版守卫写了 `fatal: true`，实测发现服务端 stderr 出现：
+
+```plain
+[request error] [fatal] [GET] http://127.0.0.1:3413/no-such-page-xyz
+H3Error: Page Not Found … { cause: { statusCode: 404, statusMessage: 'Page Not Found', fatal: true } }
+```
+
+查 `nitropack@2.13.4` `dist/core/index.mjs`：
+
+```js
+async function defaultHandler(error, event, opts) {
+  const isSensitive = error.unhandled || error.fatal;
+  …
+  if (isSensitive && !opts?.silent) { consola.error(`[request error] ${tags} [${event.method}] ${url}`, ansiError) }
+```
+
+→ `fatal: true` 会让**每一个 404** 都被记成运行时错误 → 污染错误监控、打破「运行时错误零命中」验收门。404 是正常业务结果。**去掉 `fatal` 后状态码仍是真实 404**，且 stderr 干净。
+
+### 8.5 本机验证矩阵（standalone，端口 3413，产物指纹 `1793342768316`）
+
+| 对象                                                                                     | 结果                                                                                   |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 冷构建                                                                                   | **EXIT=0**，3/3 tasks，**0 cached**（fresh build）                                     |
+| `/no-such-page-xyz`                                                                      | **404** `application/json` 159B（修复前：**200** + HTML shell）                        |
+| `/no-such-page-xyz`（`Accept: text/html`）                                               | **404** `text/html` 96058B，title `404 - Page Not Found \| Nuxt`                       |
+| `/guide/no-such-sub-page`                                                                | **404** `application/json`                                                             |
+| `/guide`                                                                                 | 200 `text/html` 111872B，title「指南 - ……」（新增落地页）                              |
+| `/guide/baseline`                                                                        | 200 `text/html` 122481B，title「绿色控制组 - ……」                                      |
+| `/`                                                                                      | 200 `text/html` 107309B（无回归）                                                      |
+| `/api/_content/query/index.md`（**无 `_params`**）                                       | **400** `application/json` 518B，报文含 `_params` 指引                                 |
+| `/api/_content/query/<qid>?_params=<URL 编码 JSON>`                                      | **200** `application/json`，**恰好 1 篇**（`_path=/guide/baseline`、title=绿色控制组） |
+| `/api/_content/query/<qid>/<base64url>`                                                  | **200** `application/json`，同样 1 篇                                                  |
+| `/api/_content/query`（裸）                                                              | 200 `application/json` 11927B（全部文档，合法端点）                                    |
+| `/api/_content/cache.1793342768316.json`                                                 | 200 `application/json` 12244B（真实内容，无回归）                                      |
+| `/api/_content/search-1793342768316`                                                     | 200 `text/plain` 6977B，`documentCount:10`（无回归）                                   |
+| `/api/_content/cache.json` / `/api/_content/search` / `/api/_content` / `/api/_content/` | 全部 **404** `application/json`（第二层守卫未回归）                                    |
+| 服务端 stderr                                                                            | **无 `request error`**（404 未进错误通道）                                             |
+| `pnpm probe:content`                                                                     | **EXIT=0，13/13 PASS**（8 真实路由 + 4 must-404 + 1 missing-page）                     |
+| `pnpm test:contracts`                                                                    | **13/13**                                                                              |
+
+### 8.6 探针动态化（指令五）
+
+`probes/content-smoke.ts` 移除硬编码的 `EXPECTED_QUERY_PATHS` / `BASELINE_TITLE`，改为运行时扫描内容目录 → 本地复刻 content v2 的 `_path` 推导（`refineUrlPart` 剥数字前缀 / `index` 段清空 / slugify）→ 推导期望 `_path` 集合与锚点文档。
+
+**动态性实证**：加入 `1.guide/0.index.md` 后，推导集合自动从 3 篇变 4 篇、锚点自动从 `/guide/baseline`（title=绿色控制组）切到 `/guide`（title=指南），**全程零常量改动**。探针输出：
+
+```plain
+# 推导出的 _path 集合 (4): ["/","/guide","/guide/baseline","/guide/failure-domains"]
+# 锚点文档: /guide (1.guide/0.index.md) title=指南
+```
+
+### 8.7 分发策略（用户要求「分发给其他分支使用」）
+
+修复落在 **main**，两条路径任选：
+
+1. **从 main 拉的新分支自动带上**（推荐，main 是唯一权威源）；
+2. **已有分支显式 cherry-pick** 两笔提交（第二笔是观测性修正「去掉 `fatal`」，**必须一起取**）。
+
+**不做 blanket 分发**：部分实验分支**刻意保留 200 shell** 来复现 F47 历史信号，批量强推会毁掉那些分支的实验前提 → **opt-in，由分支负责人自行决定**。关闭 PR ≠ 删除分支。

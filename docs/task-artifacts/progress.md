@@ -224,3 +224,53 @@
 - [x] **提交并推送 main**：`06832db`（🐞 守卫）/ `ad379fb`（🧪 探针 + 契约断言）/ `ac75d39`（🐎 CI）/ `acc4f62`（📃 口径 + 档案 + 证据）→ `e9a2105..acc4f62 main -> main`
 - [x] **生产部署响应体级复验**：Vercel docs `dpl_93X1QKoNhXCDVfb5AyLkBdq87rNf` **READY**（`aliasError=null`）、Vercel api `dpl_FfnCCGUUw1uyNbXRM5TNJXUDQTqr` READY、CF 双 Worker Builds **success**、CI **5/5 success**（含 **Linux job 实跑新内容级探针**）；双平台逐字一致——真实指纹路由 200 + 真实内容（search 4956B / cache 10024-10025B / query 9745B），canonical 两条 + 裸前缀两条全部 **404 + application/json**（修复前为 200 + HTML shell）；页面不回归（`/` 与 `/guide/baseline/` 标题正确）；`get_runtime_errors` 24h **零错误**
 - 遗留项（未在本轮修复，交用户决策）：①**页面 catch-all 的「所有未知路径返回 200」未修**（如 `/no-such-page-xyz` 仍 200 + HTML）——需覆盖上游 layer 的 `pages/[...slug].vue`，超出本轮范围；②**`/api/_content/query/index.md` 空 query 返回全部文档的弱门未修**（content 模块侧语义缺陷）；③`experiment/integrate-r18-r19`（`155063d`，🟢 可合并待授权）自带 **FINDINGS #19**，与 main 本次占用**撞号**，合并前必须按 `BRANCH-MERGE-EVALUATION.md` §4 第 7 步重编号；④仓库内 `node_modules/node_modules/` 嵌套残留（早于本轮，非本轮产物，不影响验收结论）
+
+## 2026-10-30 F47 第三层：页面 catch-all 真 404 + Content query 空查询弱门
+
+> 触发：上一节遗留项 ①②。本轮用户明确要求「**修复并分发给其他分支使用**」。证据：`evidence/2026-10-30-f47-content-api-false-positive-fix.md` §8。
+
+- [x] **指令一：页面 catch-all 的 200 掩码 —— 根因在上游 layer，修复归属 main**
+  - **根因**：上游 layer `shadcn-docs-nuxt@1.1.9` 的 `pages/[...slug].vue`（100 行）在 `!page?.body` 时**内联渲染一段 404 UI 但不抛 `createError`** → 渲染成功即 HTTP 200 + HTML 404 shell。这是 layer 的设计（友好 404 页），不是运行时故障，但让「页面不存在」与「页面存在」在状态码上无法区分。
+  - **方案**（零模板复制）：新增 `apps/docs/middleware/content-page-not-found.ts`——**命名中间件**，经 `nuxt.config.ts` 的 `hooks["pages:extend"]` 挂到 layer 的 catch-all 路由 `/:slug(.*)*`。判定条件与 layer **逐字一致**（`!page?.body`），只把「渲染友好 404 页」升级为「真实 HTTP 404」，不改变「哪些页面算存在」的语义。**不复制上游 100 行模板**（layer package.json 有 `exports` 字段，子路径 import 被封死；硬编码 pnpm 哈希路径太脆）。
+  - **顺序依据（方案成立前提，已从 Nuxt 源码确认）**：content 模块 documentDriven 插件用 `addRouteMiddleware(async fn)` 注册的是**全局**中间件（Nuxt 源码 `addRouteMiddleware`：`typeof name !== "string"` 即视为 global），负责按路径把文档写进 `useContentState().pages`；Nuxt 执行顺序是「全局 → 命名」（`nuxt/dist/pages/runtime/plugins/router.js`：同一个 Set 先塞 global、再塞 route meta 的命名中间件，按插入序执行）→ 命名中间件跑到时文档**已解析完毕**。写成全局中间件会跑在 documentDriven 之前、state 还是空的，把**全站**误判成 404。
+  - **为什么不用 `useContent()`**：它的 `page` 按 `useRoute().path` 派生，而 Nuxt 明确警告「在 middleware 里调用 `useRoute()` 会给出误导性结果」（`nuxt/dist/app/composables/router.js`：应改用 `(to, from)` 参数）→ 改按 `to.path` 直读 `useContentState().pages`，与 documentDriven 写入时的键完全一致。
+  - **守卫不允许静默失效**：`pages:extend` 找不到 catch-all 时**直接抛错中止构建**——守卫一旦悄悄消失，F47 的 200 掩码原样回归，而回归时 CI 仍是绿的（200 假阳性）。宁可构建挂掉。
+- [x] **附带修复：`/guide` 栏目落地页（`apps/docs/content/1.guide/0.index.md`）**
+  - 上游 layer 侧边栏会链接栏目根路径 `/guide`；200 掩码存在时该死链返回「200 + HTML 404 shell」，看起来一直「正常」。掩码移除后 crawler 立刻发现它 → **首轮冷构建 exit 1**（`[404] Page Not Found / Linked from /guide/baseline`）。
+  - 处置选择是**补落地页**而不是放宽 `nitro.prerender.failOnError`（后者是 blanket 式放松，违反基线纪律）。`0.` 前缀让落地页在导航 children 里排第一位（实测导航顺序 `[指南, 绿色控制组, 故障域]`）。`nuxt.config.ts` 的 prerender 种子同步补 `/guide`。
+- [x] **指令二：Content query 空查询弱门 —— 根因在 content 模块侧**
+  - **根因**（`@ztl-uwu/nuxt-content@2.13.9` `dist/runtime/utils/query.js`）：`qid` **只是 `_params` 的缓存键**，从不进入 where 条件；无 `_params` 时 `query.first === false` → `.find()` → 返回**全部文档**。`/api/_content/query/index.md` 声称按 id 取单文档，实际返回全集，**根本不校验 `index.md`**。
+  - **方案**：新增 `apps/docs/server/middleware/content-query-guard.ts`——只拦**恰好一段**的 `/api/_content/query/<qid>`，缺 `_params` → **400 + 可执行指引**（说明 qid 语义与两种正确用法）；带 `_params` 放行；`/query/<qid>/<params>` 两段形态与裸 `/api/_content/query` 放行。
+  - **语义选择是 400 而非伪造单文档语义**：服务端无法把不透明缓存键 `qid` 可靠解析成单文档，让端点**不再说谎**比伪造更诚实。
+  - **两种 `_params` 编码形态实测不同（踩坑记录）**：query-string 形态要 **URL 编码的原始 JSON**（`decodeURIComponent` 后直接 `JSON.parse`）；路径两段形态要 **base64url**。用 base64url 塞进 query-string 会被 content 模块自己打成 400「Invalid _params query」——这是模块侧报错、不是守卫报错，极易误判成守卫误伤。
+- [x] **指令四：分支定性订正 —— 两个 retry 分支「保留，不删除」**
+  - 独立复核（explore，只读）+ 主代理本地复核结论一致：**「带契约禁止键」属实，「污染分支」不属实**。本仓台账从未把这两个分支称作污染分支；「污染」专指首轮实验的污染态伪信号（`node_modules` 残留 / timeout 假象）。
+  - 两分支基于含 F47 修复的新基线 `4b5ff91` 且只加单变量；`AGENTS.md` SOP 第 6 步明文「只加单变量、**不改为过契约**」→ 属**预期对照结论**。
+  - R18/R19 必要测试任务**已完成并终局**（DoD 全勾、`verified`、台账 §2 结论列「✅ verified」）→ **无需重跑**。
+  - 台账 §1.3 明文「所有 CLOSED 的实验 PR — 其分支**保留作证据**」→ 删除 = 销毁唯一 verified 终版载体（main 上 R18.md/R19.md 仍是 ⏳ 占位版）。**正确处置 = 保留分支 + 只取档案 + 不得带入 `pnpm-workspace.yaml`**。台账新增 §3.1.1 记录这次订正。
+  - `experiment/integrate-r18-r19` 已按授权 **push（不合并 main）** → `* [new branch] experiment/integrate-r18-r19 -> experiment/integrate-r18-r19`。
+- [x] **指令五：探针改为从内容目录动态推导**（`probes/content-smoke.ts`）
+  - 移除硬编码的 `EXPECTED_QUERY_PATHS` / `BASELINE_TITLE`，改为运行时扫描内容目录 → 本地复刻 content v2 的 `_path` 推导规则（`refineUrlPart` 剥数字前缀 / `index` 段清空 / slugify）→ 推导期望 `_path` 集合与锚点文档。源码零 10 位以上数字字面量。
+  - 同步补齐第三层语义断言：单段 query 缺 `_params` → **400 + 非 HTML + 报文含 `_params`**；页面 `/no-such-page-xyz` → **404**。
+  - 动态性实证：加入 `1.guide/0.index.md` 后，推导集合自动从 3 篇变 4 篇、锚点自动从 `/guide/baseline` 切到 `/guide`，**全程零常量改动**。
+- [x] **指令六：`AGENTS.md` 内编写 node_modules 隔离 SOP**（§0.5，含 0.5.1–0.5.8 共 8 小节）
+  - **体检 vs 治疗**分离：§0.5.1 判定门「健康就别动」（本仓实测 warm store 重装约 21s、冷 store 可达 12min+，且**重装会掩盖真实故障**——若根因在应用层/上游依赖，被冲掉后就再也复现不出来）。
+  - **5 个 `node_modules` 必须一起隔离**：根 + `apps/api` + `apps/docs` + `packages/shared-core` + `packages/ui`。实测包级是指向根 `.pnpm` 的**绝对路径 Junction**，只移根会让包级悬空 → 正好复现出 `Cannot find module 'nuxt/bin/nuxt.mjs'` 那种假故障。
+  - **命名收敛到 `node_modules.stale-*`**：`.gitignore:24` 只覆盖 `node_modules.stale-*`；原 §0 写的 `node_modules.broken-<date>` **不被忽略** → 照抄会污染 `git status`。
+  - **只改名隔离、绝不删除**：一律 `Move-Item`；物理删除交给用户（`.gitignore:24` 注释已登记）。
+  - 全部 PowerShell 块经 AST 解析（5 OK / 0 error）且只读命令**逐字执行过**。
+- [x] **本机验证**（standalone，端口 3413）
+  - 冷构建 **EXIT=0**（3/3 tasks，**0 cached**，fresh build）
+  - `/no-such-page-xyz` → **404 + application/json**（原为 200 + HTML shell）；`/guide/no-such-sub-page` → **404**
+  - `/guide` / `/guide/baseline` / `/` → 200 + HTML 正常内容（无回归）
+  - `/api/_content/query/index.md`（无 `_params`）→ **400** + JSON + 指引；带 `_params` → **200 + 恰好 1 篇**（`_path=/guide/baseline`、title=绿色控制组）；两段形态 → 200 + 1 篇；裸 `/api/_content/query` → 200 + 全部文档
+  - 指纹路由无回归：`cache.<integrity>.json` → 200 + 真实内容；`search-<integrity>` → 200 + `documentCount:10`
+  - canonical 两条 + 裸前缀两条 → 404 + application/json（第二层守卫未回归）
+  - `pnpm probe:content` → **EXIT=0，13 条断言全 PASS**（8 真实路由 + 4 must-404 + 1 missing-page）；`pnpm test:contracts` → **13/13**
+- [x] **观测性修正：404 不再被记成运行时错误**
+  - 实测发现去掉 `fatal: true` 是必要的：Nitro 默认错误处理器判定 `isSensitive = error.unhandled || error.fatal`（`nitropack@2.13.4` `dist/core/index.mjs`），`fatal` 为真时会把**每一个 404** 都记成 `[request error] [fatal]` → 污染运行时错误监控、打破「运行时错误零命中」验收门。404 是正常业务结果，不该进错误通道。去掉 `fatal` 不影响状态码（仍是真实 404）。
+- **分发策略（用户要求「分发给其他分支使用」）**：修复落在 **main**（2 笔提交，见提交记录），三条路径任选——
+  1. **从 main 拉的新分支自动带上**（推荐）：main 是唯一权威源；
+  2. **已有分支显式 cherry-pick**：`git cherry-pick <fix-sha> <followup-sha>`（见提交记录里的 SHA），两笔必须一起取——第二笔是观测性修正；
+  3. **不做 blanket 分发**：部分实验分支**刻意保留 200 shell** 来复现 F47 历史信号，批量强推会毁掉那些分支的实验前提。→ **opt-in，由分支负责人自行决定**。关闭 PR ≠ 删除分支。
+- **本轮遗留项（交用户决策）**：①`experiment/integrate-r18-r19` 已 push 但其 `FINDINGS.md` 仍占 **#19**（`155063d`），合并前必须按方案②改为 `#20` 并同步其 5 处引用——**是否授权改该已 push 分支**（本轮授权边界仅到 push）；②是否按「只取档案」路径把 R18/R19 的 verified 终版档案并入 main（本轮明确不合并）；③`failure-catalog.md` 的 **F20 条目上修**（FINDINGS #19 沉淀动作①要求）是否本轮一并做；④上游旧分支 `experiment/r18-targeted-public-hoist`(`d319177`) / `experiment/r19-node-linker-hoisted`(`916c0cb`) 是否删除（唯一可安全删的一对，属独立证据归档决策）；⑤仓库内 `node_modules/node_modules/` 嵌套残留（早于本轮，非本轮产物）

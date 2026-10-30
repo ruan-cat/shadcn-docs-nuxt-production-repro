@@ -82,6 +82,24 @@ Windows workaround 绿色 != Vercel 可部署
 - 不出现 `ERR_INVALID_URL`；
 - 不出现 H3 export mismatch。
 
+> ⚠️ 2026-10-30 **第三层补充一**：本门此前标注的「弱门」（`/api/_content/query/index.md` 无 `_params`
+> 时回退空 query、返回**全部文档**，根本不校验 `index.md`）**已于本日修复**——
+> 新增 `apps/docs/server/middleware/content-query-guard.ts`，只拦**恰好一段**的 `/api/_content/query/<qid>`：
+> 缺 `_params` → **HTTP 400 + JSON 指引**（报文须含 `_params` 字样）；带 `_params` → 放行；
+> `/api/_content/query/<qid>/<params>`（两段形态）与裸 `/api/_content/query` → 放行。
+> 依据：content v2 的 `qid` **只是 `_params` 的缓存键**，从不进入 where 条件。
+> ⚠️ 两种 `_params` 编码形态**不同**：query-string 形态要 **URL 编码的原始 JSON**，
+> 路径两段形态要 **base64url**。用 base64url 塞进 query-string 会被 content 模块自己打成
+> 400「Invalid _params query」——那是**模块侧**报错、不是守卫报错，极易误判成守卫误伤。
+>
+> ⚠️ 2026-10-30 **第三层补充二（页面侧）**：**页面不存在必须返回真实 404**，不得返回 200 + HTML 404 shell。
+> 新增 `apps/docs/middleware/content-page-not-found.ts`（**命名中间件**，经 `pages:extend` 挂到 layer 的
+> catch-all 路由 `/:slug(.*)*`）。断言要求：**状态码必须是 404**；响应体形态随 `Accept` 头变化
+> （`Accept: text/html` → Nuxt 错误页 HTML；其余 → JSON），**不要**对页面断言「非 HTML」——
+> 「非 HTML」是 API 路由的要求，混用会造成假红。
+> 另：**404 不得进运行时错误通道**——Nitro 判定 `isSensitive = error.unhandled || error.fatal`，
+> 守卫刻意**不设** `fatal`，否则每个 404 都会被记成 `[request error]`、污染「运行时错误零命中」验收门。
+
 **反向断言（防假阳性，必做）**：未注册的 canonical 路径 `/api/_content/cache.json` 与 `/api/_content/search`
 必须返回**真实非 200**（404），**不得**返回 `HTTP 200 + HTML 404 shell`。
 
