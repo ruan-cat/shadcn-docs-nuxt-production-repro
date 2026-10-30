@@ -71,3 +71,12 @@ memorix 已把 11 个分片 consolidate 进 obs:5999：`memorix memory detail --
 - **在库执行层**：[docs/task-artifacts/experiments/](./experiments/README.md)（QUEUE 看板 + SOP + FINDINGS 台账 + 44 份实验档案）；总检报告 `docs/reports/2026-10-17-branch-pr-fault-reproduction-audit.md`
 - **恢复动作**：读 obs #6062 → 读 experiments/QUEUE.md 定任务 → 按 experiments/SOP.md 执行（复现前必读 FINDINGS #1 提升层污染与 #2 safe-delete 两条 gotcha）
 - **推送状态**：experiment/r01、experiment/r13 分支与 main 6 笔的 push 状态以 QUEUE.md 与远端实测为准；**只有 main push 会触发生产部署**，experiment/* 分支 push 仅作备份
+
+## 2026-10-30 状态订正（追记上方「截至 HEAD 3f67f36」快照）
+
+> 上方快照记录的是 2026-10-16/17 的真实状态，原文保留不改写；本节订正其已失效项。**权威状态一律以 [experiments/QUEUE.md](./experiments/QUEUE.md) 与 [experiments/FINDINGS.md](./experiments/FINDINGS.md) 为准。**
+
+1. **「PR #27 OPEN 可参照」→ 已失效**：#27 与 #26 均已 CLOSED（2026-10-30T07:33:07Z，删分支触发 GitHub 自动关闭），仓库当前**零 OPEN PR**。R19 的方法论范本价值仍保留在 `experiments/BRANCH-MERGE-EVALUATION.md` §5.1 与 `experiments/R19.md`。
+2. **「F47 第二层未修」→ 已定案**：第二层根因不是平台运行时故障，而是**验收契约写错了 URL**（探针请求了 content v2 的 dev-only canonical 路径，生产构建里它们不是路由，落到上游 layer catch-all 被渲染成「HTTP 200 + HTML 404 shell」）→ 见 FINDINGS **#19**；第三层修复（页面 catch-all 真 404 + Content query 空查询弱门 + 探针动态化）已落 main，并经 Vercel / CF Workers 双平台逐字复验。
+3. **「R02-R18 已关闭，R20-R45 未启动」→ 已过期**：R06–R17 已按 SOP 干净重测并全部移入 QUEUE 表 1；R18/R19 终版已并入 main（FINDINGS **#20**）；R21 / R27 / R28 / R29 / R31-family 已完成；未启动池收敛为 **R22 + R34-R45**，阻塞池仅剩 R11。
+4. **接力入口更新**：权威检查点改为 memorix obs **#6110 / #6111**；下一步队列一律以 QUEUE.md 表 1 / 表 3 / 表 4 为准，不再以本文件的「未完成任务」列表为准。

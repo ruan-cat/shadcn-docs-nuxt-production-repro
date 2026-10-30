@@ -275,3 +275,15 @@
   3. **不做 blanket 分发**：部分实验分支**刻意保留 200 shell** 来复现 F47 历史信号，批量强推会毁掉那些分支的实验前提。→ **opt-in，由分支负责人自行决定**。关闭 PR ≠ 删除分支。
 - **本轮遗留项的处置结果（2026-10-30，用户逐项授权后已执行）**：①`experiment/integrate-r18-r19` 的 `FINDINGS.md` 已由 `#19` 重编号为 **`#20`**（`6bab1ba`，分支侧 R18.md 3 处 / R19.md 2 处引用同步改号）——**撞号已消解**；②R18/R19 的 verified **终版档案已并入 main**（只取档案，未带入 `pnpm-workspace.yaml` / lockfile / `nuxt.config.ts`；main 条目号 1–20 连续无重号，契约 13/13）；③`failure-catalog.md` 的 **F20 条目已上修**（由「性能/构建图放大」改为「**可用性灾难：hoisted 使项目不可构建**」，并补 R18 治理盲区与「12min 重装是冷 store 假象」两条订正）；④上游旧分支 `experiment/r18-targeted-public-hoist`(`d319177`) / `experiment/r19-node-linker-hoisted`(`916c0cb`) 已从**本地与远端删除**（唯一可安全删的一对；两个 **retry 分支不受影响，仍保留**）
 - **新登记的遗留项（交用户决策）**：①**F17 机理在 FINDINGS 台账中无独立条目**——2026-10-30 复核时发现 `BRANCH-MERGE-EVALUATION.md` §3.5 存在错误指针「FINDINGS #19」，而 F17 机理目前只沉淀在 `R15.md` / `R16.md` / `R17.md` + `evidence/**`，是否补建 FINDINGS 条目待决；②**契约治理盲区**：F20 上修时发现 pnpm 对合法 kebab 键 `public-hoist-pattern` **零警告**，而契约测试只匹配 camelCase 字面 `publicHoistPattern` → 改用合法键名即**漏检**（FINDINGS #20 发现 4），是否在契约层同时枚举 kebab 与 camelCase 两种字面待决（会改动契约数量，需同步 CI 期望值）；③仓库内 `node_modules/node_modules/` 嵌套残留（早于本轮，非本轮产物）
+
+## 2026-10-30 台账订正与上游旧分支处置收口
+
+> 本段为**追加式**记录；上方 2026-09-29 / 2026-10-16 两段的历史快照原文不改写。
+
+- [x] **PR #27 状态订正**：上方「2026-09-29 接力核对」段记载「PR #27 当前 OPEN，为唯一在途实验 PR」——该状态**已失效**。实测 `gh pr list`（#26/#27 于 2026-10-30T07:33:07Z 同刻更新）确认 **#27 与 #26 均已 CLOSED**（#27 因 head 分支 `experiment/r19-node-linker-hoisted` 被删除而由 GitHub 自动关闭）。**当前仓库零 OPEN PR**。
+- [x] **R18/R19 终版档案并入 main**：`R18.md` / `R19.md` 已取入 main（`6f93975`）；FINDINGS 条目重编号为 **#20**（分支侧 `6bab1ba` 追加式重编号并 fast-forward 推送，**未用 force push**）。
+- [x] **两个上游旧分支已删除**：`experiment/r18-targeted-public-hoist`（`d319177`）/ `experiment/r19-node-linker-hoisted`（`916c0cb`）本地 + 远端均已删除。删除前**先移植**其唯一证据归档（`evidence/2026-08-29-r15-element-plus-popper-alias.md`、`evidence/2026-08-29-r18-targeted-public-hoist-insufficient.md`）入 main——main 与 retry 分支均无副本，直接删等于销毁唯一证据载体。
+- [x] **F20 条目上修**：由「性能/构建图放大」改为「**可用性灾难：hoisted 使项目不可构建**」（install / build:packages / docs build 全 exit 1，`.bin` shim 相对路径解析断裂）；「12min 重装」为冷 store 假象（warm store 21s），首轮 exit 124 是误诊；F20 实验方向**终止**，禁止作为 workaround。
+- [x] **CI 终态**：`7b9df63` 五门全绿（静态契约 / Linux 完整生产构建与 artifact smoke / Windows 解析 prepare / CF Workers Builds api + docs）。
+- [x] **分支计数**：本地 `experiment/*` = 23，远端 = 19；**4 个分支仅存在于本地**（`experiment/r21-windows-only-trace-false`、`r27-prerender-crawllinks-false`、`r28-prerender-routes-clear`、`r29-prerender-both`）——提交尚未推送，属单点证据风险（已登记为待决策项）。
+- [x] **本段新登记遗留项**：①F17 机理在 FINDINGS 台账无独立条目（§3.5 指针已订正，缺口未擅自补建）；②契约治理盲区（camelCase `publicHoistPattern:` 与合法 kebab `public-hoist-pattern` 未同时枚举）；③4 个仅本地分支的远端备份；④`node_modules/node_modules/` 嵌套残留。
