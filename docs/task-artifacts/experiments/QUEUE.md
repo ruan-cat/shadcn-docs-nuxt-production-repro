@@ -34,19 +34,19 @@
 
 > **R06–R17 重测排期（2026-10-29）**：R06–R17 均为首轮"污染态判废"（exit 1 + Invalid URL，环境被污染所致、非真实结论），须按 `SOP.md` 逐个 SOP 干净重测。执行顺序 R06→R07→R08→R10→R12→R14→R15→R16→R17；重测后档案落 `experiment/rXX-*` 分支并同步本表与 `FINDINGS.md`。R18/R19 已在 `experiment/r18-retry-public-hoist`、`experiment/r19-retry-node-linker-hoisted` 分支重测完成（结论 verified），待并入 main 后由本表移入表 1。
 
-| 实验 | 单变量                            | PR            | 首轮结果                 | 原因                                                | 档案                      |
-| ---- | --------------------------------- | ------------- | ------------------------ | --------------------------------------------------- | ------------------------- |
-| R18  | targeted public hoist             | #26（CLOSED） | exit 124（480s timeout） | 长尾超时（已重测 verified，分支待并入）             | 分支已落档（待并入 main） |
-| R19  | `nodeLinker: hoisted`             | #27（OPEN）   | exit 124（480s timeout） | hoisted 全量重装超时（已重测 verified，分支待并入） | 分支已落档（待并入 main） |
-| R06  | 显式升级 nuxt-og-image            | #9（CLOSED）  | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R06.md               |
-| R07  | 移除 shared-core 双向消费         | #11（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R07.md               |
-| R08  | 移除 workspace UI                 | #12（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R08.md               |
-| R10  | UI 改 source alias                | #15（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R10.md               |
-| R12  | blanket `ssr.noExternal`          | #16（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R12.md               |
-| R14  | blanket Nitro inline              | #19（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R14.md               |
-| R15  | Element Plus Popper alias 缺包    | #21（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R15.md               |
-| R16  | app-local direct alias dependency | #23（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R16.md               |
-| R17  | Nitro `traceAlias`                | #25（CLOSED） | exit 1 + Invalid URL     | 🚫 污染态判废                                       | 待建 R17.md               |
+| 实验 | 单变量                            | PR            | 首轮结果                                | 原因                                                                      | 档案                                   |
+| ---- | --------------------------------- | ------------- | --------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------- |
+| R18  | targeted public hoist             | #26（CLOSED） | exit 124（480s timeout）                | 长尾超时（已重测 verified，分支待并入）                                   | 分支已落档（待并入 main）              |
+| R19  | `nodeLinker: hoisted`             | #27（OPEN）   | exit 124（480s timeout）                | hoisted 全量重装超时（已重测 verified，分支待并入）                       | 分支已落档（待并入 main）              |
+| R06  | 显式升级 nuxt-og-image            | #9（CLOSED）  | exit 1 + Invalid URL（首轮·污染态判废） | 已 SOP 干净重测 verified：install/build 全绿（179s）、HTTP 200 + 内容命中 | R06.md（✅ clean verified 2026-10-29） |
+| R07  | 移除 shared-core 双向消费         | #11（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                             | 待建 R07.md                            |
+| R08  | 移除 workspace UI                 | #12（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                             | 待建 R08.md                            |
+| R10  | UI 改 source alias                | #15（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                             | 待建 R10.md                            |
+| R12  | blanket `ssr.noExternal`          | #16（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                             | 待建 R12.md                            |
+| R14  | blanket Nitro inline              | #19（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                             | 待建 R14.md                            |
+| R15  | Element Plus Popper alias 缺包    | #21（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                             | 待建 R15.md                            |
+| R16  | app-local direct alias dependency | #23（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                             | 待建 R16.md                            |
+| R17  | Nitro `traceAlias`                | #25（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                             | 待建 R17.md                            |
 
 ## 表 3：前置阻塞（⏸️）
 
