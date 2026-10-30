@@ -17,6 +17,7 @@
     "@repro/shared-core": "workspace:*",
     "@repro/ui": "workspace:*",
     "@ztl-uwu/nuxt-content": "2.13.9",
+    "debug": "4.4.3",
     "h3": "1.15.11",
     "nuxt": "3.21.2",
     "shadcn-docs-nuxt": "1.1.9",
