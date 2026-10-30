@@ -41,7 +41,7 @@
 | R06  | 显式升级 nuxt-og-image            | #9（CLOSED）  | exit 1 + Invalid URL（首轮·污染态判废） | 已 SOP 干净重测 verified：install/build 全绿（179s）、HTTP 200 + 内容命中                   | R06.md（✅ clean verified 2026-10-29） |
 | R07  | 移除 shared-core 双向消费         | #11（CLOSED） | exit 1 + Invalid URL（首轮·污染态判废） | 已 SOP 干净重测 verified：install/build 全绿（188s）、HTTP 200 + 内容命中，首轮为污染伪信号 | R07.md（✅ clean verified 2026-10-30） |
 | R08  | 移除 workspace UI                 | #12（CLOSED） | exit 1 + Invalid URL（首轮·污染态判废） | 已 SOP 干净重测 verified：install/build 全绿（192s）、HTTP 200 + 内容命中，首轮为污染伪信号 | R08.md（✅ clean verified 2026-10-30） |
-| R10  | UI 改 source alias                | #15（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                                               | 待建 R10.md                            |
+| R10  | UI 改 source alias                | #15（CLOSED） | exit 1 + Invalid URL（首轮·污染态判废） | 已 SOP 干净重测 verified：install/build 全绿（222s）、HTTP 200 + 内容命中，首轮为污染伪信号 | R10.md（✅ clean verified 2026-10-30） |
 | R12  | blanket `ssr.noExternal`          | #16（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                                               | 待建 R12.md                            |
 | R14  | blanket Nitro inline              | #19（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                                               | 待建 R14.md                            |
 | R15  | Element Plus Popper alias 缺包    | #21（CLOSED） | exit 1 + Invalid URL                    | 🚫 污染态判废                                                                               | 待建 R15.md                            |
