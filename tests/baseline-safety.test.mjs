@@ -68,11 +68,9 @@ for (const [group, policy] of Object.entries(policies)) {
 			assert.equal(policy.text.includes(pattern), true, `${group} 声明了 ${pattern}，但目标文件没有实际出现该实验变量`);
 		}
 
-		for (const pattern of policy.forbidden) {
-			const present = policy.text.includes(pattern);
-			const declared = allowed.includes(pattern);
-			assert.equal(present && !declared, false, `控制组不应包含未声明的危险配置 ${pattern}`);
-		}
+		// 主路径统一走 violations()，与合成样本自证共用同一判定实现，避免两套逻辑漂移。
+		const found = violations(policy, policy.text, allowed);
+		assert.deepEqual(found, [], `控制组不应包含未声明的危险配置：${found.join(", ")}`);
 	});
 }
 

@@ -41,7 +41,7 @@ jobs:
         run: pnpm build:packages
 
       - name: 运行包级测试
-        run: pnpm test
+        run: pnpm test:packages
 
       - name: 输出实际依赖树
         run: pnpm probe:deps
