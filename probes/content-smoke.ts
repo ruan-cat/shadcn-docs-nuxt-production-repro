@@ -26,11 +26,28 @@
  * 构建指纹（content v2 的 buildIntegrity = Date.now()）每次 nuxt build 都会变，
  * 因此源码内不写死任何指纹，一律运行时从构建产物读取。
  *
+ * F49 加固（2026-10-30，R45 首轮冒烟整轮判废的根因）：
+ *   原实现里 waitForServer 每轮「先看 child.exitCode、再 fetch(base)」，
+ *   fetch 只要有应答就算 ready。端口被上一轮遗留的 standalone 占着时，
+ *   新 spawn 的子进程根本起不来（EADDRINUSE），而 fetch 被**旧服务**应答 ⇒
+ *   探针把旧服务的响应当成本次产物的结果 ⇒ 假 PASS / 假 FAIL 双向风险。
+ *   现在加三道门：
+ *   ① **端口占用预检**（spawn 前）：目标端口已被占用 ⇒ 直接 exit 非零并拒绝，
+ *      绝不复用既有服务。
+ *   ② **应答者身份校验**（就绪后）：就绪信号取自**子进程自己打印的**
+ *      `Listening on <url>` 行（nitropack node-server preset：
+ *      dist/presets/node/runtime/node-server.mjs:33）——只有本次 spawn 的
+ *      子进程会打印这行；旧服务的日志不会被本探针看到。
+ *      再叠加「构建指纹路由」的内容断言做第二重身份确认。
+ *   ③ **指纹路由内容断言**：带构建指纹的 cache/search 路由必须 200 + 非 HTML，
+ *      指纹由本次产物扫描得到 ⇒ 应答者必然是同一构建。
+ *
  * 用法：
  *   pnpm probe:content <server-entry>            # 自己 spawn standalone（默认端口 3413）
  *   pnpm probe:content --base <url>               # 打已经在跑的服务
  *   pnpm probe:content <server-entry> --route /api/_content/query   # 显式指定路由（可重复 / 逗号分隔）
  *   pnpm probe:content <server-entry> --content-dir apps/docs/content  # 覆盖内容目录（也可用 REPRO_CONTENT_DIR）
+ *   pnpm probe:content <server-entry> --allow-port-reuse             # 显式允许复用既有服务（仅 --base 语义，需自担风险）
  *
  * 注意：--base 模式只消费路由来源 ①（--route）与 ③（REPRO_CONTENT_ROUTES）；
  * 来源 ②（构建产物路由表扫描）绑定在 <server-entry> 上，所以 --base 单独使用必然
@@ -39,6 +56,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { createConnection } from "node:net";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -63,6 +81,14 @@ const MISSING_PAGE_PATH = "/no-such-page-xyz";
 const PREVIEW_CHARS = 500;
 const READY_ATTEMPTS = 120;
 const READY_INTERVAL_MS = 500;
+/**
+ * F49：子进程就绪信号的正则。
+ * nitropack 的 node-server preset 在成功 bind 后打印 `Listening on <url>`
+ * （dist/presets/node/runtime/node-server.mjs:33）。
+ * 这行只有**本次 spawn 的子进程**会打印 —— 端口被旧服务占着时，
+ * 新子进程会以 EADDRINUSE 退出、根本不会打印它 ⇒ 它就是应答者身份的判据。
+ */
+const LISTENING_PATTERN = /Listening on\s+(?:unix socket\s+)?(\S+)/i;
 
 type RouteKind =
 	| "cache"
@@ -104,6 +130,7 @@ let serverEntry: string | undefined;
 let baseUrl: string | undefined;
 let port = DEFAULT_PORT;
 let contentDirOption: string | undefined;
+let allowPortReuse = false;
 const explicitRoutes: string[] = [];
 
 for (let index = 0; index < argv.length; index += 1) {
@@ -124,9 +151,13 @@ for (let index = 0; index < argv.length; index += 1) {
 		contentDirOption = argv[++index];
 	} else if (arg.startsWith("--content-dir=")) {
 		contentDirOption = arg.slice("--content-dir=".length);
+	} else if (arg === "--allow-port-reuse") {
+		allowPortReuse = true;
 	} else if (arg.startsWith("-")) {
 		console.error(`未知参数: ${arg}`);
-		console.error("用法: pnpm probe:content <server-entry> [--port 3413] [--route <path>] [--content-dir <dir>]...");
+		console.error(
+			"用法: pnpm probe:content <server-entry> [--port 3413] [--route <path>] [--content-dir <dir>] [--allow-port-reuse]...",
+		);
 		console.error("      pnpm probe:content --base <url> [--route <path>]...");
 		process.exit(2);
 	} else {
@@ -759,19 +790,85 @@ async function deriveQid(base: string, inlineParams: string): Promise<string | u
 
 // ---------------------------------------------------------------- standalone
 
-async function waitForServer(base: string, child: { exitCode: number | null }): Promise<void> {
+/**
+ * F49 门①：spawn 前的端口占用预检。
+ *
+ * 目标端口已经被别的进程监听 ⇒ 本次 spawn 的子进程必然以 EADDRINUSE 退出，
+ * 而旧服务会继续应答 fetch ⇒ 探针会把旧服务的响应当成本次产物的结果。
+ * 这里直接拒绝：端口被占用就 exit 非零，绝不复用既有服务。
+ *
+ * 判据：向 127.0.0.1:port 发起一次 TCP 连接。
+ *   - connect 成功 ⇒ 有人监听 ⇒ 端口被占用；
+ *   - ECONNREFUSED ⇒ 没有监听 ⇒ 端口空闲。
+ */
+async function isPortOccupied(targetPort: string): Promise<boolean> {
+	return new Promise((resolveOccupied) => {
+		const socket = createConnection({ host: "127.0.0.1", port: Number(targetPort) });
+		let settled = false;
+		const settle = (occupied: boolean) => {
+			if (settled) return;
+			settled = true;
+			socket.destroy();
+			resolveOccupied(occupied);
+		};
+		socket.setTimeout(1000, () => settle(false));
+		socket.once("connect", () => settle(true));
+		socket.once("error", () => settle(false));
+	});
+}
+
+/**
+ * F49 门②：就绪判据改为「子进程自己打印的 Listening 行」。
+ *
+ * 原实现只看 fetch(base) 有没有应答 —— 端口被旧服务占着时，fetch 被旧服务
+ * 应答即判 ready，从不校验应答者身份。现在要求：
+ *   1. 子进程仍存活（exitCode === null）；
+ *   2. 子进程 stdout/stderr 出现 `Listening on <url>`（只有本次 spawn 的子进程会打）。
+ * 两者同时满足 ⇒ 应答者必是本次 spawn 的进程。
+ */
+async function waitForServer(base: string, child: { exitCode: number | null }, serverLog: () => string): Promise<void> {
 	for (let attempt = 0; attempt < READY_ATTEMPTS; attempt += 1) {
 		if (child.exitCode !== null) {
 			throw new Error(`standalone 在就绪前退出，exit=${child.exitCode}`);
 		}
-		try {
-			await fetch(base, { redirect: "manual" });
-			return;
-		} catch {
-			await new Promise((r) => setTimeout(r, READY_INTERVAL_MS));
+		const log = serverLog();
+		const listening = LISTENING_PATTERN.exec(log);
+		if (listening) {
+			// 身份确认：子进程自称监听的**端口**必须与探针请求的端口一致。
+			// 只比端口不比 host —— nitro 打印的是实际 bind 地址
+			// （Windows 上 127.0.0.1 可能报成 ::1），host 差异不是身份差异，
+			// 端口才是「是不是同一台服务」的区分维度。
+			const advertised = listening[1] ?? "";
+			const advertisedPort = extractPort(advertised);
+			if (advertisedPort !== null && advertisedPort !== Number(port)) {
+				throw new Error(
+					`应答者身份不一致：子进程监听 ${advertised}（端口 ${advertisedPort}），探针请求端口 ${port}（拒绝继续）`,
+				);
+			}
+			// 端口已 bind，再确认一次确实有应答。
+			try {
+				await fetch(base, { redirect: "manual" });
+				return;
+			} catch {
+				await new Promise((r) => setTimeout(r, READY_INTERVAL_MS));
+			}
 		}
+		await new Promise((r) => setTimeout(r, READY_INTERVAL_MS));
 	}
-	throw new Error(`standalone 在 ${READY_ATTEMPTS * READY_INTERVAL_MS}ms 内没有响应`);
+	throw new Error(
+		`standalone 在 ${READY_ATTEMPTS * READY_INTERVAL_MS}ms 内没有打印「Listening on」行（子进程日志片段：${serverLog().slice(-500)}）`,
+	);
+}
+
+/** 从 URL 或 host:port 形态里取出端口号；取不到返回 null。 */
+function extractPort(value: string): number | null {
+	try {
+		const url = new URL(value.includes("://") ? value : `http://${value}`);
+		const parsed = Number(url.port);
+		return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+	} catch {
+		return null;
+	}
 }
 
 // ---------------------------------------------------------------- 主流程
@@ -829,6 +926,9 @@ async function main(): Promise<number> {
 	// --- 起服务
 	let child: ReturnType<typeof spawn> | undefined;
 	let base: string;
+	/** 子进程日志累积（stdout + stderr），供身份校验读 `Listening on` 行。 */
+	let serverLogText = "";
+	const serverLog = () => serverLogText;
 	if (baseUrl) {
 		base = baseUrl.replace(/\/$/, "");
 	} else {
@@ -838,6 +938,20 @@ async function main(): Promise<number> {
 		}
 		const entry = resolve(serverEntry);
 		base = `http://127.0.0.1:${port}`;
+
+		// F49 门①：spawn 前端口占用预检 —— 占用即拒绝，绝不复用既有服务。
+		if (!allowPortReuse && (await isPortOccupied(port))) {
+			console.error(`端口 ${port} 已被占用，拒绝复用既有服务。`);
+			console.error(
+				"F49：端口被上一轮遗留的 standalone 占着时，探针会把旧服务的响应当成本次产物的结果（假 PASS / 假 FAIL）。",
+			);
+			console.error(`处置：先终止占用 ${port} 的进程，或用 --port 换一个空闲端口。`);
+			return 1;
+		}
+		if (allowPortReuse) {
+			console.log(`# 警告: --allow-port-reuse 已开启，允许复用 ${port} 上的既有服务（应答者身份无法保证）`);
+		}
+
 		child = spawn(process.execPath, [entry], {
 			cwd: dirname(entry),
 			env: {
@@ -849,8 +963,14 @@ async function main(): Promise<number> {
 			},
 			stdio: ["ignore", "pipe", "pipe"],
 		});
-		child.stdout?.on("data", (chunk) => process.stdout.write(`[server] ${chunk}`));
-		child.stderr?.on("data", (chunk) => process.stderr.write(`[server] ${chunk}`));
+		child.stdout?.on("data", (chunk) => {
+			serverLogText += String(chunk);
+			process.stdout.write(`[server] ${chunk}`);
+		});
+		child.stderr?.on("data", (chunk) => {
+			serverLogText += String(chunk);
+			process.stderr.write(`[server] ${chunk}`);
+		});
 	}
 
 	console.log(`# Nuxt Content 响应体级探针: ${base}`);
@@ -865,7 +985,7 @@ async function main(): Promise<number> {
 	const failures: Failure[] = [];
 
 	try {
-		if (child) await waitForServer(base, child);
+		if (child) await waitForServer(base, child, serverLog);
 
 		// --- 模板 -> 具体 URL
 		// F47 第三层：单段 query 路由缺 _params 会被守卫打成 400，
