@@ -87,11 +87,8 @@ jobs:
       - name: Docs 首页 artifact smoke
         run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3100/
 
-      - name: Docs Content cache artifact smoke
-        run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3101/api/_content/cache.json
-
-      - name: Docs Content search artifact smoke
-        run: pnpm probe:artifact apps/docs/.output/server/index.mjs http://127.0.0.1:3102/api/_content/search
+      - name: Docs Content API 响应体级 smoke
+        run: pnpm probe:content apps/docs/.output/server/index.mjs
 
       - name: 独立 Nitro 3 API artifact smoke
         run: pnpm probe:artifact apps/api/.output/server/index.mjs http://127.0.0.1:3200/v1/health
