@@ -193,8 +193,13 @@ metadata:
 
 ## 13. 案例索引
 
-> 此章节在初始化时为空。随着项目中实际的 bug 修复经验积累，按照第 2.4 节的格式逐步补充摘要索引。
 > 详细案例内容写入同目录下的独立 md 文件，不要写在这里。
+
+### Vercel 生产构建失败：TypeScript 增量缓存导致 tsc 零 emit（2026-10-30）
+
+- 详细案例：`2026-10-30-vercel-shared-core-incremental-no-emit.md`
+- 适用场景：Vercel 构建报 `[commonjs--resolver] Failed to resolve entry for package "X"`，或 turbo 报 `no output files found for task X#build`；同 SHA 的 CI / Cloudflare / 本地全绿而只有 Vercel 红。
+- 关键约束：`tsc` incremental 模式下 tsbuildinfo 存在即 **exit 0 零 emit**（哪怕输出缺失）；tsbuildinfo 落在 `node_modules/.cache/` 会被 Vercel 跨构建还原 → 以 `tsc` 产出运行时产物的包，build 必须带 `--incremental false`；取构建日志首个 error 行，别拿 `errorCode` 或"其他环境绿"当根因。
 
 ## 14. 本仓库落点覆盖
 
