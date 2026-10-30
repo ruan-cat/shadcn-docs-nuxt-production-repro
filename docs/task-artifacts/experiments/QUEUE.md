@@ -10,6 +10,8 @@
 
 > 队列排序依据：[总检报告 §4/§5](../../reports/2026-10-17-branch-pr-fault-reproduction-audit.md)（2026-10-17）。
 
+> **分支合并评价**：所有 `experiment/*` 分支的「试验情况 + 合并到 main 的评价 + 评估状态」统一登记于 [BRANCH-MERGE-EVALUATION.md](./BRANCH-MERGE-EVALUATION.md)。本表只跟踪**实验执行状态**，不承担合并评价职责；**评价 ≠ 合并**，实际合并另行授权。
+
 ## 表 1：已完成实验
 
 | 实验 | 单变量                                                | PR            | 分支 / 固化方式                                                               | 结果                                                                                                                                                                                                                                        | 档案                           |
@@ -56,9 +58,9 @@
 
 > **历史登记追记（2026-10-27）**：R27/R29 的契约阻塞已解除——用户 gate 授权扩展权威 pattern 列表（main @ 4211796 加入 `crawlLinks: false` 字面），两实验已执行完成并移入表 1（原阻塞登记见 git 5cdf1e8 与 [FINDINGS #17](./FINDINGS.md)）。本表现仅剩 R11。
 
-## 表 4：未启动 17 个（R22、R30-R45）
+## 表 4：未启动 13 个（R22、R34-R45）
 
-> R27/R29 已于 2026-10-19 移入表 3（契约阻塞），2026-10-27 契约扩展（4211796）解除阻塞并执行完成后移入表 1；R28 已于 2026-10-19 完成移入表 1。实测核对：未启动+阻塞池 20 → 18（表 3 仅剩 R11，本表 17 个 = R22 + R30-R45）。
+> R27/R29 已于 2026-10-19 移入表 3（契约阻塞），2026-10-27 契约扩展（4211796）解除阻塞并执行完成后移入表 1；R28 已于 2026-10-19 完成移入表 1。**R30–R33 已于 2026-10-28 收敛为 R31-family 单变量实验（mermaid 触发），并在 `experiment/r31-mermaid-esm-cjs` 分支落档 verified（档案未并入 main）**。实测核对：未启动+阻塞池 20 → 14（表 3 仅剩 R11，本表 13 个 = R22 + R34-R45）。
 
 按总检报告 §4/§5 执行队列排序：
 
@@ -67,10 +69,10 @@
 | 🔍  | 排查项 | —    | F47 第二层平台维度定案：Linux node-server 响应体级复验（CI probe:artifact 升级内容断言或手动复验）——见 [FINDINGS #9](./FINDINGS.md) | Linux（CI 或手动复验） | 待定案   |
 | ①   | R21    | 未建 | Windows-only `trace:false`                                                                                                          | Windows 本机           | 高：长尾 |
 
-> **R21 已完成测量（2026-10-18，分支 experiment/r21-windows-only-trace-false，变更留工作区未 commit）**：build 绿 79.8s（vs R20 213s，快 ~133s）；`.output/server/node_modules` 消失（16.6MB→8.2MB）但 F26 缺包链未触发——产物零裸导入，依赖已在构建链早期全量 inline，孤立环境三断言全绿。详见 [R21.md](./R21.md)。
+> **R21 已完成测量（2026-10-18，分支 experiment/r21-windows-only-trace-false，变更已提交 d7a0113）**：build 绿 79.8s（vs R20 213s，快 ~133s）；`.output/server/node_modules` 消失（16.6MB→8.2MB）但 F26 缺包链未触发——产物零裸导入，依赖已在构建链早期全量 inline，孤立环境三断言全绿。详见 [R21.md](./R21.md)。
 
 | ② | R22 | 未建 | Linux `trace:false` | 需 Linux CI | 高：依赖 CI 协同 |
-| ③ | R30-R33 | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url） | 本机 | 中 |
+| ③ | ~~R30-R33~~ → R31-family | 未建 | ESM/CJS hydration（dayjs/mermaid/debug/sanitize-url）合并为单一 mermaid 触发（2026-10-28 用户拍板）——已落档于 `experiment/r31-mermaid-esm-cjs`（verified，档案未并入 main；合并评价见 [台账 §3.1](./BRANCH-MERGE-EVALUATION.md)） | 本机 | 中 |
 | ④ | R39-R44 | 未建 | 顺序、缓存与 fresh install 矩阵 | 本机 | 中 |
 | ⑤ | R34-R38 | 未建 | Vercel 多项目污染 | 需云端（Vercel） | 需云端协同，非本机 |
 | ⑥ | R45 | 未建 | Nuxt 4 整组兼容矩阵迁移 | 本机 + CI | 大变更，独立 PR |
