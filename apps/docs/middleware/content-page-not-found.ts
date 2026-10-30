@@ -38,6 +38,10 @@ export default defineNuxtRouteMiddleware((to) => {
 	throw createError({
 		statusCode: 404,
 		statusMessage: "Page Not Found",
-		fatal: true,
+		// 刻意**不设** `fatal: true`：Nitro 的默认错误处理器判定
+		// `isSensitive = error.unhandled || error.fatal`，`fatal` 为真时会把
+		// 每一个 404 都记成 `[request error] [fatal]` —— 404 是正常业务结果，
+		// 不该污染运行时错误监控，更不该打破「运行时错误零命中」这条验收门。
+		// 去掉 fatal 不影响状态码：仍然是真实的 HTTP 404。
 	});
 });
