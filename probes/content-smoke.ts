@@ -12,6 +12,16 @@
  *      + 顶层键与具体文档断言（_path / title / documentIds）。
  *   3. 未注册的 Content API 路径（canonical 的 cache.json / search，以及零段裸前缀
  *      /api/_content 与 /api/_content/）：HTTP 404，且响应体不是 HTML 404 shell。
+ *   4. 期望的文档集合不再写死：运行时扫描内容目录，按 content v2 的 _path 生成规则
+ *      推导出「该目录会产出哪些 _path」，锚点文档的 title 也从它的 frontmatter 读出。
+ *      内容目录增删文档不再需要手工同步本文件（见「内容目录推导」一节）。
+ *   5. F47 第三层守卫：
+ *      - 单段 query 路由 /api/_content/query/<qid> 缺 _params 时必须被守卫打成
+ *        HTTP 400 + JSON 指引（否则 content v2 会 .find() 返回全部文档，是弱门）；
+ *        派生 qid 时因此必须带上同一份 _params。
+ *      - 运行时不存在的页面必须返回真实 HTTP 404（上游 layer 的 catch-all 会渲染
+ *        「200 + HTML 404 shell」）。页面 404 的响应体就是 Nuxt 的 HTML 错误页，
+ *        所以这条只断言状态码，不要求非 HTML。
  *
  * 构建指纹（content v2 的 buildIntegrity = Date.now()）每次 nuxt build 都会变，
  * 因此源码内不写死任何指纹，一律运行时从构建产物读取。
@@ -20,6 +30,7 @@
  *   pnpm probe:content <server-entry>            # 自己 spawn standalone（默认端口 3413）
  *   pnpm probe:content --base <url>               # 打已经在跑的服务
  *   pnpm probe:content <server-entry> --route /api/_content/query   # 显式指定路由（可重复 / 逗号分隔）
+ *   pnpm probe:content <server-entry> --content-dir apps/docs/content  # 覆盖内容目录（也可用 REPRO_CONTENT_DIR）
  *
  * 注意：--base 模式只消费路由来源 ①（--route）与 ③（REPRO_CONTENT_ROUTES）；
  * 来源 ②（构建产物路由表扫描）绑定在 <server-entry> 上，所以 --base 单独使用必然
@@ -29,7 +40,8 @@
 
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const DEFAULT_PORT = "3413";
 const CONTENT_PREFIX = "/api/_content/";
@@ -40,9 +52,14 @@ const CONTENT_PREFIX = "/api/_content/";
  * 没有 index 守卫时它们同样会落到页面 catch-all → 200 + HTML 404 shell）。
  */
 const MUST_BE_404_PATHS = ["/api/_content/cache.json", "/api/_content/search", "/api/_content", "/api/_content/"];
-const EXPECTED_QUERY_PATHS = ["/guide/baseline", "/guide/failure-domains", "/"];
-const BASELINE_PATH = "/guide/baseline";
-const BASELINE_TITLE = "绿色控制组";
+/**
+ * 运行时不存在的页面路径。
+ * F47 第三层：上游 layer 的 catch-all 会把不存在的页面渲染成「HTTP 200 + HTML 404 shell」，
+ * 页面中间件必须把它升级为真实 HTTP 404。
+ * 注意语义差异：页面 404 的响应体就是 Nuxt 的 HTML 错误页，
+ * 所以这里只断言状态码是 404，**不**要求非 HTML（那是 API 路由的要求）。
+ */
+const MISSING_PAGE_PATH = "/no-such-page-xyz";
 const PREVIEW_CHARS = 500;
 const READY_ATTEMPTS = 120;
 const READY_INTERVAL_MS = 500;
@@ -86,6 +103,7 @@ const argv = process.argv.slice(2);
 let serverEntry: string | undefined;
 let baseUrl: string | undefined;
 let port = DEFAULT_PORT;
+let contentDirOption: string | undefined;
 const explicitRoutes: string[] = [];
 
 for (let index = 0; index < argv.length; index += 1) {
@@ -102,14 +120,223 @@ for (let index = 0; index < argv.length; index += 1) {
 		port = argv[++index] ?? DEFAULT_PORT;
 	} else if (arg.startsWith("--port=")) {
 		port = arg.slice("--port=".length);
+	} else if (arg === "--content-dir") {
+		contentDirOption = argv[++index];
+	} else if (arg.startsWith("--content-dir=")) {
+		contentDirOption = arg.slice("--content-dir=".length);
 	} else if (arg.startsWith("-")) {
 		console.error(`未知参数: ${arg}`);
-		console.error("用法: pnpm probe:content <server-entry> [--port 3413] [--route <path>]...");
+		console.error("用法: pnpm probe:content <server-entry> [--port 3413] [--route <path>] [--content-dir <dir>]...");
 		console.error("      pnpm probe:content --base <url> [--route <path>]...");
 		process.exit(2);
 	} else {
 		serverEntry = arg;
 	}
+}
+
+// ---------------------------------------------------------------- 内容目录推导
+
+/**
+ * 期望的文档集合不再写死成常量：运行时扫描内容目录，按 content v2 的 _path 生成规则
+ * 推导出「该目录会产出哪些 _path」，锚点文档的 title 也从它的 frontmatter 读出。
+ * 内容目录增删文档时不需要再手工同步本文件。
+ *
+ * _path 生成规则抄自 @ztl-uwu/nuxt-content@2.13.9 的
+ * dist/runtime/transformers/path-meta.js（describeId / generatePath / refineUrlPart）：
+ *   1. 相对内容目录的文件路径去掉扩展名得到 _stem（分隔符统一成 /）；
+ *   2. _stem 按 / 拆段，每段先过 refineUrlPart：
+ *        - 纯 semver 段（1.2 / 1.2.3）原样保留；
+ *        - 其它段剥掉一层「数字.」排序前缀（1.guide -> guide）；
+ *        - index（可带 .draft）整段清空；
+ *        - 结尾的 .draft 去掉；
+ *   3. 每段再做 slugify（lower=true），用 / 连接；
+ *   4. 去尾斜杠、补首斜杠。
+ * 于是 index.md -> "/"、1.guide/1.baseline.md -> "/guide/baseline"。
+ *
+ * 集合口径与生产查询保持一致：
+ *   - draft（_stem 含 .draft，或 frontmatter draft: true）在生产查询里被
+ *     `_draft != true` 过滤掉，不计入期望集合；
+ *   - partial（_stem 某段以 _ 开头）当前 content v2 的 /api/_content/query 链路
+ *     没有 _partial 过滤（只有导航与搜索索引过滤 _partial），所以计入期望集合，
+ *     但它不在导航树与搜索索引里，因此不能当锚点。
+ */
+const DEFAULT_CONTENT_DIR = "apps/docs/content";
+const CONTENT_DIR_ENV = "REPRO_CONTENT_DIR";
+/** content v2 的 markdown transformer 只认 .md（正则未锚定，.mdc 同样命中）。 */
+const MARKDOWN_FILE_PATTERN = /\.(md|mdc)$/i;
+/** content v2 refineUrlPart 里的 semver 白名单：这类段名不能被当成排序前缀剥掉。 */
+const SEMVER_PATTERN = /^(\d+)(\.\d+)*(\.x)?$/;
+/** slugify 的字符白名单（slugify@1.6.9 的 remove 默认值）。 */
+const SLUGIFY_KEEP_PATTERN = /[^\w\s$*_+~.()'"!\-:@]+/g;
+/** 探针文件所在目录的上一级即仓库根；用它做基准，避免依赖调用方的 cwd。 */
+const repoRoot = fileURLToPath(new URL("../", import.meta.url));
+
+interface ContentDoc {
+	/** 相对内容目录的路径（POSIX 分隔符，含扩展名） */
+	relativePath: string;
+	/** 按 content v2 规则推导出的 _path */
+	path: string;
+	/** frontmatter title（缺失时回落到 content v2 的 generateTitle 规则） */
+	title: string;
+	/** 是否 draft（生产查询会过滤掉，不计入期望集合） */
+	draft: boolean;
+	/** 是否 partial（_ 前缀；不出现在导航与搜索索引里，不能当锚点） */
+	partial: boolean;
+}
+
+interface ContentInventory {
+	/** 内容目录绝对路径 */
+	dir: string;
+	/** 参与断言的 _path 集合（去重 + 排序） */
+	paths: string[];
+	/** 锚点文档（稳定锚点，用于 title / documentIds / 导航断言） */
+	anchor: ContentDoc;
+}
+
+function withoutTrailingSlash(value: string): string {
+	return value.endsWith("/") ? value.slice(0, -1) : value;
+}
+
+function withLeadingSlash(value: string): string {
+	if (!value) return "/";
+	return value.startsWith("/") ? value : `/${value}`;
+}
+
+/** content v2 refineUrlPart 的等价实现。 */
+function refineUrlPart(name: string): string {
+	const last = name.split(/[/:]/).pop() ?? "";
+	if (SEMVER_PATTERN.test(last)) return last;
+	return last
+		.replace(/(\d+\.)?(.*)/, "$2")
+		.replace(/^index(\.draft)?$/, "")
+		.replace(/\.draft$/, "");
+}
+
+/**
+ * slugify@1.6.9（options: { lower: true }）的最小等价实现。
+ * 复刻了「字符白名单 -> 去首尾空白 -> 连续空白折叠成 - -> 小写」；
+ * 未复刻 slugify 的 Unicode 转写表（charMap），含特殊 Unicode 符号的文件名
+ * 可能与 content v2 有偏差（见交付说明的遗留风险）。
+ */
+function slugifyPart(value: string): string {
+	return value.normalize().replace(SLUGIFY_KEEP_PATTERN, "").trim().replace(/\s+/g, "-").toLowerCase();
+}
+
+/** content v2 generatePath 的等价实现：_stem -> _path。 */
+function deriveContentPath(stem: string): string {
+	const parts = stem.split("/").map((part) => slugifyPart(refineUrlPart(part)));
+	return withLeadingSlash(withoutTrailingSlash(parts.join("/")));
+}
+
+/**
+ * content v2 generateTitle 的等价实现（frontmatter 没有 title 时的回落）。
+ * scule 的 pascalCase 在这里简化为「首字母大写」，对单段英文名结果一致。
+ */
+function generateTitle(basename: string): string {
+	return refineUrlPart(basename)
+		.split(/[\s-]/g)
+		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+		.join(" ");
+}
+
+/**
+ * 最小 frontmatter 读取实现。
+ * 仓库根没有 yaml / js-yaml 直依赖，按纪律不新增依赖，
+ * 因此这里只解析用得上的顶层标量：title 与 draft。
+ * 不支持多行标量、锚点、嵌套结构与 YAML 锚点引用。
+ */
+function readFrontmatter(source: string): { title?: string; draft: boolean } {
+	const block = /^---\r?\n([\s\S]*?)\r?\n---/.exec(source);
+	if (!block) return { draft: false };
+	const body = block[1] ?? "";
+	const title = /^title[ \t]*:[ \t]*(.*)$/m.exec(body);
+	const draft = /^draft[ \t]*:[ \t]*(.*)$/m.exec(body);
+	return {
+		title: title ? unquoteScalar(title[1]!) : undefined,
+		draft: draft ? /^(true|yes)$/i.test(draft[1]!.trim()) : false,
+	};
+}
+
+function unquoteScalar(value: string): string {
+	const trimmed = value.trim();
+	const first = trimmed.charAt(0);
+	const last = trimmed.charAt(trimmed.length - 1);
+	if (trimmed.length >= 2 && (first === '"' || first === "'") && first === last) {
+		return trimmed.slice(1, -1);
+	}
+	return trimmed;
+}
+
+/** 递归收集内容目录下的 markdown 文件。 */
+function collectContentFiles(root: string): string[] {
+	const found: string[] = [];
+	const stack: string[] = [root];
+	while (stack.length > 0) {
+		const current = stack.pop()!;
+		let entries;
+		try {
+			entries = readdirSync(current, { withFileTypes: true });
+		} catch {
+			continue;
+		}
+		for (const entry of entries) {
+			const full = join(current, entry.name);
+			if (entry.isDirectory()) {
+				stack.push(full);
+			} else if (entry.isFile() && MARKDOWN_FILE_PATTERN.test(entry.name)) {
+				found.push(full);
+			}
+		}
+	}
+	return found;
+}
+
+/**
+ * 从内容目录推导期望的文档集合与锚点文档。
+ *
+ * 锚点规则：取 _path 字典序最小的「非根、非 partial、非 draft」文档；
+ * 这样锚点既在导航树里、也在搜索索引里，且不随无关文档增删而漂移。
+ * 若内容目录里只有根文档，则退回根文档。
+ */
+function buildContentInventory(dir: string): ContentInventory {
+	const docs: ContentDoc[] = [];
+	for (const file of collectContentFiles(dir)) {
+		const relativePath = relative(dir, file).split(/[\\/]/).join("/");
+		const stem = relativePath.replace(MARKDOWN_FILE_PATTERN, "");
+		const basename = stem.split("/").pop() ?? stem;
+		let source = "";
+		try {
+			source = readFileSync(file, "utf8");
+		} catch {
+			source = "";
+		}
+		const frontmatter = readFrontmatter(source);
+		docs.push({
+			relativePath,
+			path: deriveContentPath(stem),
+			title: frontmatter.title ?? generateTitle(basename),
+			draft: /\.draft(\/|$)/.test(stem) || frontmatter.draft,
+			partial: stem.split("/").some((part) => part.startsWith("_")),
+		});
+	}
+
+	const published = docs.filter((doc) => !doc.draft);
+	const paths = [...new Set(published.map((doc) => doc.path))].sort();
+	const anchorCandidates = published.filter((doc) => !doc.partial);
+	const nested = anchorCandidates
+		.filter((doc) => doc.path !== "/")
+		.sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+	const anchor = nested[0] ?? anchorCandidates[0] ?? published[0];
+	if (!anchor) {
+		throw new Error(`内容目录里没有可用的 markdown 文档: ${dir}`);
+	}
+	return { dir, paths, anchor };
+}
+
+/** 解析内容目录位置：--content-dir > REPRO_CONTENT_DIR > 默认值（相对仓库根）。 */
+function resolveContentDir(): string {
+	const option = contentDirOption ?? process.env[CONTENT_DIR_ENV] ?? DEFAULT_CONTENT_DIR;
+	return isAbsolute(option) ? option : resolve(repoRoot, option);
 }
 
 // ---------------------------------------------------------------- 产物扫描
@@ -207,6 +434,19 @@ function encodeQueryParams(value: unknown): string {
 		.replace(/=/g, "");
 }
 
+/**
+ * `_params` **查询字符串**形态的编码：URL 编码后的原始 JSON。
+ *
+ * 与路径形态（`**:params` 段）不同：content v2 的 `getContentQuery` 对
+ * `event.context.params.params` 走 `decodeQueryParams`（base64url 解码），
+ * 而对 query string 里的 `_params` 走 `parseJSONQueryParams`（直接 JSON.parse）。
+ * 实测：base64url 形态的 `_params` 会被服务端打成 400「Invalid _params query」，
+ * 只有 URL 编码的原始 JSON 才被接受（200 + 过滤结果）。
+ */
+function encodeQueryParamsInline(value: unknown): string {
+	return encodeURIComponent(JSON.stringify(value));
+}
+
 // ---------------------------------------------------------------- HTTP 辅助
 
 interface Fetched {
@@ -273,8 +513,11 @@ function findNavPath(value: unknown, path: string): boolean {
 
 // ---------------------------------------------------------------- 断言
 
-function assertTarget(target: Target, fetched: Fetched): Failure | undefined {
+function assertTarget(target: Target, fetched: Fetched, inventory: ContentInventory): Failure | undefined {
 	const reasons: string[] = [];
+	const anchorPath = inventory.anchor.path;
+	const anchorTitle = inventory.anchor.title;
+	const expectedPaths = inventory.paths;
 	const contentType = fetched.contentType ?? "";
 	const parsed = (() => {
 		try {
@@ -286,6 +529,31 @@ function assertTarget(target: Target, fetched: Fetched): Failure | undefined {
 			};
 		}
 	})();
+
+	// F47 第三层：单段 query 路由（/api/_content/query/<qid>）缺 _params 时，
+	// content v2 会走 .find() 返回全部文档（弱门），必须被守卫打成 400 + JSON 指引。
+	// 这条独立断言：不依赖 JSON.parse 成功，状态码与响应体形态都要单独看。
+	if (target.kind === "query-qid") {
+		if (fetched.status !== 400) {
+			reasons.push(`期望 HTTP 400（缺 _params 的单段 query 路由必须被守卫拒绝），实际 ${fetched.status}`);
+		}
+		if (isHtmlShell(fetched.contentType, fetched.text)) {
+			reasons.push(`响应体是 HTML shell（Content-Type=${fetched.contentType ?? "无"}），必须返回 JSON 指引`);
+		}
+		if (!fetched.text.includes("_params")) {
+			reasons.push(`响应体不包含「_params」，无法证明这是 _params 缺失的指引而不是泛化错误`);
+		}
+		if (reasons.length === 0) return undefined;
+		return {
+			url: target.url,
+			status: fetched.status,
+			contentType: fetched.contentType,
+			bytes: fetched.bytes,
+			preview: fetched.text.slice(0, PREVIEW_CHARS),
+			pathSet: undefined,
+			reasons,
+		};
+	}
 
 	if (fetched.status !== 200) {
 		reasons.push(`期望 HTTP 200，实际 ${fetched.status}`);
@@ -315,11 +583,11 @@ function assertTarget(target: Target, fetched: Fetched): Failure | undefined {
 						if (contents.length < 3) {
 							reasons.push(`contents 长度期望 >= 3，实际 ${contents.length}`);
 						}
-						const doc = findDoc(contents, BASELINE_PATH);
+						const doc = findDoc(contents, anchorPath);
 						if (!doc) {
-							reasons.push(`contents 中缺少 _path === ${BASELINE_PATH} 的文档`);
-						} else if (doc.title !== BASELINE_TITLE) {
-							reasons.push(`${BASELINE_PATH} 的 title 期望 ${BASELINE_TITLE}，实际 ${String(doc.title)}`);
+							reasons.push(`contents 中缺少 _path === ${anchorPath} 的文档`);
+						} else if (doc.title !== anchorTitle) {
+							reasons.push(`${anchorPath} 的 title 期望 ${anchorTitle}，实际 ${String(doc.title)}`);
 						}
 					}
 				}
@@ -332,29 +600,30 @@ function assertTarget(target: Target, fetched: Fetched): Failure | undefined {
 				} else {
 					const ids = search.documentIds;
 					const values = ids && typeof ids === "object" ? Object.values(ids as Record<string, unknown>) : [];
-					if (!values.includes(BASELINE_PATH)) {
-						reasons.push(`documentIds 的值里没有 ${BASELINE_PATH}`);
+					if (!values.includes(anchorPath)) {
+						reasons.push(`documentIds 的值里没有 ${anchorPath}`);
 					}
 				}
-				if (!fetched.text.includes(BASELINE_TITLE)) {
-					reasons.push(`响应体不包含「${BASELINE_TITLE}」`);
+				if (!fetched.text.includes(anchorTitle)) {
+					reasons.push(`响应体不包含「${anchorTitle}」`);
 				}
 				break;
 			}
-			case "query":
-			case "query-qid": {
+			case "query": {
 				if (!Array.isArray(value)) {
 					reasons.push("响应体不是数组");
 				} else {
 					pathSet = collectPathSet(value);
-					if (!pathSet || !sameSet(pathSet, EXPECTED_QUERY_PATHS)) {
-						reasons.push(`_path 集合期望 ${JSON.stringify(EXPECTED_QUERY_PATHS)}，实际 ${JSON.stringify(pathSet)}`);
+					if (!pathSet || !sameSet(pathSet, expectedPaths)) {
+						reasons.push(
+							`_path 集合期望（内容目录推导）${JSON.stringify(expectedPaths)}，实际 ${JSON.stringify(pathSet)}`,
+						);
 					}
-					const doc = findDoc(value, BASELINE_PATH);
+					const doc = findDoc(value, anchorPath);
 					if (!doc) {
-						reasons.push(`数组中缺少 _path === ${BASELINE_PATH} 的文档`);
-					} else if (doc.title !== BASELINE_TITLE) {
-						reasons.push(`${BASELINE_PATH} 的 title 期望 ${BASELINE_TITLE}，实际 ${String(doc.title)}`);
+						reasons.push(`数组中缺少 _path === ${anchorPath} 的文档`);
+					} else if (doc.title !== anchorTitle) {
+						reasons.push(`${anchorPath} 的 title 期望 ${anchorTitle}，实际 ${String(doc.title)}`);
 					}
 				}
 				break;
@@ -364,12 +633,12 @@ function assertTarget(target: Target, fetched: Fetched): Failure | undefined {
 					reasons.push("响应体不是数组");
 				} else {
 					pathSet = collectPathSet(value);
-					if (!pathSet || !sameSet(pathSet, [BASELINE_PATH])) {
-						reasons.push(`过滤后 _path 集合期望 ${JSON.stringify([BASELINE_PATH])}，实际 ${JSON.stringify(pathSet)}`);
+					if (!pathSet || !sameSet(pathSet, [anchorPath])) {
+						reasons.push(`过滤后 _path 集合期望 ${JSON.stringify([anchorPath])}，实际 ${JSON.stringify(pathSet)}`);
 					}
-					const doc = findDoc(value, BASELINE_PATH);
-					if (doc && doc.title !== BASELINE_TITLE) {
-						reasons.push(`${BASELINE_PATH} 的 title 期望 ${BASELINE_TITLE}，实际 ${String(doc.title)}`);
+					const doc = findDoc(value, anchorPath);
+					if (doc && doc.title !== anchorTitle) {
+						reasons.push(`${anchorPath} 的 title 期望 ${anchorTitle}，实际 ${String(doc.title)}`);
 					}
 				}
 				break;
@@ -379,8 +648,8 @@ function assertTarget(target: Target, fetched: Fetched): Failure | undefined {
 			case "navigation-qid-params": {
 				if (!Array.isArray(value)) {
 					reasons.push("响应体不是数组");
-				} else if (!findNavPath(value, BASELINE_PATH)) {
-					reasons.push(`导航树中找不到 _path === ${BASELINE_PATH} 的条目`);
+				} else if (!findNavPath(value, anchorPath)) {
+					reasons.push(`导航树中找不到 _path === ${anchorPath} 的条目`);
 				}
 				break;
 			}
@@ -419,13 +688,42 @@ function assertCanonical(path: string, fetched: Fetched): Failure | undefined {
 	};
 }
 
+/**
+ * 页面 catch-all 断言：运行时不存在的页面必须返回真实 HTTP 404。
+ * 与 API 路由不同，页面 404 的响应体就是 Nuxt 的 HTML 错误页，
+ * 因此这里只判状态码，不判「非 HTML」。
+ */
+function assertMissingPage(fetched: Fetched): Failure | undefined {
+	const reasons: string[] = [];
+	if (fetched.status !== 404) {
+		reasons.push(`期望 HTTP 404，实际 ${fetched.status}（200 + HTML 404 shell 就是 F47 假阳性）`);
+	}
+	if (reasons.length === 0) return undefined;
+	return {
+		url: MISSING_PAGE_PATH,
+		status: fetched.status,
+		contentType: fetched.contentType,
+		bytes: fetched.bytes,
+		preview: fetched.text.slice(0, PREVIEW_CHARS),
+		pathSet: undefined,
+		reasons,
+	};
+}
+
 // ---------------------------------------------------------------- 运行时 qid
 
 /**
  * 从运行时文档的 _id（content:<相对路径>）派生一个可用的 qid。
  * 全程运行时取值，不写死任何内容标识。
+ *
+ * F47 第三层：单段 query 路由 `/api/_content/query/<qid>` 缺 `_params` 时会被守卫打成 400，
+ * 所以这里必须带上同一份 `_params`（服务端只认 `_params`，qid 本身只是缓存键，
+ * 任意 candidate 字符串都能用），否则所有候选都会被判失败、qid 永远派生不出来。
+ *
+ * 注意 `_params` 的编码形态：查询字符串形态要 URL 编码的原始 JSON
+ * （`encodeQueryParamsInline`），不是 base64url —— 见该函数的注释。
  */
-async function deriveQid(base: string): Promise<string | undefined> {
+async function deriveQid(base: string, inlineParams: string): Promise<string | undefined> {
 	let docs: unknown;
 	try {
 		const response = await fetch(new URL("/api/_content/query", base));
@@ -445,7 +743,9 @@ async function deriveQid(base: string): Promise<string | undefined> {
 
 	for (const candidate of candidates) {
 		try {
-			const fetched = await fetchText(new URL(`${CONTENT_PREFIX}query/${candidate}`, base).toString());
+			const url = new URL(`${CONTENT_PREFIX}query/${candidate}`, base);
+			url.searchParams.set("_params", inlineParams);
+			const fetched = await fetchText(url.toString());
 			if (fetched.status !== 200) continue;
 			if (isHtmlShell(fetched.contentType, fetched.text)) continue;
 			JSON.parse(fetched.text);
@@ -511,6 +811,21 @@ async function main(): Promise<number> {
 		return 1;
 	}
 
+	// --- 期望集合：运行时从内容目录推导（不再写死常量）
+	const contentDir = resolveContentDir();
+	if (!existsSync(contentDir)) {
+		console.error(`内容目录不存在: ${contentDir}`);
+		console.error("拒绝静默通过：请用 --content-dir 或 REPRO_CONTENT_DIR 指向正确的内容目录。");
+		return 1;
+	}
+	let inventory: ContentInventory;
+	try {
+		inventory = buildContentInventory(contentDir);
+	} catch (error) {
+		console.error(`内容目录推导失败: ${error instanceof Error ? error.message : String(error)}`);
+		return 1;
+	}
+
 	// --- 起服务
 	let child: ReturnType<typeof spawn> | undefined;
 	let base: string;
@@ -541,6 +856,11 @@ async function main(): Promise<number> {
 	console.log(`# Nuxt Content 响应体级探针: ${base}`);
 	console.log(`# 路由来源: ${source}`);
 	console.log(`# 路由模板: ${templates.join(", ")}`);
+	console.log(`# 内容目录: ${inventory.dir}`);
+	console.log(`# 推导出的 _path 集合 (${inventory.paths.length}): ${JSON.stringify(inventory.paths)}`);
+	console.log(
+		`# 锚点文档: ${inventory.anchor.path} (${inventory.anchor.relativePath}) title=${inventory.anchor.title}`,
+	);
 
 	const failures: Failure[] = [];
 
@@ -548,8 +868,15 @@ async function main(): Promise<number> {
 		if (child) await waitForServer(base, child);
 
 		// --- 模板 -> 具体 URL
+		// F47 第三层：单段 query 路由缺 _params 会被守卫打成 400，
+		// 所以派生 qid 时要带上同一份 _params（服务端只认 _params，qid 只是缓存键）。
+		// 两种 _params 编码形态不同：查询字符串形态用 URL 编码 JSON，
+		// 路径两段形态（**:params）用 base64url。
+		const whereClause = { where: [{ _path: inventory.anchor.path }] };
+		const encodedParams = encodeQueryParams(whereClause);
+		const inlineParams = encodeQueryParamsInline(whereClause);
 		const needsQid = templates.some((template) => template.includes(":qid"));
-		const qid = needsQid ? await deriveQid(base) : undefined;
+		const qid = needsQid ? await deriveQid(base, inlineParams) : undefined;
 		if (needsQid && !qid) {
 			failures.push({
 				url: "(qid 派生)",
@@ -561,9 +888,6 @@ async function main(): Promise<number> {
 				reasons: ["无法从运行时内容派生可用的 qid，:qid 路由无法取证"],
 			});
 		}
-		const encodedParams = encodeQueryParams({
-			where: [{ _path: BASELINE_PATH }],
-		});
 
 		const targets: Target[] = [];
 		for (const template of templates) {
@@ -608,14 +932,23 @@ async function main(): Promise<number> {
 		// --- 真实路由断言
 		for (const target of targets) {
 			const fetched = await fetchText(new URL(target.url, base).toString());
-			const failure = assertTarget(target, fetched);
+			const failure = assertTarget(target, fetched, inventory);
 			if (failure) {
 				failures.push(failure);
 				console.error(`FAIL ${target.url}`);
 				console.error(`  状态码=${failure.status} Content-Type=${failure.contentType} bytes=${failure.bytes}`);
 				for (const reason of failure.reasons) console.error(`  - ${reason}`);
+				console.error(`  推导出的期望 _path 集合: ${JSON.stringify(inventory.paths)}`);
 				if (failure.pathSet) {
 					console.error(`  实际 _path 集合: ${JSON.stringify(failure.pathSet)}`);
+					const missing = inventory.paths.filter((item) => !failure.pathSet!.includes(item));
+					const extra = failure.pathSet.filter((item) => !inventory.paths.includes(item));
+					if (missing.length > 0) {
+						console.error(`  产物缺少的文档: ${JSON.stringify(missing)}（产物可能落后于内容目录，需要重新构建）`);
+					}
+					if (extra.length > 0) {
+						console.error(`  产物多出的文档: ${JSON.stringify(extra)}（内容目录里没有这些文档）`);
+					}
 				}
 				console.error(`  响应体前 ${PREVIEW_CHARS} 字符: ${failure.preview}`);
 			} else {
@@ -638,6 +971,23 @@ async function main(): Promise<number> {
 			} else {
 				console.log(`PASS ${path} (must-404) ${fetched.status} ${fetched.contentType} bytes=${fetched.bytes}`);
 			}
+		}
+
+		// --- 页面 catch-all：不存在的页面必须是真实 404（响应体是 HTML 错误页，只判状态码）
+		const missingPage = await fetchText(new URL(MISSING_PAGE_PATH, base).toString());
+		const missingPageFailure = assertMissingPage(missingPage);
+		if (missingPageFailure) {
+			failures.push(missingPageFailure);
+			console.error(`FAIL ${MISSING_PAGE_PATH}`);
+			console.error(
+				`  状态码=${missingPageFailure.status} Content-Type=${missingPageFailure.contentType} bytes=${missingPageFailure.bytes}`,
+			);
+			for (const reason of missingPageFailure.reasons) console.error(`  - ${reason}`);
+			console.error(`  响应体前 ${PREVIEW_CHARS} 字符: ${missingPageFailure.preview}`);
+		} else {
+			console.log(
+				`PASS ${MISSING_PAGE_PATH} (missing-page) ${missingPage.status} ${missingPage.contentType} bytes=${missingPage.bytes}`,
+			);
 		}
 	} finally {
 		if (child && child.exitCode === null) {
