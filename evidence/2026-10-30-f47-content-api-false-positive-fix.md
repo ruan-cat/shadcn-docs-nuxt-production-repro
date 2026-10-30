@@ -388,3 +388,58 @@ async function defaultHandler(error, event, opts) {
 2. **已有分支显式 cherry-pick** 两笔提交（第二笔是观测性修正「去掉 `fatal`」，**必须一起取**）。
 
 **不做 blanket 分发**：部分实验分支**刻意保留 200 shell** 来复现 F47 历史信号，批量强推会毁掉那些分支的实验前提 → **opt-in，由分支负责人自行决定**。关闭 PR ≠ 删除分支。
+
+### 8.8 生产部署响应体级复验（推送后回填，2026-10-30）
+
+**部署终态**
+
+| 平台           | 对象                                                                                        | 结果                                                             |
+| -------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Vercel         | docs `dpl_412GYezs8ty9cWDCm2NLdBYpFVzn`（SHA `d449f8d`）                                    | **READY**，`aliasError=null`，别名 `…-docs.vc.ruan-cat.com` 生效 |
+| Cloudflare     | docs Worker（`Workers Builds` check-run `123935063985`）                                    | **success**，Version ID `cb381745-ed54-401a-b414-dea86969ce0a`   |
+| Cloudflare     | api Worker（check-run `123934582318`）                                                      | **success**，Version ID `99237dbb-16b5-47b9-8874-7f1643d61e4d`   |
+| GitHub Actions | 静态契约与依赖探针 / Linux 完整生产构建与 artifact smoke / Windows 解析、prepare 与独立 API | **3/3 success**                                                  |
+| GitHub Actions | Workers Builds × 2                                                                          | **2/2 success** → **CI 5/5**                                     |
+
+> **Linux job 实跑了新守卫**：`Linux 完整生产构建与 artifact smoke` 在 Ubuntu 上跑 `probe:content`（含第三层的 400 断言与页面 404 断言）→ success，说明 `pages:extend` + 命名中间件 + `to.path` 读 `useContentState().pages` 这条链路**跨平台成立**。
+
+**双平台响应体级断言（逐字一致）**
+
+| 对象                                                       | Vercel docs                                                                                  | Cloudflare docs                                         |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `/no-such-page-xyz`                                        | **404** `application/json`                                                                   | **404** `application/json`                              |
+| `/api/_content/query/index.md`（**无 `_params`**）         | **400** `application/json`                                                                   | **400** `application/json`                              |
+| `/api/_content/query/any.qid.json?_params=<URL 编码 JSON>` | **200** `application/json` 5486B，**恰好 1 篇**（`_path=/guide/baseline`、title=绿色控制组） | **200** `application/json` 5486B，**恰好 1 篇**（同上） |
+| `/api/_content/cache.json`（canonical）                    | **404** `application/json`                                                                   | **404** `application/json`                              |
+| `/guide`                                                   | 200 `text/html` 112082B                                                                      | 307 → `/guide/` → 200 `text/html` 111880B               |
+| `/guide/baseline`                                          | 200 `text/html` 122691B                                                                      | 307 → `/guide/baseline/` → 200 `text/html` 122491B      |
+| `/`                                                        | 200 `text/html` 107519B                                                                      | 200 `text/html` 107317B                                 |
+
+> CF 的 307 是 Workers 静态资源对目录路径的尾斜杠规范化（`/guide` → `/guide/`），跟随重定向后 200；Vercel 直接 200。**不是回归**。
+
+**远端指纹路由（不硬编码，从首页 HTML 发现）**
+
+| 平台            | 发现的指纹      | `cache.<fp>.json`                 | `search-<fp>`                                  |
+| --------------- | --------------- | --------------------------------- | ---------------------------------------------- |
+| Vercel docs     | `1793343173766` | **200** `application/json` 12244B | **200** `text/plain` 6977B，`documentCount:10` |
+| Cloudflare docs | `1793343179745` | **200** `application/json` 12243B | **200** `text/plain` 6977B，`documentCount:10` |
+
+> **两平台指纹不同**（`1793343173766` vs `1793343179745`）→ 再次实证「探针不得硬编码构建指纹」；指纹路由在双平台均返回 200 + 真实内容，第二层修复无回归。
+
+**运行时错误**
+
+`get_runtime_errors`（docs project，2h 窗口）→ **No runtime errors found**。
+即：生产上对不存在页面的 404 请求**没有**进运行时错误通道——与本节 8.4 的 `isSensitive = error.unhandled || error.fatal` 判据一致（守卫不设 `fatal`）。
+
+**本轮提交（main，已推送）**
+
+| SHA       | 类型    | 范围                                                                       |
+| --------- | ------- | -------------------------------------------------------------------------- |
+| `0a16d03` | 📃 docs | 分支定性订正 + FINDINGS #19 方案②（2 文件）                                |
+| `d5751c2` | 🐞 fix  | F47 第三层：页面 catch-all 真 404 + query 守卫 + `/guide` 落地页（4 文件） |
+| `28d6719` | 🐞 fix  | 去掉 `fatal`（1 文件）                                                     |
+| `2165d2e` | 🧪 test | 探针动态化 + 第三层语义断言（1 文件）                                      |
+| `66c19c8` | 📃 docs | AGENTS.md node_modules 隔离 SOP（1 文件）                                  |
+| `d449f8d` | 📃 docs | 台账口径 + 证据回填（4 文件）                                              |
+
+→ `195e592..d449f8d main -> main`
