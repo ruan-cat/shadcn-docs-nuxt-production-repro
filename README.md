@@ -80,10 +80,10 @@ repository root
 
 `use-vercel-deploy-in-monorepo` 技能指导完成，Git Integration 主链（团队 `ruancat-projects`）：
 
-| Project | Root Directory | Framework | 部署 |
-| --- | --- | --- | --- |
-| shadcn-docs-nuxt-production-repro-docs | apps/docs | nuxtjs | 生产 READY（SHA `e710f86`，3m） |
-| shadcn-docs-nuxt-production-repro-api | apps/api | nitro | 生产 READY（SHA `e710f86`，50s） |
+| Project                                | Root Directory | Framework | 部署                             |
+| -------------------------------------- | -------------- | --------- | -------------------------------- |
+| shadcn-docs-nuxt-production-repro-docs | apps/docs      | nuxtjs    | 生产 READY（SHA `e710f86`，3m）  |
+| shadcn-docs-nuxt-production-repro-api  | apps/api       | nitro     | 生产 READY（SHA `e710f86`，50s） |
 
 Install 均为 `pnpm install --frozen-lockfile`（仓库根执行），Build 均为 `turbo run build --filter=@repro/<pkg>...`（Turbo DAG 表达 workspace 依赖闭包），Output 均为 `.vercel/output`，Node 22.x。E2E：`Cloning github` 日志 + SHA 精确匹配 + 冒烟——api `/v1/health` 返回健康 JSON；docs 页面/SCSS/UI 全部存活，**Content API 200 + 404 shell 假阳性（F47 双平台复现，见下）**。完整证据：[`evidence/2026-09-30-vercel-deploy-e2e.md`](./evidence/2026-09-30-vercel-deploy-e2e.md)。部署 URL 受团队 SSO 保护；公网访问需接入自定义域名（用户决策）。
 
@@ -91,10 +91,10 @@ Install 均为 `pnpm install --frozen-lockfile`（仓库根执行），Build 均
 
 ```json
 {
-  "nuxt": "3.21.2",
-  "shadcn-docs-nuxt": "1.1.9",
-  "@ztl-uwu/nuxt-content": "2.13.9",
-  "h3": "1.15.11"
+	"nuxt": "3.21.2",
+	"shadcn-docs-nuxt": "1.1.9",
+	"@ztl-uwu/nuxt-content": "2.13.9",
+	"h3": "1.15.11"
 }
 ```
 
@@ -176,6 +176,7 @@ Linux docs build 基线：
 ## 任务工件
 
 - [任务总入口](./docs/task-artifacts/README.md)
+- [AI 会话交接入口（HANDOFF）](./docs/task-artifacts/HANDOFF.md) ← 新会话起点：memorix 取回命令 + 推进状态 + 遗留清单
 - [架构与边界](./docs/task-artifacts/architecture.md)
 - [完整故障目录](./docs/task-artifacts/failure-catalog.md)
 - [F01-F46 当前状态矩阵](./docs/task-artifacts/status-matrix.md)

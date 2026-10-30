@@ -11,6 +11,7 @@
 | [FINDINGS.md](./FINDINGS.md)   | 关键技术发现台账（带实证证据的横向发现）                                                                                                                                                 |
 | [_TEMPLATE.md](./_TEMPLATE.md) | 单实验档案模板（R{xx}.md 以此为骨架）                                                                                                                                                    |
 | R{xx}.md                       | 单实验档案。已完成：[R02](./R02.md)、[R03](./R03.md)、[R04](./R04.md)、[R05](./R05.md)；**R09 以 PR #14 固化（无独立档案，见 [QUEUE.md](./QUEUE.md) 表 1）**；其余待实验执行后按模板新建 |
+| [../HANDOFF.md](../HANDOFF.md) | 会话交接入口：memorix 取回命令 + 本阶段推进状态 + 遗留清单（新会话先读这份）                                                                                                             |
 
 ## 使用流程（三步）
 
