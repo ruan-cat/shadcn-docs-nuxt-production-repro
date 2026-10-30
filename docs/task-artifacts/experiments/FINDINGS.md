@@ -195,3 +195,36 @@
 - **证据**：分支 `experiment/r31-mermaid-esm-cjs` 的 verified 落档（已并入 main 的 [R31.md](./R31.md)）；日志指针 `/tmp/r31-install.log`、`/tmp/r31-buildpkgs.log`、`/tmp/r31-docsbuild.log`、`/tmp/r31-server.log`、`/tmp/r31-dev.log`；浏览器侧 chrome-devtools MCP 实测（`evaluate_script` 断言 `svg.flowchart` / `nuxtApp` / console / network）。
   - ⚠️ **证据载体缺口（2026-10-30 复核）**：上述浏览器断言**未沉淀为仓库内可回溯载体**（无截图文件、无 console/network 导出、无 evidence 归档件），只以「chrome-devtools MCP 实测」一句话留痕 → 无法由第三方独立复核「四包零入口错误」这一关键判读。**「证据日志留存指针」自检项在本实验实为半勾**（构建/服务日志有指针，浏览器侧无）。R31 后续如需再取证，须把 console / network 快照落盘到 `docs/task-artifacts/evidence/`。
 - **⚠️ 编号说明（2026-10-30 重编号，用户授权）**：本条原为分支侧自带的 **#19**，与 main 侧已发布的 **#19**（F47 第二层定案）撞号 → 按与 #20 相同的**方案②**（main 侧 #19 不动）改为 **#22**；分支 `R31.md` 内 1 处「FINDINGS #19」引用同步改号。
+
+## 23. turbo 缓存还原的三条机制事实 + 本仓构建「内容幂等、字节非幂等」——产物字节比对在本仓不是可达验收门（R39/R40）
+
+- **发现 1（cache hit 是严格字节级还原）**：同一 node_modules 下连续两次 `pnpm build`（185s → 1s `FULL TURBO`），产物清单 **1792 个文件逐行完全相同**（`path|sha256|len` 三元组 diff = **0 行**）。⇒ turbo 的缓存还原**不是「重新构建出的等价物」，而是同一份字节**；被缓存的构建指纹（Content `buildIntegrity` 时间戳、Nuxt buildId UUID）也一并被还原，故两次的指纹相同。
+- **发现 2（本仓构建「内容幂等、字节非幂等」）**：`--force` 全量重跑（165.9s）与 cache-hit 路径差 **356 行**（178 对 `_nuxt/*` 路径增删 + 15 个同路径文件内容变化）；**两次真实重跑之间也差 356 行**。差异经逐文件、逐字符归因，分两类且**内容全部等价**：
+  - **构建指纹类（每次必变）**：Content `buildIntegrity = Date.now()` → 路由名 `cache.<ts>.json` / `search-<ts>` 与 `runtimeConfig`；Nuxt `buildId` UUID（`public/_nuxt/builds/latest.json`）；`nitro.json` 的 `date`；`nitro.mjs` 内资源 `mtime`。
+  - **枚举顺序不确定性类（实质差异、反复出现）**：`server/chunks/build/server.mjs` 内嵌 lucide 图标集合的 **JSON key 顺序**在三次真实重跑间持续变化（`languages` → `check` → `sun`），`styles.mjs` 内 `error-404` / `error-500` 条目顺序互换。均为**同长度替换**（6335/6335、198815/198815 字节）→ 集合内容相同、仅顺序不同 → 传导为 `public/_nuxt/*.js` 的内容哈希文件名变化 → 178 对路径增删。
+- **发现 3（turbo 缓存还原的三条机制事实，补既有 SOP 盲区）**：
+  - **缓存落点在仓库根 `.turbo/cache`（207 个子项），不在 `node_modules` 内** ⇒ 按 `AGENTS.md` §0.5 隔离 node_modules **并不能**清空 turbo 缓存。「干净依赖环境」与「冷 turbo 缓存」是两件事。
+  - **`.nuxt` 目录参与 task hash**：把 `apps/docs/.nuxt` 改名移走后，docs 的 hash 由 `5f736996212e114e` **变为** `032bab828abe7d0e` → 必然 miss。
+  - **`.output` 目录不参与 hash，但缺失时阻断还原**：把 `apps/docs/.output` 改名移走后 hash **未变**，但 turbo **无法完成缓存还原** → 降级为 miss 并重新执行；而无 `.nuxt` 的三个 task（`shared-core` / `ui` / `api`）在 `dist` / `.output` 被移走后**仍能 hit 并还原产物**。
+  - ⇒ **docs task 的缓存还原同时要求 `.output` 与 `.nuxt` 两个目录原位存在且内容匹配**；只缺一个即不成立。
+- **发现 4（`--force` ≠ 冷构建，已实证）**：`--force` 只强制重跑 task，**不清 turbo cache、不清 tsbuildinfo**。全量重跑后紧接的 `pnpm build` 仍为 `4 cached / 138ms FULL TURBO`。⇒ 「fresh」在本仓有**两种语义**（「强制重跑」vs「冷缓存」），PR body 与验收门必须写明是哪一种。
+- **发现 5（`turbo.json` 的 `outputs` 是通配，会夹带陈旧产物）**：`outputs: ["dist/**", ".nuxt/**", ".output/**", ".vercel/output/**"]` 中 `.vercel/output/**` **不是 `build` task 自身的产物**（来自 `build:vercel` = `nitro build --preset vercel`）；实测缓存条目内混有 mtime 相差约 26 天的 `.vercel/output/functions/**`（1532 个文件），而磁盘上该目录已被删除 ⇒ cache hit 会把本次构建根本不产出的陈旧 bundle 还原回工作区。
+- **影响**：①**「两次构建产物必须逐字节相同」在本仓必然假红**——正确判据是「**构建指纹 + 枚举顺序归一化后内容等价**」（R42–R44 的等价判据据此设计为四合取）；②用 cache-hit 产物当验收证据会掩盖「真实重跑产物每次字节不同」这一非幂等事实（**F35「不允许只用 cache hit 作为验收证据」在本仓的具体落点**）；③任何「隔离 node_modules 即可得到干净构建环境」的表述都应补一句「**turbo 缓存需另行隔离**」；④首次建立 **Linux 计时基线**：`pnpm build:fresh` = **1m18.339s**（此前仓内所有基线均为 Windows 的 157–222s，量级差约 3 倍）——跨平台耗时对照此前一直缺基线。
+- **证据**：[R39.md](./R39.md)、[R40.md](./R40.md)；本地 `%TEMP%\repro-r3940\`（build1–4.log、manifest1–4.txt）；GitHub run `41036747720`（main 的 Linux control，job `123999345078`，完整日志 `%TEMP%\r22-main-linux.log`）；隔离 tag `node_modules.stale-r3940-20261030-174020`。
+- **交叉引用**：`failure-catalog.md` F35 / F42 / F43；`AGENTS.md` §0.5（node_modules 隔离 SOP，本条补其 turbo 缓存盲区）；`evidence-policy.md` §1（结论必须小于或等于证据）。
+
+## 24. fresh resolve 的漂移面分层：直接依赖 = 0、传递依赖 = 562 项，且不改变 H3 世代结构——F09 在本拓扑下不成立（R41）
+
+- **发现 1（漂移面必须分层看，笼统说「会漂」会误导）**：删除 lockfile 后 `pnpm install --no-frozen-lockfile`（Linux x64 / Node v22.23.4 / pnpm 10.33.0），committed → fresh 的 lockfile 差异分三层：
+  - **`settings` / `overrides` / `packageExtensionsChecksum` 三段：逐字相同，差异 = 0。**
+  - **`importers` 段的 specifier：逐字相同，差异 = 0** —— `nuxt@3.21.2`、`shadcn-docs-nuxt@1.1.9`、`@ztl-uwu/nuxt-content@2.13.9`、`h3@1.15.11`、`vue@3.5.30`、`vue-router@4.6.4`、`nitro@3.0.260610-beta`（**含 prerelease**）、`nuxt-og-image@5.1.9` —— **全部未漂**。
+  - **`packages:` 段：562 项差异**（= 286 项同名不同版本 + 276 项包名集合增删）。
+- **发现 2（直接依赖漂移面 = 0 的根因）**：本仓仅 **4 个 caret**，且**全部在根 `devDependencies`**（`@prettier/plugin-oxc ^0.2.3` / `lint-staged ^17.6.0` / `prettier ^3.9.10` / `simple-git-hooks ^2.14.0`）——**均不进入 docs / api 运行时**；运行时直接依赖全部精确 pin，且 Content 与 og-image 被 root `pnpm.overrides` 双重钉死。⇒ **F02（theme caret）/ F03（Content caret）的漂移面无法由「只删 lockfile」复现**——那需要先把 manifest 改成 caret（R03 / R04 已分别做过并 verified）。
+- **发现 3（传递依赖漂移含主版本跳跃，但未改变运行时解析）**：代表性漂移 —— `@floating-ui/vue` 1.1.11 → **2.0.1（主版本跳跃）**、`@nuxt/kit` 4.5.2 → 4.6.3、`nitropack` 2.13.4 → 2.13.5、`rollup` 4.63.1 → 4.66.0、`vite` 7.3.6 → 7.3.7、`@types/node` 26.4.0 → 26.6.6、`@vue/compiler-sfc` 3.5.42 → 3.5.44、`shadcn-nuxt` 2.8.2 → 2.9.0、`reka-ui` 2.10.4 → 2.11.0。
+- **发现 4（H3 世代结构与 `@nuxt/kit` 代际数量均不变 → F09 在本拓扑下不成立）**：fresh resolve 后 `probe:h3` 五个上下文 **全部与 control 一致** —— docs → `h3@1.15.11`、**Content → `h3@1.15.11`**、Nuxt → `h3@1.15.11`、Nitro 3 → `h3@2.0.1-rc.22`（仅属 apps/api，非污染）、API 裸 h3 → `h3@1.15.11`；`probe:deps` 结尾原文仍为 **`Found 2 versions of h3`**；`@nuxt/kit` 仍是 **3.21.2 / 3.21.11 / 4.6.3 三代共存**（F08 仍成立，未新增第四代）。⇒ **R41 是有效的否证实验（clean negative）**，而非「有漂移但无害」的含混结论。
+- **发现 5（root overrides 与 packageExtensions 精确 key 之间存在脆弱耦合）**：`pnpm-workspace.yaml` 的两条**精确 key**（`@ztl-uwu/nuxt-content@2.13.9` / `nuxt-og-image@5.1.9`）之所以生效，靠的**正是** root `pnpm.overrides` 把这两个包钉死。**一旦 override 被解除（R05 / R03 的变量），精确 key 失配 → h3@1.15.11 不再注入 → F47 第一层复发。** 本次实测证明该耦合当前成立（fresh resolve 后 Content 仍解析到 h3 v1）。
+- **发现 6（既有 workflow 只给原料、不给结论）**：`.github/workflows/fresh-resolution.yaml`（`workflow_dispatch` → 删 lockfile → `pnpm install --no-frozen-lockfile` → 采集环境/依赖树/H3 解析 → 上传 artifact，含新 `pnpm-lock.yaml`）**不做与 committed lockfile 的 diff、不 build、不冒烟**，且 `retention-days: 7`。⇒ 它是 R41 的**执行载体**，但**不能替代实验**；本条的 diff 与归因全部由 R41 自身产出。
+- **发现 7（契约不校验 lockfile 内容）**：`tests/` 下 5 个测试文件**均不读 `pnpm-lock.yaml` 内容**（`ci-contract.test.mjs` 只读 workflow 文件字面）⇒ fresh resolve 出的 lockfile **不会撞红任何契约**，漂移检测**必须由实验自身产证据**。另：基线 CI 三个 job 全部 `--frozen-lockfile`，故 fresh lockfile 若被提交会与 manifest specifier 不符 → 直接 exit 1。
+- **影响**：①「删 lockfile fresh resolve」在本仓是**近乎零风险**的实验（直接依赖漂移面 0），这解释了为何该 workflow 一直绿；②**风险不在漂移本身，而在漂移面的结构**：一旦把某个 caret 引入运行时依赖链、或解除 root overrides，漂移面会立刻从 0 变为非 0 —— 这两条是后续实验的**风险闸门**；③任何声称「fresh resolve 无影响」的表述都应限定为「**直接依赖层无影响**」，不得推广到传递依赖层（562 项差异）；④`nitro@3.0.260610-beta`（精确但 prerelease）实测**未漂**，本仓唯一「可能是运行时直接依赖漂移点」的候选被排除。
+- **证据**：[R41.md](./R41.md)；GitHub run `41035616455`（artifact `fresh-resolution`：fresh `pnpm-lock.yaml` + `fresh-environment.json` + `fresh-dependency-tree.txt` + `fresh-h3-resolution.txt`）；对照 run `41036747720`（main Linux control）。
+- **交叉引用**：`failure-catalog.md` F02 / F03 / F07 / F08 / F09；`FINDINGS.md` #19（F47 第一层）、#22（`debug` 非 mermaid 依赖 → `optimizeDeps.include: ['debug']` 为悬空声明）。

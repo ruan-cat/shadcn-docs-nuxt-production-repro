@@ -305,3 +305,23 @@
 - [x] **B3：嵌套 `node_modules/node_modules/` 已隔离**——体检确认外层 store 健康（`.pnpm` 1209 / `nuxt.mjs` ✓ / `tsc` ✓ / 4 个包级 ✓）→ 按 AGENTS §0.5.1 **不动外层**；嵌套目录经实测为**僵尸虚拟 store**（76996 文件 / 580 MB / 内含自己的 `.pnpm` 1170 项），且外层 `.pnpm` 指向它的符号链接数 = **0**（扫描命中项全是 **HardLink 同 inode 兄弟**，不是依赖）。已 `Rename-Item` 就地隔离为 `node_modules/node_modules.stale-20261030-155656`（位于 gitignored 目录内，`git status` 干净）。⚠️ **移出仓库到 `D:\nm-trash\` 被运行时硬安全策略拦截**（禁止递归写/删目标落在工作区外）→ 残留由用户或主代理处置：`Move-Item -LiteralPath '<repo>\node_modules\node_modules.stale-20261030-155656' -Destination 'D:\nm-trash\node_modules.stale-nested-20261030-155656'`。
 - [x] **隔离后验收**：docs 生产构建 **exit 0 / 187.4s**（`Build complete!`）+ 内容级探针 **13/13 全绿**（含 canonical 路径与缺失页面的真 404 断言）+ 契约 **15/15** → 依赖树完好，隔离未破坏任何东西。
 - [x] **提交与推送**：`56ee0e1`（🔒 契约双拼写加固）/ `c3626b4`（📃 台账）→ `4f44c29..c3626b4 main -> main`（EXIT=0，工作区干净）。
+
+## 2026-10-30 C 类未启动实验池阶段执行（第 1 批：R40 / R39 / R41）
+
+> 本段为**追加式**记录。任务源 = [experiments/C-PHASE-EXECUTION.md](./experiments/C-PHASE-EXECUTION.md)。
+
+- [x] **前置核实**：用户已手动完成 `node_modules/node_modules.stale-20261030-155656` 移出（实测 `D:\nm-trash\node_modules.stale-nested-20261030-155656` 存在，仓内零 `node_modules.stale-*` 残留）；`.pnpm` = 1209 / `nuxt.mjs` ✓ / `tsc` ✓；git 干净 @ `41cd215`。
+- [x] **R39/R40 批次（测量型，main 原地，基线 `666b9bc`）**：隔离 node_modules（根 + 4 包级，tag `stale-r3940-20261030-174020`）→ `pnpm install --frozen-lockfile` exit 0 / 34s → **6 次构建**：
+  - #1 `pnpm build` 185s / `2 cached, 4 total`；#2 1s / `4 cached` / `143ms FULL TURBO` → **manifest2 与 manifest1 逐行 diff = 0 行**（cache hit 是严格字节级还原）
+  - #3 产物改名移走后 167s / `3 cached` → **docs 转 miss，hash 未变**（`.output` 不参与 hash 但缺失即阻断还原）
+  - #4 `pnpm build:fresh`（`--force`）165.9s / `0 cached, 4 total` → vs manifest1 = **356 行差异**
+  - #5 紧接其后 1s / `4 cached` / `138ms FULL TURBO` → **`--force` 不是冷构建**
+  - #6 `.nuxt` 改名移走后 162.7s / `3 cached` → **docs hash 由 `5f736996212e114e` 变为 `032bab828abe7d0e`**（`.nuxt` 参与 hash）
+  - **差异归因**：构建指纹类（Content `buildIntegrity` / Nuxt buildId / `nitro.json` date / `nitro.mjs` mtime）+ **枚举顺序不确定性类**（lucide 图标集合 JSON key 序在 m1/m4/m6 间持续变化、`styles.mjs` 的 error-404/500 条目序互换；均为同长度替换）
+  - **冒烟**：`pnpm probe:content` **13/13 PASS**（含 canonical 路径与缺失页面的真 404 反向断言）
+- [x] **首次建立 Linux 计时基线**：main 的 Linux control CI run `41036747720`（job `123999345078`，`workflow_dispatch` on `41cd215`）——`pnpm build:fresh` = `Tasks: 4 successful` / `Cached: 0 cached` / **`Time: 1m18.339s`**；`nodeModules.exists = true`；`dependencyCount = 207`；隔离父级 node_modules 下 `HTTP 200 OK bytes=107359`；Content 13/13 PASS；`/v1/health` 200 bytes=85。⇒ 仓内此前**只有 Windows 基线**（157–222s），跨平台耗时对照缺基线的问题已解决。
+- [x] **R41（fresh resolve 漂移面量化）**：走既有 `fresh-resolution.yaml` workflow（run `41035616455`，artifact `fresh-resolution`）——**直接依赖漂移面 = 0**（nuxt / shadcn-docs-nuxt / content / h3 / vue / vue-router / nitro prerelease / og-image 全部未漂）；**传递依赖差异 = 562 项**（286 同名不同版本 + 276 包名集合增删），含 `@floating-ui/vue` 1.x→2.x **主版本跳跃**；**H3 世代结构不变**（`probe:h3` 五上下文全同 control、`Found 2 versions of h3`、`@nuxt/kit` 仍三代共存）→ **F09 在本拓扑下不成立**，属有效否证。
+- [x] **落档与台账同步**：新增 [experiments/R39.md](./experiments/R39.md) / [R40.md](./experiments/R40.md) / [R41.md](./experiments/R41.md)；新增 [experiments/FINDINGS.md](./experiments/FINDINGS.md) **#23**（turbo 缓存还原三机制 + 本仓内容幂等/字节非幂等）与 **#24**（漂移面分层 + F09 不成立）；[experiments/QUEUE.md](./experiments/QUEUE.md) 表 1 新增 R39/R40/R41 三行、表 4 由 **14 → 11**（R22 + R32 + R34-R38 + R45）、未启动+阻塞池 15 → 12；[experiments/C-PHASE-EXECUTION.md](./experiments/C-PHASE-EXECUTION.md) 进度快照补 CP-1……CP-7。
+- [x] **提交**：`9b2e4ca`（📃 docs: 完成 R39/R40/R41 实验并落档）。
+- [ ] **R42 / R43 / R44（构建顺序与并行矩阵）**：执行中（worker 串行，main 原地，手工序列不经 turbo）。前置取证已订正 4 处事实：turbo `--concurrency` **默认 = 10（固定值，非 CPU 数）**；`probes/collect-environment.ts` **无任何内存采样**（原记忆有误）；docs#build 与 api#build **之间无依赖边** → R42/R43 必须手工序列且**必须以 `pnpm build:packages` 开头**（否则 `@repro/ui` / `@repro/shared-core` 的 `dist/` 未就位 → `Failed to resolve entry for package "@repro/shared-core"`）。
+- [ ] **R34-R38（Vercel 多项目污染组）**：⛔ **待用户确认**——需真实部署（额度）；R35/R36 涉及是否允许在分支上违反 F38「不做根 vercel.json」既定决策。
