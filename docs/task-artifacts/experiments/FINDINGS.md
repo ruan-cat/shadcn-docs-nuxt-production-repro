@@ -65,6 +65,7 @@
 - **影响**：F47 第二层"serverless 特有"假设动摇——可能覆盖 node-server（即全 preset），node-server 此前的"绿"是弱断言假象；F47 矩阵 node-server 行证据强度需降级为"200 已验证、内容未验证"。
 - **沉淀动作**：①Linux node-server 响应体级复验定案（[QUEUE](./QUEUE.md) 🔍 项）；②probe:artifact 升级内容断言（独立 infra 改动，勿混入实验）；③F47 矩阵修正待定案后执行。
 - **注意**：本条为嫌疑发现（本机 Windows 单平台实测），措辞保留"待定案"，不得直接改写 F47 矩阵结论。
+- **2026-10-30 定案**：本条已由 [FINDINGS #19](#19-f47-第二层定案探针请求了-dev-only-路径名catch-all-把「路由不存在」渲染成-http-200) 升级为定案结论——第二层**不是** serverless/preset 运行时故障，而是「生产构建指纹化路由名 vs 探针硬编码 dev 路径」的契约失配 + catch-all 把「路由不存在」渲染成 HTTP 200；node-server 与 vercel/cloudflare_module 三处**完全一致**。本条的「影响」与「沉淀动作」中「待定案」部分以 #19 为准。
 
 ## 10. baseline-safety 契约按“字面子串”校验声明 pattern——多行书写不满足
 
@@ -138,3 +139,12 @@
 - **证据**：/tmp/r27-build.log（`Prerendering 5 routes` 措辞无 "with crawler" + `Prerendered 9 routes in 11.561 seconds` + 9 路由明细 = 3 页面 + 3 `_payload.json` + 2 `_ipx` + 1 `_i18n`，无失败标记无 Invalid URL）、/tmp/r29-build.log（无 `Prerendering`/`Prerendered`/`Initializing prerenderer` 行、html = 0、.output/public 仅 `_nuxt` + 2 logo）+ nitropack 源码行号（core:1987-1992）+ 三轮冒烟（R27 `/`、`/guide/baseline` 字节数与磁盘预渲染产物一致即静态命中；R29 全 SSR 兜底；`cache.json` 四态 200+404shell），详见 [R27.md](./R27.md)、[R29.md](./R29.md)。
 - **影响**：①F27 完整签名以 R29 为准（html 11→0 + 运行时全 SSR 兜底）；②R27 单变量不足以复现 F27 全貌——故障家族的触发阶梯证明"组合变量"价值（R28 部分命中 / R27 部分破坏 / R29 完整触发，三者互为对照）；③content 路由注册条件为后续核查项。
 - **沉淀动作**：①后续 F27/F28/F29 相关判读以 R29 完整签名为基准；②content v2.13.9 路由注册对 crawlLinks 态的依赖核查列为候选后续任务（待入队，候选位置：QUEUE 表 4 🔍 排查项旁）。
+
+## 19. F47 第二层定案：探针请求了 dev-only 路径名，catch-all 把「路由不存在」渲染成 HTTP 200
+
+- **发现**：F47 第二层（`/api/_content/cache.json`、`/api/_content/search` 返回 HTTP 200 + HTML 404shell）的真实成因是**验收契约写错了 URL**，不是运行时故障：content v2 在**生产构建**下把 API 路由名指纹化（`cache.<buildIntegrity>.json` / `search-<buildIntegrity>`），无后缀路径**只在 dev 模式存在**；请求无后缀路径落到 catch-all `/**`，被上游 layer 的 `pages/[...slug].vue` 渲染成 404 UI 但**不抛 `createError`** → HTTP 200。**content 运行时 DB/存储完全正常**——旧假设「serverless 下 DB 初始化失败 → handler 崩溃」被证伪。
+- **证据**：①模块源码 `@ztl-uwu/nuxt-content@2.13.9` `dist/module.mjs:207/238/243`（`buildIntegrity = nuxt.options.dev ? void 0 : Date.now()`，路由名按 dev/生产二分）；②产物路由表 `.output/server/chunks/_/nitro.mjs:9932-9949` 实锤——注册的是 `/api/_content/cache.1793336652904.json`、`/api/_content/search-1793336652904`、`/api/_content/query/:qid/**:params`、`/api/_content/navigation`，**没有** canonical 两条，catch-all `/**` 位于 handlers 末位；③带指纹路径在本机 node-server 与 Vercel 生产**均返回 200 + 真实 JSON**（cache `contents` 3 篇；search `documentCount:8`、`documentIds` 8 条、命中「绿色控制组」）；④canonical 路径在本机 / Vercel / Cloudflare 远端**三处逐字一致**均为 200 + 404shell；⑤`runtimeConfig.public.content.integrity` 暴露指纹、应用客户端据此拼路径（产物自洽，只有外部探针在用 dev 路径）；⑥`probes/artifact-smoke.ts` 仅断言 `response.ok` → 对 404 shell 恒绿；⑦`ci.yaml:90-94` 两条 smoke step 打的正是 dev-only URL → **必然假绿**。
+- **影响**：①F47 第二层从「平台运行时故障」重定义为「**验收契约假阳性**」，矩阵的 preset 维度结论作废（node-server 与 serverless 表现一致）；②`failure-catalog.md` 原第 326 行的实验方向（node:sqlite / better-sqlite3 / serverAsset 初始化路径对比）**打偏**，不再作为后续方向；③连带订正 `acceptance-gates.md` G4 与 `failure-catalog.md` F29 两处把 dev 路径写成硬性契约的规格缺陷；④附带暴露第二个潜在假阳性门——`/api/_content/query/index.md` 无 `_params` 时回退空 query 返回**全部文档**，它根本不校验 `index.md` 本身。
+- **沉淀动作**：①`apps/docs/server/api/_content/[...].ts` 守卫——未注册的 Content API 路径返回**真实 404**，从机制上消除 200 假阳性；②`probes/content-smoke.ts` 升级为**从构建产物发现指纹路由 + 响应体内容级断言**（`JSON.parse` 成功 + 具体 `_path`/`title`，并对 canonical 路径断言真 404）；③`ci.yaml` 删除两条 dev-only URL 的 smoke step；④`acceptance-gates.md` G4 / `failure-catalog.md` F29 / 本文件 #9 同步订正；⑤探针**不得硬编码构建指纹**（`Date.now()` 每次构建都变）；⑥另立独立契约断言把 shared-core 的 `--incremental false` 固化，防 Vercel 增量零 emit 类缺陷复归。
+- **交叉引用**：证据文件 `evidence/2026-10-30-f47-content-api-false-positive-fix.md`；事故档案 `.agents/skills/fix-bug/record-bug-fix-memory/2026-10-30-f47-content-api-false-positive.md`；本条与 #9 的「定案」标注一致，#9 原文保留为嫌疑发现记录不改写。
+- ⚠️ **编号保留说明（2026-10-30 独立复核发现）**：本条占用 **#19**，而待合并分支 `experiment/integrate-r18-r19`（`155063d`，BRANCH-MERGE-EVALUATION 标 🟢 可合并待授权）已在其 `FINDINGS.md` 中占用 **#19**（条目：`R19→F20 复现：hoisted 爆炸半径实锤`）。两条内容不同，**合并时必须重编号，否则出现重号 #19**（该台账自身的检查项「FINDINGS 编号 1–N 连续、无重号」即会失败，且会让 5 处「FINDINGS #19」引用指向歧义）。重编号方案与操作顺序见 [BRANCH-MERGE-EVALUATION.md §4](./BRANCH-MERGE-EVALUATION.md) 第 7 步。
