@@ -62,6 +62,16 @@
 - 部署 URL 受团队 SSO 保护，公网冒烟用 `vercel curl --yes` 或接入自定义域名。
 - 证据：`evidence/2026-09-30-vercel-deploy-e2e.md`。
 
+## Vercel 零额度取证路径（2026-10-30，R35-R38 实证）
+
+部署额度受限时，**配置作用域类问题不必真的部署**——在**仓库外**的 `%TEMP%` 沙箱里即可定案：
+
+- `vercel deploy --dry --debug` → 看 `Found config in file "…"` 与 `Read local config from root directory (…)` 两行的先后 ⇒ **根 `vercel.json` 的作用域由 Project 的 Root Directory 决定**（本仓两个 Project 都设了 Root Directory ⇒ 根配置对两者都无效，F38 的交叉污染**双向不可复现**）。
+- `vercel pull --environment=production` → 把设置读回沙箱，**回读比对**声明值是否生效（这是「声明未生效」的决定性证据，不靠推断）。
+- `vercel deploy --prebuilt --dry` → `--prebuilt` 只认 `join(cwd, project.rootDirectory, '.vercel/output')`；**搬运 `.vercel/output` 到仓库根不是受支持的路径**。
+- 沙箱必须在**仓库外**（`Push-Location $env:TEMP\...`）跑，否则会污染仓库 `.vercel/project.json` 的单槽绑定（F39）。
+- 证据：`evidence/2026-10-30-r35-r36-root-vercel-json-no-cross-contamination.md`；FINDINGS #30 / #31。
+
 ## Cloudflare Workers 部署事实（2026-09-30，机制修正版）
 
 - 部署机制 = **Cloudflare Workers Builds 识别 GitHub 更新**（用户方向修正：禁止 GitHub Actions 部署链；原 `deploy-cloudflare.yaml` 已删除，运行记录已清理）。
