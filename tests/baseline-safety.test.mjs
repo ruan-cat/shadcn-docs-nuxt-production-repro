@@ -31,12 +31,31 @@ const policies = {
 	},
 	pnpmWorkspace: {
 		text: workspace,
-		forbidden: ["nodeLinker: hoisted", "publicHoistPattern"],
+		// 同一危险键必须同时枚举 camelCase 与 kebab 两种拼写。
+		// 实测（2026-10-30，pnpm 10.33.0）：pnpm-workspace.yaml 只认 camelCase——写 kebab 会被 pnpm 显式
+		// WARN「ignored because they are not written in camelCase」并**忽略**，不产生 public hoist；
+		// 而写非法 camelCase 键则零警告、静默容忍。故契约侧按纵深防御处理：两种拼写都不得逃过字面检测。
+		forbidden: ["nodeLinker: hoisted", "node-linker: hoisted", "publicHoistPattern", "public-hoist-pattern"],
 	},
 };
 
+// 与上面的 forbidden 列表**独立硬编码**的期望值。
+// 若二者同源（元守卫从 forbidden 派生），元守卫会退化成恒真式——删除任一拼写都不会变红，
+// 这正是本守卫要防的回归：任何人对 forbidden 的删改都必须让元守卫变红。
+const REQUIRED_WORKSPACE_FORBIDDEN_PATTERNS = [
+	"nodeLinker: hoisted",
+	"node-linker: hoisted",
+	"publicHoistPattern",
+	"public-hoist-pattern",
+];
+
 function allowedPatterns(group) {
 	return experiment?.allowedSafetyPatterns?.[group] ?? [];
+}
+
+// 判违集合 = 出现在目标文件里、但没有被实验显式声明的危险 pattern
+function violations(policy, text, allowed) {
+	return policy.forbidden.filter((pattern) => text.includes(pattern) && !allowed.includes(pattern));
 }
 
 for (const [group, policy] of Object.entries(policies)) {
@@ -56,3 +75,25 @@ for (const [group, policy] of Object.entries(policies)) {
 		}
 	});
 }
+
+test("pnpm-workspace 危险键必须同时枚举 camelCase 与 kebab 两种拼写", () => {
+	for (const pattern of REQUIRED_WORKSPACE_FORBIDDEN_PATTERNS) {
+		assert.ok(
+			policies.pnpmWorkspace.forbidden.includes(pattern),
+			`pnpmWorkspace 危险键列表缺少拼写 ${pattern}（治理盲区：pnpm 对非法 camelCase 键零警告）`,
+		);
+	}
+});
+
+test("camelCase 与 kebab 两种拼写都必须触发判违（合成样本自证）", () => {
+	const samples = [
+		{ text: "nodeLinker: hoisted", pattern: "nodeLinker: hoisted" },
+		{ text: "node-linker: hoisted", pattern: "node-linker: hoisted" },
+		{ text: "publicHoistPattern: ['*']", pattern: "publicHoistPattern" },
+		{ text: "public-hoist-pattern: ['*']", pattern: "public-hoist-pattern" },
+	];
+
+	for (const { text, pattern } of samples) {
+		assert.ok(violations(policies.pnpmWorkspace, text, []).includes(pattern), `危险配置 ${text} 未被判违`);
+	}
+});
