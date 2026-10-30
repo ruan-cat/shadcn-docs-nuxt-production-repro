@@ -190,3 +190,23 @@
 - [x] exclude 收敛：`**/node_modules/shadcn-docs-nuxt/**` 拦截纯 include 来源（127→86）；剩余 86 个经 .nuxt 生成文件 import 闭包进入程序，exclude 无法拦截——**Nuxt layer 与独立 tsc 的结构性错配，修复归属上游**（可作 upstream issue 证据素材）；vite/nitro 构建不经过 tsc，排除零影响（实测 Build complete）
 - [x] 验证：api/docs/shared-core/ui 单包 typecheck 逐一实测；`pnpm test` 6/6（fail 0）；docs 生产构建 ✓；矩阵终态 5/6（docs 红为已定性的上游噪声，非本仓回归）
 - 事故附带：init-prettier-git-hooks 的 `pnpm add` 曾致 packages/ui 的 vite 链接瞬时损坏（MODULE_NOT_FOUND）→ `pnpm install --frozen-lockfile` 重连修复（668ms 恢复）
+
+## 2026-10-30 Vercel 生产构建失败事故（`shared-core` 增量 tsc「exit 0 零 emit」）与 hotfix
+
+> 触发：用户报告「vercel 部署出现故障了，main 主分支出现故障了」。性质：**生产故障修复**（非实验），hotfix 直提 main。事故档案（方法论层）：`.agents/skills/fix-bug/record-bug-fix-memory/2026-10-30-vercel-shared-core-incremental-no-emit.md`（本仓该技能首个案例）；生产级证据：`evidence/2026-10-30-vercel-shared-core-hotfix-verify.md`。
+
+- [x] 取证：docs 部署 `dpl_NmhoQN68qKhTC9pz5FragviFiFgj`（SHA `c26c887`）`state=ERROR` / `errorCode=invalid_packagejson` / `errorStep=buildStep`；同 SHA 的 api 部署 READY → 故障域锁定在 docs 构建链；日志首个错误行 `[commonjs--resolver] Failed to resolve entry for package "@repro/shared-core"` + `WARNING no output files found for task @repro/shared-core#build`
+- [x] 决定性对比：上次成功部署 `d452ea1` 为 `Cached: 3 cached, 3 total`（全命中，从未执行 tsc）；本次 `Cached: 0 cached, 3 total`（首次真实执行 tsc）→ 缺陷一直存在，**仅在缓存失效时才被执行**
+- [x] 隔离探针（TEMP 副本，工作树零污染）：S1 全新构建 ✅ 4 文件 emit；S2 陈旧 tsbuildinfo + dist 缺失 → `tsc exit=0` **零 emit** ❌；S3 typecheck 污染后同样零 emit ❌；FIX-A `--incremental false` 连续两次完整产出 ✅
+- [x] 根因：`packages/shared-core/tsconfig.json` 的 `incremental: true` + `tsBuildInfoFile: ./node_modules/.cache/tsconfig.tsbuildinfo` → tsbuildinfo 存在即 `exit 0` 零 emit（哪怕 dist 缺失）；Vercel 跨构建还原 `node_modules/.cache/` → 陈旧 tsbuildinfo 存活 → shared-core 无 `dist/` → docs vite 解析 `main`/`exports`（`./dist/index.js`）失败
+- [x] 结构性假阴性：**只有 Vercel 还原该缓存**；CI（全新 checkout）/ Cloudflare Workers Builds（不还原 `node_modules/.cache/`）/ 本地冷构建全绿 → 「其余平台绿」不能作为排除依据
+- [x] 修复（职责分离，**不动 tsconfig 的 incremental**，它服务 tsserver/IDE）：`packages/shared-core/package.json` 的 `build` → `tsc -p tsconfig.json --incremental false`、`typecheck` → `--noEmit --incremental false`；根 `clean` 补 `packages/**/node_modules/.cache`（使 `pnpm clean` 真正等价于冷构建）
+- [x] 提交并推送 main：`cfb8dd5`（🐞 build 幂等化）/ `e35e315`（🔧 clean 脚本）/ `f211d3a`（📃 事故档案 + 订正 CF 部署机制注释）→ `c26c887..f211d3a main -> main`
+- [x] 部署终态（`f211d3a`）：Vercel docs `dpl_H47KSPigrfP32j7R1dkJzK92UE66` **READY**（`aliasError=null`）、Vercel api `dpl_61g3w4YZLTUg6WuLMtVr5xVMaZno` READY、CF 双 Worker Builds **success**（docs `1f81cefe…` / api `3914336d…`）、CI **5/5 success**（含 **Linux 完整生产构建与 artifact smoke**）
+- [x] 构建日志全文核验（`vercel inspect --logs`，75,226 字符）：`no output files` = **0**、`Failed to resolve entry` = **0**、`Tasks: 3 successful, 3 total`、`Cached: 1 cached, 3 total`；日志中 12 处 `error` 字样**全部**是 Nuxt 静态 chunk 名（`error-404-*` / `error-500-*`），无真实错误
+- [x] 远端 turbo 缓存条目健康性（原未实证项）：shared-core 本次为 **cache hit**（hash `4af19887ba66d90b`，脚本变更已使 hash 从 `b72bf9cba8629655` 变化），该条目还原出可用产物并驱动下游 vite 解析成功 → **新 hash 的缓存条目健康**，非「成功但无产物」坏条目
+- [x] 生产响应体内容断言（F47 纪律，不只看 200）：docs `/` title「生产级复现实验室」✅；`/guide/baseline/` title「绿色控制组」✅；`/api/_content/query/index.md` 真实 JSON（3 条 markdown + `workspace-runtime-probe` 节点）✅；api `/v1/health` `{"ok":true,…}` ✅；api `/v1/runtime` `{"runtime":"nitro","generation":"nitro3-h3v2"}` ✅；404 shell 标记 0 命中
+- [x] F47 分层复验：构建期问题已修复；**运行时第二层假阳性在 Vercel 生产复现**（`/api/_content/cache.json` 与 `/api/_content/search?q=绿色` 均 200 + HTML 404 shell）——与 10-16 基线逐字一致，**既有缺陷、非本次回归**，仍登记于 `failure-catalog.md:328` / `FINDINGS #9`
+- [x] 遗留清理：探针隔离目录 `dist.pre-fix` / `dist.local-fix` 已移出仓库至 `C:\Users\pc\AppData\Local\Temp\pua-quarantine-20261030-123735\`（`.gitignore` 规则 `dist` 不匹配 `dist.pre-fix`）；端口 3399/3401/3402 释放；`node_modules.stale-*` 无残留；`.pnpm` 目录数 1209、nuxt.mjs / tsc 均在位
+- [x] 子代理收尾：3 explore + 1 worker 全部 succeeded（1 个历史取证 explore 已取消回收）；`cleanup-agent-team-node-processes` dry-run `CandidateCount=0`、`WorkBuddyPoolCandidateCount=0`，收窄 IncludePattern 复核后唯一命中项是审计命令自身的 PowerShell（`self-or-parent-chain` 受保护）→ **本 run 无孤儿进程残留**
+- 遗留项（未在本轮修复，需另行决策）：① F47 第二层假阳性单独立项（`probes/artifact-smoke.ts` 只断言 `response.ok`，从不做响应体检查）；② CI 防回归缺口——`pnpm build:fresh` 的 `--force` 只强制重跑 task、**不清 tsbuildinfo**，runner 全新 checkout 无陈旧缓存 → 该类缺陷在 CI 中**结构性不可见**，建议在契约测试断言 shared-core build script 含 `--incremental false`（改 `tests/` 需 gate）
