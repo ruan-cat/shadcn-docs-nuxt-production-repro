@@ -75,3 +75,46 @@
 - 历史源文档 4 份（Lucide 排除性调研、复用计划、Vercel 部署 spec/plan）已 byte-identical 迁移入仓 `docs/history/shadcn-docs-nuxt/`，索引与吸收状态映射见 `docs/history/README.md`。
 - 迁移副本是历史存档，不随实验状态更新；**现行状态与结论一律以 `docs/task-artifacts/` 与 `evidence/` 为准**，不得引用历史副本中的过时数据作为验收依据。
 - 外部源目录 `D:/store/WorkBuddy/2026-6-30-common/docs/shadcn-docs-nuxt/` 仅作 provenance 保留。
+
+## 标准测试 SOP（防 AI 重犯错）
+
+> 详尽的 7 步复现流程见 `docs/task-artifacts/experiments/SOP.md`，本节约为其**不可妥协的 AI 执行纪律**（缺漏即判违规）。本节约针对 2026 多轮"污染态误判 / node_modules 破损 / 档案台账脱节"事故设立，确保任意会话、任意上下文压缩后的 AI 都能复现同一正确流程，不再踩同一坑。
+
+### 0. 前置：永远先独立核验 `node_modules` 健康度（防伪信号第一关）
+
+- 开工前**不要盲信上一次"环境已 clean"的声明**，必须独立核验：
+  - `ls node_modules/.pnpm | wc -l` 应 ≈ 1200（正常 ~1210）。若为 1 或远小于此，说明上次实验（尤其 `nodeLinker: hoisted`）留下了扁平破损布局，须先修复。
+  - `apps/docs/node_modules/nuxt/bin/nuxt.mjs` 与 `packages/shared-core/node_modules/typescript/bin/tsc` 必须存在；缺失即破损。
+- 异常时先恢复再开工：`mv node_modules node_modules.broken-<date>` → `pnpm install --frozen-lockfile`（timeout 600）→ 复验 `.pnpm` 恢复 ~1200、nuxt.mjs/tsc 恢复。
+
+### 1. 复现必须前台执行
+
+- 含构建/清理的复现一律**前台**运行，禁止后台任务（harness `SAFE_DELETE_BULK_CONFIRM_REQUIRED` 守卫会拦截后台批量删除，曾实测拦截 `.nuxt/dist` 清理 549 文件）。后台跑出的结果不可采信。
+
+### 2. 严格走 SOP 7 步，隔离改名而非删除
+
+- `git checkout experiment/<br>` → `mv node_modules node_modules.stale-<br>`（**改名隔离，勿 rm**）→ `pnpm install --frozen-lockfile` → `build:packages && docs build`（默认 timeout 480s，长尾可加大但**必须记录实际 timeout 与退出码**）→ 启 `.output` 先验 `Listening` 行再 curl 内容断言 → 写 `R{xx}.md` → `git checkout main` → 定向清理 `node_modules.stale-*`。
+- timeout 失败（exit 124）≠ 真实故障结论：R18/R19 首轮即因 480s 上限 exit 124（timeout 假象），重测加大 timeout 后须如实记录，不得把 timeout 失败当故障证据。
+
+### 3. `git checkout main` 不还原 gitignored 的 `node_modules` —— 必须显式重建
+
+- 实验若改了 `pnpm-workspace.yaml`（如 `nodeLinker: hoisted` / `publicHoistPattern`），`git checkout main` **不会**还原 `node_modules` 布局。回 main 后必须 `pnpm install --frozen-lockfile` 并复验 `.pnpm` ~1200 + nuxt.mjs/tsc 存在，确认回到 symlinked 默认态，否则下一实验会被伪故障污染。
+
+### 4. 档案与台账三处同步（杜绝"分支落档、main 看板滞后"）
+
+- 每完成一实验立刻同步三处，缺一即 DoD 未达成：
+  1. `R{xx}.md` 档案填齐（执行记录表、结论、`candidate`/`verified` 标注）；
+  2. `QUEUE.md` 从"待重测/污染态判废"移入完成态，注明落档分支；
+  3. `FINDINGS.md`（如有横向发现）同步，**条目号与 Rxx.md 正文交叉引用必须一字不差**（曾发生 `#20` 与 `## 19.` 错位误导结论）。
+- 落档在分支上的实验，必须在同步到 main 的同一批提交里更新 QUEUE/FINDINGS，禁止"分支落档即算完成"而 main 看板滞后。
+
+### 5. 契约与响应体断言是事实，不是意见
+
+- 契约测试（`tests/baseline-safety.test.mjs`）把 `pnpm-workspace.yaml` 当**纯文本**子串匹配：`forbidden = ["nodeLinker: hoisted", "publicHoistPattern"]` 是 camelCase 字面量（非 pnpm 合法 kebab 键）。pnpm 对非法键零警告 → 这是**治理盲区**，命中即违约，须如实记录，不得因"pnpm 没报错"而判绿。
+- 冒烟验收必须做**响应体内容断言**（Content cache/search 命中），不只看 HTTP 200——F47 证明 node-server/worker/Vercel 均存在 200 假阳性。
+
+### 6. 污染态判废项重测：不复用旧分支、隔离、串行
+
+- 首轮 `exit 1 + Invalid URL` 一律判废，按 SOP 干净重测后才可采信（参照总检报告 §3.1 对 r05-r17 首轮批处理的判废依据）。
+- 重测**不复用**被污染旧分支（旧分支曾混入无关文档），应从当前 main 起新分支、只加单变量、不改为过契约。
+- OOM / 长尾实验（R20-R26 等）必须 timeout + **串行**，绝不并发——并发引入资源竞争噪声，污染单变量结论。
