@@ -296,12 +296,14 @@ Get-ChildItem -Path 'apps','packages' -Directory -Filter 'node_modules.stale-*' 
 
 - 实验若改了 `pnpm-workspace.yaml`（如 `nodeLinker: hoisted` / `publicHoistPattern`），`git checkout main` **不会**还原 `node_modules` 布局。回 main 后必须 `pnpm install --frozen-lockfile` 并复验 `.pnpm` ~1200 + nuxt.mjs/tsc 存在，确认回到 symlinked 默认态，否则下一实验会被伪故障污染。
 
-### 4. 档案与台账三处同步（杜绝"分支落档、main 看板滞后"）
+### 4. 档案与台账四处同步（杜绝"分支落档、main 看板滞后"）
 
-- 每完成一实验立刻同步三处，缺一即 DoD 未达成：
+- 每完成一实验立刻同步四处，缺一即 DoD 未达成：
   1. `R{xx}.md` 档案填齐（执行记录表、结论、`candidate`/`verified` 标注）；
   2. `QUEUE.md` 从"待重测/污染态判废"移入完成态，注明落档分支；
-  3. `FINDINGS.md`（如有横向发现）同步，**条目号与 Rxx.md 正文交叉引用必须一字不差**（曾发生 `#20` 与 `## 19.` 错位误导结论）。
+  3. `FINDINGS.md`（如有横向发现）同步，**条目号与 Rxx.md 正文交叉引用必须一字不差**（曾发生 `#20` 与 `## 19.` 错位误导结论）；
+  4. `evidence/`：原始日志关键原文**抄录**进 evidence 文件（防 `%TEMP%` 丢失）并在 `evidence/README.md` **索引登记**（2026-10-31 起为 DoD 必查项——「证据存在但索引检索不到」已发生两轮：2026-10-30 七份补登记、2026-10-31 R48-R50 批次初版再漏）。
+- **有实验分支的，还必须在同一批提交里把分支登记进 `BRANCH-MERGE-EVALUATION.md` §2 总表**（含合并评价）——2026-10-31 回查发现 r46 漏登记一整个会话、r22 / r32 / r45（nuxt4-generation-migration）从未入表，仅靠追记提及不算登记。
 - 落档在分支上的实验，必须在同步到 main 的同一批提交里更新 QUEUE/FINDINGS，禁止"分支落档即算完成"而 main 看板滞后。
 
 ### 5. 契约与响应体断言是事实，不是意见

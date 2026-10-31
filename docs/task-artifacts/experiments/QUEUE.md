@@ -135,4 +135,6 @@
 1. R{xx}.md 档案填齐（执行记录表、结论、关键发现）（例外：以 PR 固化的控制组实验如 R09 豁免独立档案）；
 2. [SOP.md](./SOP.md) 复现自检清单全勾；
 3. QUEUE.md 状态与 FINDINGS.md（如有横向发现）已同步；
-4. 结论标注为 `candidate` / `verified`（标注规则见 [_TEMPLATE.md](./_TEMPLATE.md)）。
+4. 结论标注为 `candidate` / `verified`（标注规则见 [_TEMPLATE.md](./_TEMPLATE.md)）；
+5. 原始日志关键原文已抄录进 `evidence/` 文件并在 [evidence/README.md](../../../evidence/README.md) **索引登记**（2026-10-31 起必查——「证据存在但检索不到」已发生两轮：2026-10-30 七份补登记、R48-R50 批次初版再漏）；
+6. 有实验分支的，[BRANCH-MERGE-EVALUATION.md](./BRANCH-MERGE-EVALUATION.md) §2 总表**已登记该分支与合并评价**（2026-10-31 起必查——`r46` 曾漏登记一整个会话，`r22` / `r32` / `r45` 补查时发现从未入表）。
