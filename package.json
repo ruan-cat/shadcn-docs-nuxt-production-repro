@@ -46,7 +46,9 @@
 	"pnpm": {
 		"overrides": {
 			"@ztl-uwu/nuxt-content": "2.13.9",
-			"nuxt-og-image": "5.1.9"
+			"nitropack": "2.13.5",
+			"nuxt-og-image": "5.1.9",
+			"unstorage": "1.17.5"
 		}
 	}
 }
