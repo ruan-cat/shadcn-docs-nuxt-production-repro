@@ -36,6 +36,7 @@ YYYY-MM-DD-rXX-实验名称.md
 | `2026-10-30-r46-nitro-2135-attribution.md`                      | R46：nitro 2.13.5 → `unstorage@1.17.6` 单变量归因（✅ 阳性复现）                       | ✅ 现行                                        |
 | `2026-10-30-vercel-shared-core-hotfix-verify.md`                | shared-core 增量 tsc「exit 0 零 emit」hotfix 验证                                      | ✅ 现行                                        |
 | `2026-10-31-r48-r50-r46-mitigation-directions.md`               | R48 / R49 / R50：R46 三规避方向实证（A ✅ 全保真 / B ❌ 同签名 500 / C ✅ 调用点消除） | ✅ 现行                                        |
+| `2026-10-31-r51-axis-a-renderer-byte-diff.md`                   | R51 轴 A：Nuxt4/Nuxt3 生成 renderer 字节级对比（键形态 `"/.json"` 实锤 / 包裹否定）    | ✅ 现行                                        |
 
 > **2026-10-30 索引补登记追记**：上表建立时只登记了 9 份，仓内实际已有 16 份 —— **R22 / R32 / R34 / R35-R36 / R42-R44 / R45 / R46 七份漏登记**（文件本身都在，缺的是索引行）。本次按「索引即目录」的约定补齐，避免「证据存在但检索不到」。
 >

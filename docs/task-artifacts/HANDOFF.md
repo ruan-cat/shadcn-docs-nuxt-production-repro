@@ -46,10 +46,11 @@ memorix resume "continue R51 two-axis unstorage F48" --refresh never
 3. **三轮审计落地**：台账落地回查（BRANCH-MERGE 七分支登记 + evidence 索引 + QUEUE DoD 第 5/6 条）；分支现场 vs 档案全量核对（30 分支、6 处 provenance 缺口补齐、零结论被推翻）；项目总盘点（obs 6121 补录、status-matrix 七行订正、四处假设级 claim 显式标注）。
 4. **F48 立号**：[failure-catalog](../failure-catalog.md) F48 = unstorage 1.17.6 key 校验 × content v2 `"/"` key 冲突（本仓已复现，R46 阳性）；11 处引用回改；F45 保留「升级纪律」语义。
 5. **SOP 技能落地**：`.agents/skills/experiment-ledger-sop/SKILL.md`（实验全流程门禁：开工 / 验收 / 落档九项 / 平台矩阵 / 收口 / 编辑纪律），AGENTS.md 技能表强制第一项。
+6. **R51 轴 A（renderer 模板轴）取证完成**（[FINDINGS #34](experiments/FINDINGS.md)）：双臂对比（main fresh build + `experiment/nuxt4-generation-migration` 现场复建）——**键形态子机理实锤**（N3 生成 renderer `:390` 三元键 `"/"` 抛 1.17.6 校验 vs N4 `getPayloadCacheKey` → `"/.json"` 通过）+ **包裹子机理否定**（两侧裸 await）+ payloadCache 实例链闭合（nitropack@2.13.5 → unstorage 1.17.6）；#33 发现 2 升级为代码级正向实锤、#32 发现 5 订正（R45 内容库空与 1.17.6 无关）；**上游 issue 证据链零推断环节**。
 
 ### 2.2 git 与验证基线
 
-- `origin/main` = **`dfa1bb2`**；本地 ahead 3（`e683a2d` 总盘点 → `acfca83` F48+SOP → `f75d787` 复核收口，均为 docs-only）+ 本文件重写提交，**随下一里程碑 push**（push 触发双 Project 生产部署 + CI）。
+- `origin/main` = **`dfa1bb2`**；本地未推送批次 = `e683a2d`（总盘点）→ `acfca83`（F48+SOP）→ `f75d787`（复核收口）→ `ee0f51a`（本文件深度重写）→ R51 轴 A 落档提交（本文件同批更新），**随下一里程碑 push**（push 触发双 Project 生产部署 + CI）。
 - 本会话 main 提交的 trailer 约定：**`Assisted-by: ZCode / GLM-5.3-Flash`，无 Co-authored-by**（ZCode/GLM 不在 git-commit 技能 allowlist，禁止冒名）。
 - 生产内容断言（两轮同量）：docs 首页「生产级复现实验室」×7 / 107519 B、api `/v1/health` `ok:true`、`/v1/runtime` `node v22.23.4 / nitro3-h3v2 / linux`、`/api/_content/query` 200 / 11927 B；CI run `41177909466` 绿。
 - 契约直跑 **26/26 PASS**；main 工作区 node_modules = control 态（nitropack 2.13.4 / nuxt 3.21.2，`.pnpm` = 1295 健康）。
@@ -58,15 +59,15 @@ memorix resume "continue R51 two-axis unstorage F48" --refresh never
 
 ## 3. 开放项（= 下一个 agent 的工作池）
 
-| #   | 开放项                              | 解除条件 / 备注                                                                                                                                                                       |
-| --- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **F41 专项实验未做**                | 目前仅 CI Linux job 被动观察（连续绿）；Windows vs Linux symlink 专项对照未入队                                                                                                       |
-| 2   | **R11 常驻阻塞**                    | 解除条件 = 捕获首个 SSR externalization 错误（R48/R49/R50 三轮均未产生该签名）                                                                                                        |
-| 3   | **Nuxt 4 两轴实验（R51+，未入队）** | renderer 模板轴（**含 Nuxt4/Nuxt3 renderer.mjs 字节级对比**——R49 归因系排除法）+ content 吞异常轴；R50「运行时 SSR 兜底」需浏览器级验证；R48-R50 采纳进基线前必须过 G12 Linux closure |
-| 4   | **上游 issue 提交（待用户授权）**   | 材料就绪：R46 字节级取证 + R48/R49/R50 + [evidence/2026-10-31-……](../../../evidence/2026-10-31-r48-r50-r46-mitigation-directions.md)；**F48 为引用句柄**                              |
-| 5   | **隔离目录物理删除（用户动作）**    | 48 个 `*.stale-*` 在 `D:\code\ruan-cat\_repro-nm-quarantine`，agent 不可删除                                                                                                          |
-| 6   | **本地 3+1 笔未推送**               | `e683a2d` / `acfca83` / `f75d787` + 本文件重写提交——随下一里程碑 push                                                                                                                 |
-| 7   | **两个小额待定夺**                  | `.workbuddy/hooks/hooks.json` 被 git 跟踪但零文档（是否登记）；工作区的 `docs/prompts/01.prompts.md` 是用户自有笔记（勿提交）                                                         |
+| #   | 开放项                            | 解除条件 / 备注                                                                                                                                                                                                                                                                                            |
+| --- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **F41 专项实验未做**              | 目前仅 CI Linux job 被动观察（连续绿）；Windows vs Linux symlink 专项对照未入队                                                                                                                                                                                                                            |
+| 2   | **R11 常驻阻塞**                  | 解除条件 = 捕获首个 SSR externalization 错误（R48/R49/R50 三轮均未产生该签名）                                                                                                                                                                                                                             |
+| 3   | **Nuxt 4 剩余轴（R51 轴 A ✅）**  | 轴 A（renderer 字节级对比）✅ verified 2026-10-31（[FINDINGS #34](experiments/FINDINGS.md)）；**轴 B（content 吞异常——R45「内容库为空」真因，搜索空间已收窄）未做**；R50「运行时 SSR 兜底」需浏览器级验证；R48-R50 采纳进基线前必须过 G12 Linux closure                                                    |
+| 4   | **上游 issue 提交（待用户授权）** | 材料就绪且**证据链零推断环节**（R51 轴 A 键形态分歧点代码级实锤）：R46 字节级取证 + R48/R49/R50 + R51 轴 A + [evidence/2026-10-31-……](../../../evidence/2026-10-31-r48-r50-r46-mitigation-directions.md) / [r51-axis-a](../../../evidence/2026-10-31-r51-axis-a-renderer-byte-diff.md)；**F48 为引用句柄** |
+| 5   | **隔离目录物理删除（用户动作）**  | 48 个 `*.stale-*` 在 `D:\code\ruan-cat\_repro-nm-quarantine`，agent 不可删除                                                                                                                                                                                                                               |
+| 6   | **本地 3+1 笔未推送**             | `e683a2d` / `acfca83` / `f75d787` + 本文件重写提交——随下一里程碑 push                                                                                                                                                                                                                                      |
+| 7   | **两个小额待定夺**                | `.workbuddy/hooks/hooks.json` 被 git 跟踪但零文档（是否登记）；工作区的 `docs/prompts/01.prompts.md` 是用户自有笔记（勿提交）                                                                                                                                                                              |
 
 ---
 
@@ -75,11 +76,11 @@ memorix resume "continue R51 two-axis unstorage F48" --refresh never
 | 要查什么              | 去哪                                                                                  |
 | --------------------- | ------------------------------------------------------------------------------------- |
 | 实验状态总表          | `docs/task-artifacts/experiments/QUEUE.md`（表 1 全量 / 表 3 仅 R11 / DoD 六条）      |
-| 横向发现              | `docs/task-artifacts/experiments/FINDINGS.md`（至 **#33**）                           |
+| 横向发现              | `docs/task-artifacts/experiments/FINDINGS.md`（至 **#34**）                           |
 | 故障目录              | `docs/task-artifacts/failure-catalog.md`（至 **F48**）+ `status-matrix.md`（F01-F48） |
 | 阶段计划与 checkpoint | `docs/task-artifacts/experiments/C-PHASE-EXECUTION.md`（CP-0……CP-8 全 ✅）            |
 | 时间线快照（追加式）  | `docs/task-artifacts/progress.md`                                                     |
-| 单实验档案            | `docs/task-artifacts/experiments/R{xx}.md`（R01-R50，R30/R33 并入 R31-family）        |
+| 单实验档案            | `docs/task-artifacts/experiments/R{xx}.md`（R01-R51，R30/R33 并入 R31-family）        |
 | 分支合并评价          | `docs/task-artifacts/experiments/BRANCH-MERGE-EVALUATION.md`（30 分支全量登记）       |
 | 原始证据              | `evidence/`（README.md 有索引）                                                       |
 | 仓库纪律              | `AGENTS.md`（§0.5 node_modules、§4 四处同步、Vercel/CF 部署事实）                     |
@@ -104,3 +105,4 @@ memorix resume "continue R51 two-axis unstorage F48" --refresh never
 - **2026-10-30**：本文件建立（C 类阶段收口，obs 6130/6133 + ledger）。
 - **2026-10-31（第一次更新）**：遗留项处置批次收口（R21 复核 + R48/R49/R50），交接工件 obs 6135。
 - **2026-10-31（深度重写）**：压缩上下文前的阶段交接——砍掉与 AGENTS.md / experiment-ledger-sop 技能重复的摘录，只留状态、坐标、开放项；memorix 交接广播 obs 6141 / 阶段纪要 obs 6140。
+- **2026-10-31（R51 批次更新）**：轴 A 取证完成（FINDINGS #34 / QUEUE R51 行 / status-matrix F45/F48 ✝️ / evidence 索引）——开放项 #3 更新（轴 B 留存）、#4 上游 issue 材料升级为零推断。
