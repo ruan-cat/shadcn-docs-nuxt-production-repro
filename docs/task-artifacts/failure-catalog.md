@@ -430,3 +430,11 @@ nitropack 2.13.5 相对 2.13.4 的**唯一依赖增量**把 `unstorage` 从 `^1.
 - **R45（Nuxt 4 世代）**：content runtime 的 `cache.setItem(id, {parsed, hash}).catch(() => {})` 吞掉异常 ⇒ 生产**内容库为空**（构建全绿、数据全空，数据级故障）。
 
 **三规避方向已实证**（[FINDINGS #33](experiments/FINDINGS.md)）：钉 `unstorage` 1.17.5 ✅ 全保真（R48）/ content 升级 2.14.1 ❌ 无效（R49，失败写入在 Nuxt 生成 renderer，与 content 版本无关）/ `experimental.payloadExtraction: false` 调用点消除 ✅（R50，代价 = payload 静态化消失）。上游修复路径与 issue 材料见 [HANDOFF §4](HANDOFF.md) 第 7 条（待用户授权）。本编号自 [F45](#f45升级被错误理解为单包升级而不是兼容矩阵迁移) 的 ✝️ 追记独立拆出——F45 是「升级纪律」类目，本条是可按签名（`Invalid key: "/"`）检索的故障本体；相关档案：[R46.md](experiments/R46.md) / [R48.md](experiments/R48.md) / [R49.md](experiments/R49.md) / [R50.md](experiments/R50.md)。
+
+## F50：Nuxt 4 把 nitro 主 bundle 的 buildDir 改写到 `node_modules/.cache/nuxt/.nuxt`，content v2 的预热目录随之错位 ⇒ `_snapshot` 读空 ⇒ 生产内容库为空（2026-10-31 登记；**本仓已复现**，R52 verified）
+
+`@nuxt/content` 的 `build:before` 预热钩子把 source 原文写入 `resolve(nuxt.options.buildDir, "content-cache")`（`cache:content:parsed:*`），nitro 主 bundle 的 `_snapshot`（`buildProduction` 内、rollup 之前）按 `bundledStorage.push("/cache/content")` 把该挂载快照进产物 serverAssets。**Nuxt 3 恒 `buildDir = .nuxt`，预热/回写/快照三步同目录**；**Nuxt 4 把主 bundle 实例的 buildDir 改写为 `node_modules/.cache/nuxt/.nuxt`** ⇒ base 随实例错位 ⇒ `_snapshot` 读空目录 ⇒ bundled 零条 ⇒ 生产运行时 `cache:content:parsed` 无数据 ⇒ **Content API 全空集合（构建全绿的假象）**。
+
+- **表象**（R45 / R51 臂 2 / R52 B 轮三度复现）：build exit 0、Prerendered 11 routes（页面渲染成功——prerender 期 `sourceBase` 指向 `content/` 源目录不受错位影响）、产物 `nitro:bundled:cache:content:*` **零条**、`.nuxt/content-cache/parsed/*` 停留预热裸 markdown、缺 `content-index.json`。
+- **机理铁证**（R52 插桩）：双实例 `cacheContentBase` 对比——第 1 实例 `…/apps/docs/.nuxt/content-cache`（读到预热 4 条）vs 第 2 实例（主 bundle）`…/apps/docs/node_modules/.cache/nuxt/.nuxt/content-cache`（读空）；`node_modules/.cache/nuxt/` 整体不存在 ⇒ prerender 期 `setItem` 回写丢失并被 content `storage.js:163` 的 `.catch(() => {})` 吞（workerd 内确切去向待深挖）。
+- 与 [F48](#f48unstorage-1176-的-key-校验与-content-v2-的-key-约定冲突)（Nuxt 3 世代 unstorage 校验，构建级 500）互补：**F50 = Nuxt 4 世代的数据级空集合**——Nuxt 4 迁移的两大世代适配缺口。相关档案：[R52.md](experiments/R52.md)（verified）/ [R45.md](experiments/R45.md)（阳性）；上游双靶点：nuxt（buildDir 改写语义）+ @nuxt/content（预热未对齐 nitro 实际 buildDir）。

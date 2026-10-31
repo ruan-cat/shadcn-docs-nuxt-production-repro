@@ -385,3 +385,16 @@
 - **影响**：①**F48 的因果链零推断环节**（键形态分歧点 + 包裹否定 + 实例归位全部实测）——上游 issue（F48 句柄）可组装；②R51 轴 B 是 R45 内容库空的最后未归因块；③规避方向 A（钉 1.17.5）与 C（`payloadExtraction:false`）的机理解释获得代码级锚点（C 的「调用点消除」在 N4 是**天然形态**）。
 - **证据**：[R51.md](./R51.md)、[evidence/2026-10-31-r51-axis-a-renderer-byte-diff.md](../../../evidence/2026-10-31-r51-axis-a-renderer-byte-diff.md)；原始日志 `%TEMP%\r51-arm1-packages.log` / `r51-arm1-docs.log` / `r51-arm2-install.log` / `r51-arm2-docs.log`；臂 2 用既有分支 `experiment/nuxt4-generation-migration`（无新分支）。
 - **交叉引用**：[FINDINGS #32](./FINDINGS.md)（发现 5 订正）/ [#33](./FINDINGS.md)（发现 2 实锤升级）；`failure-catalog.md` **F48**（键形态分歧点归入本条证据链）/ F45（Nuxt 4 迁移纪律）；[FINDINGS #28](./FINDINGS.md)（R45 判负——轴 B 承接其未归因部分）。
+
+## 35. Nuxt 4 把 nitro 主 bundle 的 buildDir 改写为 `node_modules/.cache/nuxt/.nuxt` ⇒ content 预热/快照目录错位 ⇒ `_snapshot` 读空 ⇒ 生产内容库为空（R52，R45 真因闭合）
+
+> 同分支 A/B 双轮（插桩恒定，业务零变更）：A = main 版本集合（N3+content 2.13.9）、B = R45 变量面（N4+content 2.14.1）。分支 `experiment/r52-content-cache-axis`（插桩 `b981900` → 增补 → `a6fab32`）。
+
+- **发现 1（断点铁证——base 值对比）**：N4 双实例 `cacheContentBase`——第 1 实例 `…/apps/docs/.nuxt/content-cache`（读到预热 4 条）vs 第 2 实例（主 bundle）`…/apps/docs/node_modules/.cache/nuxt/.nuxt/content-cache`（**读空**）；control 双实例 buildDir 恒 `.nuxt`、keys 全程可读。content 的 `devStorage["cache:content"].base` 由 `nuxt.options.buildDir` 解析（module.mjs `:261-264`）→ **base 随实例错位**。
+- **发现 2（因果链全实测）**：预热（改写前）落旧目录（mtime 20:31:25 裸 md）→ 主 bundle `_snapshot`（nitro `:1585`，rollup 前）读新目录空 → **bundled 零条**（产物 grep = 0；`.nuxt/snapshot` 两处均不存在 = 零数据不 mkdir）→ 运行时 `cache:content:parsed` 无数据 → **Content API 全空**。
+- **发现 3（假绿面）**：prerender 期挂在读空实例上 → cache miss → `sourceBase`（`apps/docs/content`，绝对路径）不受错位影响 → 解析成功 → **页面渲染成功**（Prerendered 11）——「构建全绿 + 数据全空」双面性的来源。
+- **发现 4（预热是设计行为 + content 版本无罪）**：`.nuxt/content-cache/parsed/*` 的裸 markdown = content `build:before` 预热钩子（module.mjs `:640-670`）写入 source 原文——**设计行为非异常**；content 2.13.9↔2.14.1 `storage.js` 逐字相同、`module.mjs` 仅版本常量差——content 版本无关再次实锤。
+- **发现 5（R45 未归因闭合 + F50 立号）**：R45「control 为何写 JSON」= 不是 content 写入行为差异，是 **N4 快照读取目录错位**（control 的 JSON 被 `_snapshot` 读到、R45 的回写丢失且读错目录）→ **[F50](../failure-catalog.md)** 立号（Nuxt 4 buildDir 改写 × content 预热错位）。次级环节（prerender `setItem` 在 workerd 内的确切去向）登记待深挖。
+- **影响**：①R45 判负的因果链**零推断环节**；②Nuxt 4 迁移的两大世代适配缺口定案（F48 = N3 世代构建级 500 / **F50 = N4 世代数据级空集合**）；③上游 issue 双靶点材料齐备（nuxt buildDir 语义 + @nuxt/content 预热对齐）。
+- **证据**：[R52.md](./R52.md)、[evidence/2026-10-31-r52-content-cache-axis.md](../../../evidence/2026-10-31-r52-content-cache-axis.md)；原始日志 `%TEMP%\r52-arm-control-docs.log` / `r52-probe-control.log` / `r52-probe-nuxt4.log` / `r52-probe-nuxt4b.log`。
+- **交叉引用**：[FINDINGS #34](./FINDINGS.md)（发现 4 收窄→本条闭合）/ [#32](./FINDINGS.md)（发现 5 的再订正——N4 吞的是错位后的写丢失，非 Invalid key）；`failure-catalog.md` **F50**（本条立号）/ F45（Nuxt 4 迁移纪律）/ F48（N3 世代互补缺口）；[FINDINGS #28](./FINDINGS.md)（R45 判负——本条闭合其未归因部分）。
