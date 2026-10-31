@@ -27,15 +27,15 @@ memorix resume "继续 C 类阶段收口后的遗留项处置" --refresh never
 
 ## 1. memorix 坐标（本轮登记的工件）
 
-| 用途         | 类型                | ID / 句柄                                      | 何时用                             |
-| ------------ | ------------------- | ---------------------------------------------- | ---------------------------------- |
-| 阶段收口纪要 | `what-changed`      | `obs:6130`                                     | 要本轮的完整结论与原始数据         |
-| **交接工件** | `what-changed`      | `obs:6133`                                     | **下一个 agent 的第一读**          |
-| 遗留项台账   | `continuity ledger` | `bc1b3527-3223-4f6e-bd46-b493fa6191c1`（open） | 查「还剩什么、已定了什么」         |
-| 本次会话     | `session`           | `sess-mvuyu5hn-kr39xz`                         | 追溯本次会话                       |
-| 旧交接工件   | `what-changed`      | `obs:6132`（**已 archived**）                  | 引号转义被破坏导致命令被截断，作废 |
+| 用途         | 类型                | ID / 句柄                                      | 何时用                                             |
+| ------------ | ------------------- | ---------------------------------------------- | -------------------------------------------------- |
+| **交接工件** | `what-changed`      | `obs:6135`                                     | **下一个 agent 的第一读**（2026-10-31 批次全结论） |
+| 遗留项台账   | `continuity ledger` | `bc1b3527-3223-4f6e-bd46-b493fa6191c1`（open） | 查「还剩什么、已定了什么」                         |
+| 阶段收口纪要 | `what-changed`      | `obs:6130`                                     | C 类阶段收口（2026-10-30）的完整结论               |
+| 本次会话     | `session`           | `sess-mvvu7zai-451n75`                         | 追溯 2026-10-31 批次                               |
+| 旧交接工件   | `what-changed`      | `obs:6133`（**已 archived**）                  | 引号转义被破坏导致命令被截断，作废                 |
 
-> 检索用 `memorix memory detail --id 6133` 取全文。
+> 检索用 `memorix memory detail --id 6135` 取全文。
 
 ---
 
@@ -86,7 +86,19 @@ memorix resume "继续 C 类阶段收口后的遗留项处置" --refresh never
 
 ---
 
-## 3. 项目当前推进状态（截至 2026-10-30）
+## 3. 项目当前推进状态（截至 2026-10-31）
+
+### 3.0 遗留项处置批次（2026-10-31，CP-8）
+
+| 项                          | 判定                          | 关键结论                                                                                                                                              |
+| --------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R21 字节级复核              | ✅ **复核通过**（遗留项闭合） | `d7a0113` 唯一语义变更 = `externals.trace: false`，其余 74 行为缩进规范化；分支已推送（origin = `d7a0113`）；R21/R22 各落 ✝️ 节（提交 `6175702`）     |
+| R48 钉 unstorage            | ✅ **verified（全保真规避）** | nitro 2.13.5 + unstorage 1.17.5 ⇒ build exit 0 / 探针 13/13 / 5 条 bundled cache 与 control 同形态；override 为 workspace 全局钉，nitro 升级须重评    |
+| R49 content 2.14.1          | ❌ **判负（同签名 500）**     | prerender 500 与 R46 逐字节同构 ⇒ content 升级不能规避；**R45「构建全绿」归因收窄到 Nuxt 4 renderer 模板**（不是 content 2.14.1 的功劳）              |
+| R50 payloadExtraction:false | ✅ **verified（形态订正）**   | 字面「拦截改写 key」结构性不可达（prefixStorage 内联校验 + payloadCache 模块作用域持有）；可行形态 = 调用点消除：build exit 0 / 探针 13/13 / SSR 完好 |
+| 隔离目录搬移                | ✅ 完成（物理删除待用户）     | 48 个 `*.stale-*` 目录移出仓库进 `D:\code\ruan-cat\_repro-nm-quarantine`（before=48 / after=0 实证）                                                  |
+
+⇒ **R46 三规避方向全部闭环：A ✅（推荐，全保真）/ B ❌（排除）/ C ✅（牺牲 payload 静态化）**，见 [FINDINGS #33](./experiments/FINDINGS.md)。三个实验分支（`experiment/r48-pin-unstorage-1175` `5e458e1` / `experiment/r49-content-2141-nitro-2135` `89c1534` / `experiment/r50-payload-extraction-off` `dac335d`）均**本地未 push**。
 
 ### 3.1 阶段结论：C 类未启动实验池**已清空**
 
@@ -123,26 +135,24 @@ R45 判负（阻断级）**仍然成立**，但根因**不是**「Nuxt 4 世代�
 | 仓库纪律              | `AGENTS.md`（§0.5 node_modules 隔离 SOP、§4 交叉引用、§5 契约纪律、Vercel 部署事实）  |
 | 分支合并评价          | `docs/task-artifacts/experiments/BRANCH-MERGE-EVALUATION.md`                          |
 
-### 3.4 代码与提交状态
+### 3.4 代码与提交状态（2026-10-31）
 
-- `main` = `6cfae72`（本地）｜`origin/main` = `a166cad` ⇒ **本地领先 1 笔**（`6cfae72` = AGENTS.md 增补「Vercel 零额度取证路径」，按部署额度纪律与下一里程碑合并推送）。
-- 本轮 6 笔提交：`d67adaa` R35-R38 落档 → `6562663` R46 落档 → `90d70da` 交叉引用守卫 → `309e8f0` 阶段收口台账 → `a166cad` 契约计数订正 → `6cfae72` AGENTS.md 零额度路径。
-- 实验分支（均**未 push**）：`experiment/r46-nitro-2135-bump`（`b1e0bb8`）、`experiment/nuxt4-generation-migration`、`experiment/r21-windows-only-trace-false`（`d7a0113`，未复核）、`experiment/r32-debug-esm-cjs` 等。
-- 验证基线：CI `run 41056802246` **全绿**；生产双 Project 部署 **READY @ `a166cad`**；生产内容断言通过（docs 首页「生产级复现实验室」×7、api `/v1/health` = `ok:true`、api `/v1/runtime` = `node v22.23.4 / nitro3-h3v2 / linux`）。
-- 契约直跑：`node --test tests/*.test.mjs` → 当前 **26/26 PASS**（原 19 + 新增 FINDINGS 交叉引用守卫 7）。
+- 本地 main 链：`6cfae72`（AGENTS 零额度路径）→ `f927b54`（HANDOFF 建立）→ `6175702`（R21 复核落档）→ `bd9cf26`（R48/R49/R50 落档 + FINDINGS #33 + CP-8）→ 本文件更新提交；随**2026-10-31 里程碑 push** 一次推入 origin/main（触发双 Project 生产部署）。
+- 实验分支（均**未 push**）：`experiment/r48-pin-unstorage-1175`（`5e458e1`）、`experiment/r49-content-2141-nitro-2135`（`89c1534`）、`experiment/r50-payload-extraction-off`（`dac335d`）、`experiment/nuxt4-generation-migration`、`experiment/r46-nitro-2135-bump`（`b1e0bb8`）等。
+- 验证基线：契约直跑 **26/26 PASS**（`bd9cf26` 前后各验一次）；main 工作区 node_modules 已 frozen 重建回 control 态（nitropack 2.13.4 / nuxt 3.21.2，`.pnpm` = 1295 含实验期新增版本缓存，属健康）。
 
 ---
 
-## 4. 遗留问题清单（= memorix continuity 台账的 requirements）
+## 4. 遗留问题清单（= memorix continuity 台账的 requirements，2026-10-31 更新）
 
-| #   | 遗留项                     | 解除条件 / 备注                                                                                                 |
-| --- | -------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 1   | **R21 提交未字节级复核**   | `experiment/r21-windows-only-trace-false` / `d7a0113`（仅本地）；R22 遗留项闭合时只能就「零裸导入」一条给出解释 |
-| 2   | **R46 三个规避方向未验证** | 钉 `unstorage` 1.17.5 / 升级 content 避开 `"/"` key / 应用层拦截改写该 key —— 各自需**独立实验**                |
-| 3   | **F41 未单独验证**         | Windows 本地 vs Vercel Linux 的 symlink 行为差异 → 留给 CI 的 Linux job 观察点                                  |
-| 4   | **R11 常驻阻塞**           | 无证据驱动目标；解除条件 = **捕获首个 SSR externalization 错误**后重启                                          |
-| 5   | **隔离目录物理清理**       | `node_modules.stale-*` / `.output.stale-*` 等 ⇒ **必须由用户 / 主代理删除**（运行时硬安全策略拦截 agent 删除）  |
-| 6   | **main 领先 1 笔待推送**   | `6cfae72`；push 触发双 Project 生产部署 ⇒ 与下一里程碑合并推送                                                  |
+| #   | 遗留项                     | 解除条件 / 备注                                                                                                                           |
+| --- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | ~~R21 提交未字节级复核~~   | ✅ **已闭合（2026-10-31）**：复核通过，唯一语义变更 = `trace: false`（提交 `6175702`）                                                    |
+| 2   | ~~R46 三个规避方向未验证~~ | ✅ **已闭合（2026-10-31）**：R48 ✅ 全保真 / R49 ❌ 排除 / R50 ✅ 调用点消除（[FINDINGS #33](./experiments/FINDINGS.md)，提交 `bd9cf26`） |
+| 3   | **F41 未单独验证**         | Windows 本地 vs Vercel Linux 的 symlink 行为差异 → 留给 CI 的 Linux job 观察点（2026-10-31 里程碑 push 的 CI run 是最新观察窗口）         |
+| 4   | **R11 常驻阻塞**           | 无证据驱动目标；解除条件 = **捕获首个 SSR externalization 错误**后重启（R48/R49/R50 三轮均未产生该错误签名，阻塞维持）                    |
+| 5   | **隔离目录物理删除**       | 48 个 `*.stale-*` 已移出仓库进 `D:\code\ruan-cat\_repro-nm-quarantine`（agent 侧动作完成）；**物理删除必须由用户执行**                    |
+| 6   | **下一阶段候选（未入队）** | Nuxt 4 迁移变量面两轴：renderer 模板轴（R49 给出有利证据）与 content runtime 吞异常轴（R45 阻断仍在）需各自独立实验；编号从 R51 起        |
 
 ---
 
@@ -175,3 +185,4 @@ R45 判负（阻断级）**仍然成立**，但根因**不是**「Nuxt 4 世代�
 ### 维护记录
 
 - **2026-10-30**：本文件建立（C 类阶段收口）。对应 memorix 工件 `obs:6130`（阶段纪要）/ `obs:6133`（交接工件）/ continuity 台账 `bc1b3527-3223-4f6e-bd46-b493fa6191c1`。
+- **2026-10-31**：遗留项处置批次收口（CP-8）——R21 复核闭合 + R48/R49/R50 三规避方向实证（[FINDINGS #33](./experiments/FINDINGS.md)）+ 隔离目录 48 个移出仓库。memorix 交接工件更新为 `obs:6135`（`obs:6133` 此前已 archived）。§3/§4 已重写为本批状态。
