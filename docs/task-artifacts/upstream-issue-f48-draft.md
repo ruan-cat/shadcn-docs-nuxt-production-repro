@@ -1,7 +1,7 @@
-# F48 上游 Issue 草稿（待用户授权后提交）
+# F48 上游 Issue（**已提交**：[nuxt/nuxt#36792](https://github.com/nuxt/nuxt/issues/36792)，2026-10-31 用户授权）
 
-> **状态**：草稿组装完毕，**提交动作等用户授权**（外发动作纪律）。
-> **证据链状态**：零推断环节（R51 轴 A 键形态分歧点代码级实锤，2026-10-31）。
+> **状态**：✅ **已提交**——主 issue = [nuxt/nuxt#36792](https://github.com/nuxt/nuxt/issues/36792)（F48 全文）；**F50 增补评论** = [issuecomment-6543587139](https://github.com/nuxt/nuxt/issues/36792#issuecomment-6543587139)（R52 buildDir 错位定案）。下方草稿保留为提交内容的存档底稿（投递版以英文撰写）。
+> **证据链状态**：零推断环节（R51 轴 A 键形态分歧点代码级实锤，2026-10-31；R52 轴 B buildDir 错位实测）。
 > **建议投向**：首选 **nuxt**（renderer 模板键形态是 Nuxt 侧产物，Nuxt 4 已隐性修复而 Nuxt 3 维持现状）；CC **unenv/unstorage**（校验只看 key 部分忽略非空 base 的语义问题）。草稿以 nuxt 仓为靶撰写，投 unstorage 时替换「标题/落点」两节。
 
 ---

@@ -398,3 +398,14 @@
 - **影响**：①R45 判负的因果链**零推断环节**；②Nuxt 4 迁移的两大世代适配缺口定案（F48 = N3 世代构建级 500 / **F50 = N4 世代数据级空集合**）；③上游 issue 双靶点材料齐备（nuxt buildDir 语义 + @nuxt/content 预热对齐）。
 - **证据**：[R52.md](./R52.md)、[evidence/2026-10-31-r52-content-cache-axis.md](../../../evidence/2026-10-31-r52-content-cache-axis.md)；原始日志 `%TEMP%\r52-arm-control-docs.log` / `r52-probe-control.log` / `r52-probe-nuxt4.log` / `r52-probe-nuxt4b.log`。
 - **交叉引用**：[FINDINGS #34](./FINDINGS.md)（发现 4 收窄→本条闭合）/ [#32](./FINDINGS.md)（发现 5 的再订正——N4 吞的是错位后的写丢失，非 Invalid key）；`failure-catalog.md` **F50**（本条立号）/ F45（Nuxt 4 迁移纪律）/ F48（N3 世代互补缺口）；[FINDINGS #28](./FINDINGS.md)（R45 判负——本条闭合其未归因部分）。
+
+## 36. Windows / Linux 产物内 symlink 形态的结构性差异：Linux 相对路径（可移植）/ Windows 构建机绝对路径（换机即断）——workspace 包零产物 symlink（R53，F41 专项定案）
+
+> F41 专项（dispatch-only artifact-dump workflow + Windows 同清单对照）：run `41203061929` success；Windows 对照 = main fresh build 同清单。
+
+- **发现 1（F41 核心风险面排除）**：`.output/server/node_modules/@repro/` **双平台均不存在**——`@repro/shared-core` / `@repro/ui` 被 bundle 内联，workspace `*` symlink 不进产物 ⇒ R38 关注的「workspace symlink 指向 Root Directory 之外」风险面在产物内不存在（R34 云端断言通过的机理确认）。
+- **发现 2（平台差异实锤）**：产物内 symlink 的目标形态——**Linux 全部相对路径**（`css-tree -> .nitro/css-tree@2.3.1`，21 字节）/ **Windows 全部构建机绝对路径**（`css-tree -> /d/code/…/.nitro/css-tree@2.3.1`，110 字节）。与 [FINDINGS #25](./FINDINGS.md)（R22 `file://` 绝对路径）同族：**Windows 构建产物内的链接类引用默认不可移植**在默认 trace 与 trace:false 两种形态下均成立。
+- **发现 3（F41 判读）**：差异真实且方向确定，但默认 trace + 本机/同机运行不触发（绝对路径自洽）；生产部署构建在云端 Linux，不经 Windows 产物 ⇒ **当前架构下无运行时故障**——F41 从「专项未入队」转为「差异定性完成、控制组已观察」。
+- **发现 4（工具链规则实证）**：`workflow_dispatch` 的 workflow 文件必须先存在于默认分支才能对其他 ref dispatch（首试 HTTP 404）。
+- **证据**：[R53.md](./R53.md)、artifact `f41-linux-server-output`（run `41203061929`，保留 7 天）+ listing 摘录于档案；Windows 清单 `%TEMP%\r53-win-listing.txt`。
+- **交叉引用**：`failure-catalog.md` F41（状态行更新）/ F22（Windows 产物结构域）；[FINDINGS #25](./FINDINGS.md)（R22 同族先例）/ R38（workspace symlink 风险面的产物级排除）。
