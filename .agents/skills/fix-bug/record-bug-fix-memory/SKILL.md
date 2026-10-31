@@ -207,6 +207,12 @@ metadata:
 - 适用场景：任何 API 返回 **HTTP 200 但响应体是 HTML 错误页**；或「本机 control 与远端表现完全一致」却被归因为平台差异；或验收契约里写死了 dev-only 路径（如 Nuxt Content v2 生产构建的 `/api/_content/cache.<buildIntegrity>.json` / `search-<buildIntegrity>`，无后缀路径只在 dev 模式存在）。
 - 关键约束：Nuxt Content v2 生产构建的 API 路由名带 `Date.now()` 构建指纹，**契约必须从构建产物发现真实路由，不得硬编码路径或指纹**；catch-all 页面只渲染 404 UI 而不抛 `createError` → 未注册路径返回 **200**，故必须给未注册路径加真 404 守卫并做**反向断言**；「状态码 200 + 零错误日志」**不是**通过证据（可能根本没有 handler 被调用）；验收断言要落到具体文档 `_path`/`title`，只断言「非空」「含某个词」同样是弱门。
 
+### 台账编辑与验证的假信号三连：prettier 钩子 stale read / 表格插行断裂 / ANSI 日志 grep 零输出（2026-10-31）
+
+- 详细案例：`2026-10-31-ledger-editing-false-signal-traps.md`
+- 适用场景：对 QUEUE/FINDINGS 等大对齐表格文件「编辑 → 提交 → 再编辑」穿插时 Edit 报 `File has been modified since read`；往表格尾部插行后表格渲染断裂（契约测试与 prettier 都不拦）；对 `%TEMP%` 下构建日志 `grep` 提信号时 `tail` 能看到而 `grep -E` 静默零输出；从 Git Bash 调 `powershell -NoProfile -Command` 时 `$var` 被吃导致命令散架。
+- 关键约束：任何 commit（lint-staged 跑 prettier 改写 staged 文件）之后继续编辑同一文件**必须重新 Read**；markdown 表格插行锚点必须选**表格最后一行的行尾**而非后续注记的行首；本仓构建日志含 ANSI 色码**一律 `grep -a`**；多语句 PowerShell 一律先落 `.ps1`（`%TEMP%`）再 `-File` 执行；独立复核审计是这几类「工具不报错但事实错」的唯一可靠拦截层。
+
 ## 14. 本仓库落点覆盖
 
 - 本仓库的 bug 经验优先记录在当前技能目录：`.agents/skills/fix-bug/record-bug-fix-memory/*.md`

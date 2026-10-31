@@ -268,6 +268,8 @@ Get-ChildItem -Path 'apps','packages' -Directory -Filter 'node_modules.stale-*' 
 - `Move-Item` 目标已存在会失败（`node_modules.stale-xxx` 重名）→ 换 `$stamp` 重跑，别退化成删除。
 - `Get-ChildItem -Filter` 配 `-Directory` 才只出目录；跨目录扫包级残留用 `-Recurse -Depth 1`（`apps`、`packages` 各一层）。
 - 路径含中文/空格时一律用 `-LiteralPath`，避免通配符误伤。
+- **从 Git Bash 调 `powershell -NoProfile -Command "…$var…"` 同样会被 bash 先吃掉 `$var`**（§0.5.5 搬移脚本实测：`$q`/`$before` 全变空串、命令散架）→ 多语句 PowerShell 一律先写成 `.ps1`（放 `%TEMP%`，不放仓库）再 `powershell -NoProfile -ExecutionPolicy Bypass -File` 执行。
+- **本仓构建日志含 ANSI 色码，`grep` 按 binary 处理且静默零输出**（`tail` 能看到 `✨ Build complete!` 而 `grep -E` 无结果，不报错）→ 对 `%TEMP%\r{xx}-*.log` 提取信号一律加 `-a`。
 
 #### 0.5.8 自检清单（复制到会话里逐条打勾，全绿才准开工）
 

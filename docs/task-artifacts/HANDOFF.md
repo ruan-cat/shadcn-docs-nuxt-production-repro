@@ -137,9 +137,10 @@ R45 判负（阻断级）**仍然成立**，但根因**不是**「Nuxt 4 世代�
 
 ### 3.4 代码与提交状态（2026-10-31）
 
-- 本地 main 链：`6cfae72`（AGENTS 零额度路径）→ `f927b54`（HANDOFF 建立）→ `6175702`（R21 复核落档）→ `bd9cf26`（R48/R49/R50 落档 + FINDINGS #33 + CP-8）→ 本文件更新提交；随**2026-10-31 里程碑 push** 一次推入 origin/main（触发双 Project 生产部署）。
+- 本地 main 链：`6cfae72`（AGENTS 零额度路径）→ `f927b54`（HANDOFF 建立）→ `6175702`（R21 复核落档）→ `bd9cf26`（R48/R49/R50 落档 + FINDINGS #33 + CP-8）→ `ef5c6f9`（本文件更新）——**已于 2026-10-31 里程碑 push 推入 origin/main**；其上的「台账落地补漏」提交（BRANCH-MERGE-EVALUATION 四分支登记 / evidence 索引 / 案例沉淀 / AGENTS.md 坑位）随下一里程碑推送。
 - 实验分支（均**未 push**）：`experiment/r48-pin-unstorage-1175`（`5e458e1`）、`experiment/r49-content-2141-nitro-2135`（`89c1534`）、`experiment/r50-payload-extraction-off`（`dac335d`）、`experiment/nuxt4-generation-migration`、`experiment/r46-nitro-2135-bump`（`b1e0bb8`）等。
 - 验证基线：契约直跑 **26/26 PASS**（`bd9cf26` 前后各验一次）；main 工作区 node_modules 已 frozen 重建回 control 态（nitropack 2.13.4 / nuxt 3.21.2，`.pnpm` = 1295 含实验期新增版本缓存，属健康）。
+- **2026-10-31 里程碑验证基线**：CI run `41168485031` 三 job 全绿（Windows 解析 1m6s / Linux 完整生产构建与 artifact smoke 2m9s / 静态契约与依赖探针 36s）；双 Project 生产部署 **READY**（docs `dpl_3v75GqYt4TRSqWzXcuJ2KCQxj2up` / api `dpl_CG1NSjTjmP8BFA8mKsNwkYS31Rfm`，均 @ `ef5c6f9`）；生产内容断言全绿——docs 首页「生产级复现实验室」×7 / 107519 B、api `/v1/health` `ok:true`、`/v1/runtime` `node v22.23.4 / nitro3-h3v2 / linux`、docs `/api/_content/query` 200 / 11927 B（与本地探针同量）。**F41 观察点**：Linux job 构建与 artifact smoke 绿、无 symlink 驱动故障 ⇒ 维持被动观察。
 
 ---
 

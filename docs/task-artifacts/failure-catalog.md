@@ -338,6 +338,8 @@ Docs 与 Nitro API 需要不同 Build Command / Output Directory；根配置可�
 
 Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审查。Nuxt 3 -> Nuxt 4 必须作为独立迁移 PR，而不是普通依赖刷新。
 
+> ✝️ **2026-10-31 追记（R48/R49/R50，[FINDINGS #33](experiments/FINDINGS.md)）**：本条的「兼容矩阵」已细化到传递依赖轴——nitro 2.13.5 经 `unstorage@1.17.6` 的 key 校验与 content v2 的 `"/"` key 约定冲突（R46 阳性复现）。三规避方向已实证：**钉 `unstorage` 1.17.5（✅ 全保真）/ content 升级 2.14.1（❌ 无效，失败写入在 Nuxt 生成 renderer，与 content 版本无关）/ `experimental.payloadExtraction: false` 消除调用点（✅，牺牲 payload 静态化）**；R45「构建全绿」归因收窄到 **Nuxt 4 renderer 模板**。三规避分支均不合并（见 BRANCH-MERGE-EVALUATION §2）。
+
 ## F46：复杂业务场景与官方最小 starter 的可靠性落差
 
 最终仓库要能形成一张逐层加压表：官方风格最小 docs 能工作；每增加一个真实生产因素（workspace、UI、API、Vercel、Windows、fresh resolution）都记录首次出现的不稳定边界。
