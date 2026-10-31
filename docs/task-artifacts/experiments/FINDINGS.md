@@ -409,3 +409,16 @@
 - **发现 4（工具链规则实证）**：`workflow_dispatch` 的 workflow 文件必须先存在于默认分支才能对其他 ref dispatch（首试 HTTP 404）。
 - **证据**：[R53.md](./R53.md)、artifact `f41-linux-server-output`（run `41203061929`，保留 7 天）+ listing 摘录于档案；Windows 清单 `%TEMP%\r53-win-listing.txt`。
 - **交叉引用**：`failure-catalog.md` F41（状态行更新）/ F22（Windows 产物结构域）；[FINDINGS #25](./FINDINGS.md)（R22 同族先例）/ R38（workspace symlink 风险面的产物级排除）。
+
+## 37. F50 最后一环：N4 的 prerender storage 是内存态实例——回写随构建消亡、`_snapshot` 读 fs 空，双向断裂全实测（R54）
+
+> 同分支 A/B（nitro 插件探针 `r54-probe.mjs`，`import.meta.prerender` 守卫，业务零变更）：A = main 版本集合、B = N4 版本集合（与 R52 一致）。
+
+- **发现 1（N4：写读回成功但零落盘——内存态实锤）**：B 轮探针 `fsProbe write→readBack="hello-r54"` **成功**、`cacheContentKeys` 含预热 4 条+probe（数据可读）——**但双 buildDir（`.nuxt/content-cache` 与 `node_modules/.cache/nuxt/.nuxt/content-cache`）均零 probe 文件**、`node_modules/.cache/nuxt` 整体不存在 ⇒ prerender storage **非 fs 落盘**（内存驱动定性：三点实测反推，driver 名未直读）。
+- **发现 2（N3 对照：fs 直连）**：A 轮探针 write→readBack 成功且 **probe 文件落盘 `.nuxt/content-cache/`** ⇒ N3 的 prerender storage 是 fs 驱动直连 → 回写落盘 → `_snapshot` 读到 → bundled 5 条 → 全链通。
+- **发现 3（F50 最后一环闭合）**：「写丢失去向」= **prerender 专属内存态 storage 随构建结束消亡**（全盘无痕实锤：`node_modules/.cache/` 无 nuxt 目录、全仓无 N4 时代 content-index）——F50 的「回写 → 快照」双向断裂全实测：回写进内存（不落 fs）、`_snapshot` 读 fs（空目录）。
+- **发现 4（执行模型定案 + 前提订正）**：双世代 prerender 均**主进程 in-process**（pid 与构建一致实测）——R52「workerd 内 fs 写」的前提**有误已订正**（nitro 的 `#initWorker` 是 dev 模式 worker，与 prerender 无关）；N3 执行体 = `.nuxt/prerender` 独立 bundle（报错栈 `nitro.mjs:3913` 实锤）。
+- **发现 5（工具链 gotcha）**：`defineNitroPlugin` 在 prerender bundle 中**不可自动导入**（`is not defined` @ `nitro.mjs:3913`）——nitro 插件需在 prerender 生效必须显式 `import … from "#imports"`。
+- **影响**：①F50 证据链**全实测无推断环节**——上游 issue #36792 的「为什么 setItem 没落盘」答辩答案就绪（**增补评论待用户授权**）；②N3/N4 prerender storage 形态差异（fs 直连 vs 内存态）= 世代适配缺口的最终机理层。
+- **证据**：[R54.md](./R54.md)、[evidence/2026-10-31-r54-prerender-write-loss.md](../../../evidence/2026-10-31-r54-prerender-write-loss.md)；原始日志 `%TEMP%\r54-probe-control.log` / `r54-probe-nuxt4.log`。
+- **交叉引用**：`failure-catalog.md` **F50**（证据链增补）；[FINDINGS #35](./FINDINGS.md)（R52 断点——本条补最后一环）/ [#36](./FINDINGS.md)（同批 R53）；[R52.md](./R52.md) 次级环节 ✝️ 闭合。
