@@ -2,6 +2,7 @@
 
 ## 本项目的技能表
 
+- `experiment-ledger-sop` — `.agents/skills/experiment-ledger-sop/SKILL.md` — **实验全流程台账 SOP（强制）**：验证、复现、CLI 跟踪、数据 markdown 化的闭环检查清单。任何实验开工前、验收前、落档前、批次收口前必须过对应门（§0 触发时机）；其「落档门九项」与「证据等级标注」是 2026-10-31 三轮审计暴露缺口的制度化闸门。
 - `record-bug-fix-memory` — `.agents/skills/fix-bug/record-bug-fix-memory/SKILL.md` — bug 修复后的经验与事故记录沉淀（非调试流程本身）。
   - **存储架构**：双层存储。SKILL.md 只放流程指导和摘要索引，详细案例存储在同目录下的独立 `YYYY-MM-DD-{slug}.md` 文件中。
   - **阅读方式**：使用此技能前，先读 SKILL.md 了解流程，再根据「案例索引」章节按需读取相关的独立案例文件。
@@ -89,6 +90,8 @@
 ## 标准测试 SOP（防 AI 重犯错）
 
 > 详尽的 7 步复现流程见 `docs/task-artifacts/experiments/SOP.md`，本节约为其**不可妥协的 AI 执行纪律**（缺漏即判违规）。本节约针对 2026 多轮"污染态误判 / node_modules 破损 / 档案台账脱节"事故设立，确保任意会话、任意上下文压缩后的 AI 都能复现同一正确流程，不再踩同一坑。
+>
+> **实验全流程的落档闭环（四处同步 + evidence 索引 + 分支登记 + 证据等级标注 + CLI 跟踪）强制走 `.agents/skills/experiment-ledger-sop/SKILL.md` 的门禁清单**——2026-10-31 三轮审计（落地回查 / 分支现场核对 / 项目总盘点）暴露的全部丢三落四缺口均已固化为该技能的门禁，本节与本节以下条款是其子集。
 
 ### 0. 前置：永远先独立核验 `node_modules` 健康度（防伪信号第一关）
 

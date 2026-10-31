@@ -338,7 +338,7 @@ Docs 与 Nitro API 需要不同 Build Command / Output Directory；根配置可�
 
 Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审查。Nuxt 3 -> Nuxt 4 必须作为独立迁移 PR，而不是普通依赖刷新。
 
-> ✝️ **2026-10-31 追记（R48/R49/R50，[FINDINGS #33](experiments/FINDINGS.md)）**：本条的「兼容矩阵」已细化到传递依赖轴——nitro 2.13.5 经 `unstorage@1.17.6` 的 key 校验与 content v2 的 `"/"` key 约定冲突（R46 阳性复现）。三规避方向已实证：**钉 `unstorage` 1.17.5（✅ 全保真）/ content 升级 2.14.1（❌ 无效，失败写入在 Nuxt 生成 renderer，与 content 版本无关）/ `experimental.payloadExtraction: false` 消除调用点（✅，牺牲 payload 静态化）**；R45「构建全绿」归因收窄到 **Nuxt 4 renderer 模板**。三规避分支均不合并（见 BRANCH-MERGE-EVALUATION §2）。
+> ✝️ **2026-10-31 追记（R48/R49/R50，[FINDINGS #33](experiments/FINDINGS.md)）**：本条的「兼容矩阵」已细化到传递依赖轴——nitro 2.13.5 经 `unstorage@1.17.6` 的 key 校验与 content v2 的 `"/"` key 约定冲突（R46 阳性复现）。三规避方向已实证：**钉 `unstorage` 1.17.5（✅ 全保真）/ content 升级 2.14.1（❌ 无效，失败写入在 Nuxt 生成 renderer，与 content 版本无关）/ `experimental.payloadExtraction: false` 消除调用点（✅，牺牲 payload 静态化）**；R45「构建全绿」归因收窄到 **Nuxt 4 renderer 模板**。三规避分支均不合并（见 BRANCH-MERGE-EVALUATION §2）。**该冲突已于 2026-10-31 独立编号为 F48（见文末）——F45 保留「升级纪律」语义，按签名（`Invalid key: "/"`）检索请用 F48。**
 
 ## F46：复杂业务场景与官方最小 starter 的可靠性落差
 
@@ -421,3 +421,12 @@ Nuxt、Nitro、H3、Content、shadcn-docs-nuxt、OG Image 应按世代组合审�
    - **两种 `_params` 编码形态不同（易踩坑）**：query-string 形态要 **URL 编码的原始 JSON**（`decodeURIComponent` 后直接 `JSON.parse`），路径两段形态要 **base64url**。用 base64url 塞进 query-string 会被 content 模块自己打成 400「Invalid _params query」——**模块侧**报错、不是守卫报错。
 
 **本机验证**（standalone，端口 3413，产物指纹 `1793342768316`）：冷构建 EXIT=0（3/3 tasks，0 cached）；`/no-such-page-xyz` → **404**（curl 默认 Accept → `application/json`；`Accept: text/html` → Nuxt 错误页 HTML，title `404 - Page Not Found | Nuxt`），且服务端日志**无 `request error`**；`/guide` `/guide/baseline` `/` → 200 无回归；`/api/_content/query/index.md` 无 `_params` → **400 + 报文含 `_params`**，带 `_params` → **200 + 恰好 1 篇**（`_path=/guide/baseline`、title=绿色控制组）；两段形态 → 200 + 1 篇；裸 `/api/_content/query` → 200 + 全部文档；指纹路由 `cache.<integrity>.json` / `search-<integrity>` → 200 + 真实内容（`documentCount:10`）；canonical 两条 + 裸前缀两条 → 404 + application/json（第二层守卫未回归）。`pnpm probe:content` **13/13 PASS**，`pnpm test:contracts` **13/13**（⚠️ 计数时点说明：该次验证时契约为 13 项；**2026-10-30 A2 双拼写加固后契约为 15/15**，以 `pnpm test:contracts` 当前输出为准）。
+
+## F48：unstorage 1.17.6 的 key 校验与 content v2 的 `"/"` key 约定冲突（2026-10-31 登记；**本仓已复现**，R46 阳性）
+
+nitropack 2.13.5 相对 2.13.4 的**唯一依赖增量**把 `unstorage` 从 `^1.17.5` 抬到 `^1.17.6`，后者给 `prefixStorage` 新增 `itemKey` 校验：`normalizeKey("/")` 归一为空串 ⇒ falsy ⇒ 抛 `[unstorage] Invalid key: "/"`。content v2 以 `"/"` 表示根文档/根路由——同一冲突按调用点是否被 `.catch` 包裹呈现**两种表象**：
+
+- **R46（Nuxt 3 世代）**：nitro renderer 的 payloadCache `setItem` 未被包裹 ⇒ **prerender 500（构建级失败）**；
+- **R45（Nuxt 4 世代）**：content runtime 的 `cache.setItem(id, {parsed, hash}).catch(() => {})` 吞掉异常 ⇒ 生产**内容库为空**（构建全绿、数据全空，数据级故障）。
+
+**三规避方向已实证**（[FINDINGS #33](experiments/FINDINGS.md)）：钉 `unstorage` 1.17.5 ✅ 全保真（R48）/ content 升级 2.14.1 ❌ 无效（R49，失败写入在 Nuxt 生成 renderer，与 content 版本无关）/ `experimental.payloadExtraction: false` 调用点消除 ✅（R50，代价 = payload 静态化消失）。上游修复路径与 issue 材料见 [HANDOFF §4](HANDOFF.md) 第 7 条（待用户授权）。本编号自 [F45](#f45升级被错误理解为单包升级而不是兼容矩阵迁移) 的 ✝️ 追记独立拆出——F45 是「升级纪律」类目，本条是可按签名（`Invalid key: "/"`）检索的故障本体；相关档案：[R46.md](experiments/R46.md) / [R48.md](experiments/R48.md) / [R49.md](experiments/R49.md) / [R50.md](experiments/R50.md)。

@@ -307,7 +307,7 @@
   - ✝️ **2026-10-30 已闭合（R46）**：根因**不在** nitro 自身，而在其唯一依赖增量 `unstorage@1.17.6` 给 `prefixStorage` 新增的 key 校验——`normalizeKey("/")` 归一为空串 ⇒ `"/"` 被判非法。详见 [FINDINGS #32](./FINDINGS.md) 与 [R46.md](./R46.md)。本条「未归因」状态**到此解除**；上文关于「nitro 逐字等价 ⇒ nitro 无责」的观察**成立**（正是它把排查指向了传递依赖）。
 - **影响**：①**R45 判负（阻断级）**——Nuxt 4 世代迁移在「生产内容库」维度上不可用；②**h3 世代跃迁应从 Nuxt 4 迁移的前置清单里删除**（前提不成立），Nuxt 4 迁移的变量面可**缩小**；③**「构建成功」再次不是验收**（本条与 F47 同源但更重：状态码全绿、数据全空）；④**探针必须加「端口占用即拒绝 / 应答者身份校验」**，否则任何固定端口验收都可能被上一轮的残留服务污染（假 PASS 与假 FAIL 都会发生）；⑤**content 升级可从嫌疑名单里划掉**（运行时实现逐行相同）。
 - **证据**：[R45.md](./R45.md)、[evidence/2026-10-30-r45-nuxt4-generation-migration.md](../../../evidence/2026-10-30-r45-nuxt4-generation-migration.md)；本地 `%TEMP%\r45\`（`install*.log` / `build-docs*.log` / `probe-closure.log` / `probe-content.log` / `probe-content-clean.log`）、`%TEMP%\r45probe\`（`shadcn-docs-nuxt@1.1.9` / `@1.2.2`、`@ztl-uwu/nuxt-content@2.13.9`、`nitropack@2.13.4` 的 npm pack 解包）；实验分支 `experiment/nuxt4-generation-migration`（**未 push**）。
-- **交叉引用**：`failure-catalog.md` F47（200 假阳性）/ F30 / F45 / F02 / F03 / F07；[FINDINGS #26](./FINDINGS.md)（探针判据自证）与 [FINDINGS #27](./FINDINGS.md)（探针路径自证）——本条发现 5 是同源的**第三个探针陷阱**（前两个是「判据恒 0」「路径写错」，本条是「端口被占 → 应答者身份错误」）；[FINDINGS #24](./FINDINGS.md)（h3 世代结构）；`R45.md`「✝️ 订正」节（R-3 前提被证伪）。
+- **交叉引用**：`failure-catalog.md` F47（200 假阳性）/ F30 / F45 / **F48**（R45 内容库为空表象的本体故障，2026-10-31 立号）/ F02 / F03 / F07；[FINDINGS #26](./FINDINGS.md)（探针判据自证）与 [FINDINGS #27](./FINDINGS.md)（探针路径自证）——本条发现 5 是同源的**第三个探针陷阱**（前两个是「判据恒 0」「路径写错」，本条是「端口被占 → 应答者身份错误」）；[FINDINGS #24](./FINDINGS.md)（h3 世代结构）；`R45.md`「✝️ 订正」节（R-3 前提被证伪）。
 
 ## 29. 部署 control 可用「只读核验」固化（零新增部署）+ 自定义域名是绕过 SSO 的公网冒烟入口（R34）
 
@@ -360,7 +360,7 @@
 - **发现 6（补上了 [FINDINGS #28](./FINDINGS.md) 发现 4 的触发条件）**：content 侧「构建期写入原文 / 运行期消费 `cached.parsed`」的契约缺口**一直存在**，但在 unstorage 1.17.5 下**从未显形**——因为 `cache.setItem` 能成功，运行时会把 JSON 回写缓存位，把原文覆盖掉。1.17.6 才第一次让这个隐患**显形**。⇒ 「缓存位一旦被原文占据，内容库必然为空」这条判断**成立且精确**。
 - **影响**：①**R46 阳性复现（阻断级，构建级失败）**，根因**精确到 `unstorage@1.17.6`**；②**R45 的判负（阻断级）仍然成立，但归因被修正**——不再意味着「Nuxt 4 世代不可迁移」，而意味着「**nitro 2.13.5 与 content v2 的 key 约定不兼容**」⇒ **Nuxt 4 迁移的变量面应拆开评估**（Nuxt 4 本身 / content 2.14.x / nitro 2.13.5 各自独立）；③**可操作的规避方向**（本轮**未验证**，需独立实验）：钉住 `unstorage` 到 1.17.5；或升级/修补 content 使其避开 `"/"` 作为 key；或在应用层拦截改写该 key；④**验收纪律再次兑现**——「build 绿」既可能是假绿（R45：状态码全绿 + 数据全空），也可能是硬红（R46：构建直接 500），**同一个根因两种表象**，只取决于异常有没有被 `.catch` 吞掉。
 - **证据**：[R46.md](./R46.md)、[evidence/2026-10-30-r46-nitro-2135-attribution.md](../../../evidence/2026-10-30-r46-nitro-2135-attribution.md)；原始日志 `%TEMP%\r46-build.log` / `%TEMP%\r46-nodiag-build.log` / `%TEMP%\r46b-build.log` / `%TEMP%\r46b-probe.log` / `%TEMP%\r46-install.log`；实验分支 `experiment/r46-nitro-2135-bump`（提交 `b1e0bb8`，**未 push**）。
-- **交叉引用**：[FINDINGS #28](./FINDINGS.md)（R45 判负；其「发现 7（未归因部分）」由本条**闭合**）；`failure-catalog.md` F45（升级被误当单包升级）/ F47（200 假阳性）/ F02 / F03；`R45.md`「✝️ 归因订正」节（追加式订正，原文不改写）；[FINDINGS #26](./FINDINGS.md)（探针判据自证）。
+- **交叉引用**：[FINDINGS #28](./FINDINGS.md)（R45 判负；其「发现 7（未归因部分）」由本条**闭合**）；`failure-catalog.md` **F48**（本条故障的独立编号，2026-10-31 自 F45 拆出）/ F45（升级纪律）/ F47（200 假阳性）/ F02 / F03；`R45.md`「✝️ 归因订正」节（追加式订正，原文不改写）；[FINDINGS #26](./FINDINGS.md)（探针判据自证）。
 
 ## 33. R46 三规避方向的实证结论：钉 unstorage 有效 / content 升级无效 / 字面拦截不可达但调用点消除可行（R48/R49/R50）
 
@@ -372,4 +372,4 @@
 - **发现 4（决策含义）**：要在 Nuxt 3 世代使用 nitro 2.13.5——选 **A**（全保真，唯一语义零代价路径）或 **C**（牺牲 payload 静态化）；**B 直接排除**。Nuxt 4 世代不构成完整规避（R45 的「内容库为空」缺陷独立存在，本批未验证）⇒ **Nuxt 4 迁移的变量面拆分再次兑现**：renderer 模板轴（有利证据）与 content runtime 吞异常轴（仍阻断）必须分开评估。
 - **影响**：①R46 遗留的三规避方向**全部闭环**（A ✅ / B ❌ / C ✅ 订正形态）；②「拦截改写类」规避有了通用判断法——**校验在包装器内联 + 引用被生成代码模块作用域持有时，唯一入口是关闭触发写入的配置常量**；③R45 的「构建全绿」归因闭合，Nuxt 4 变量面两轴拆分获得实证支撑；④lockfile diff 行数（856 行）远大于语义差异（两个 override）⇒ 评估此类实验**以解析结果（版本集合）为准，不以行数为准**。
 - **证据**：[R48.md](./R48.md)、[R49.md](./R49.md)、[R50.md](./R50.md)、[evidence/2026-10-31-r48-r50-r46-mitigation-directions.md](../../../evidence/2026-10-31-r48-r50-r46-mitigation-directions.md)；原始日志 `%TEMP%\r48-build.log` / `%TEMP%\r49-build.log` / `%TEMP%\r50-build.log` / `%TEMP%\r50-server.log`；实验分支 `experiment/r48-pin-unstorage-1175`（`5e458e1`）/ `experiment/r49-content-2141-nitro-2135`（`89c1534`）/ `experiment/r50-payload-extraction-off`（`dac335d`），**均未 push**。
-- **交叉引用**：[FINDINGS #32](./FINDINGS.md)（R46 根因与三规避方向出处；其影响③「需独立实验」由本条闭合）；[FINDINGS #28](./FINDINGS.md)（R45 判负与本条发现 2 的归因收窄）；`failure-catalog.md` F45 / F47（内容级断言纪律）；[FINDINGS #26](./FINDINGS.md)（探针判据自证）。
+- **交叉引用**：[FINDINGS #32](./FINDINGS.md)（R46 根因与三规避方向出处；其影响③「需独立实验」由本条闭合）；[FINDINGS #28](./FINDINGS.md)（R45 判负与本条发现 2 的归因收窄）；`failure-catalog.md` **F48** / F45（升级纪律）/ F47（内容级断言纪律）；[FINDINGS #26](./FINDINGS.md)（探针判据自证）。
