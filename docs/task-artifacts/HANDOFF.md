@@ -140,7 +140,7 @@ R45 判负（阻断级）**仍然成立**，但根因**不是**「Nuxt 4 世代�
 ### 3.4 代码与提交状态（2026-10-31）
 
 - 本地 main 链：`6cfae72`（AGENTS 零额度路径）→ `f927b54`（HANDOFF 建立）→ `6175702`（R21 复核落档）→ `bd9cf26`（R48/R49/R50 落档 + FINDINGS #33 + CP-8）→ `ef5c6f9`（HANDOFF 批次更新）→ `5e12b74` / `f916e51` / `dfa1bb2`（台账落地补漏 / 分支登记全量化 + DoD 升格 / 分支现场审计补齐）——**全部已于 2026-10-31 推入 origin/main（tip = `dfa1bb2`）**。注：后 3 笔在 push 前按 git-commit 技能重写过 trailer（旧 SHA `ec14532` / `0f4737e` / `276d3b0` 已废，树逐字节一致；旧 SHA 曾被 memorix 记录引用，对照关系见 continuity 台账）。
-- 实验分支（均**未 push**）：`experiment/r48-pin-unstorage-1175`（`5e458e1`）、`experiment/r49-content-2141-nitro-2135`（`89c1534`）、`experiment/r50-payload-extraction-off`（`dac335d`）、`experiment/nuxt4-generation-migration`、`experiment/r46-nitro-2135-bump`（`b1e0bb8`）等；远端备份是否推送见 §4 第 9 条。
+- 实验分支（**已推送备份**，2026-10-31）：`experiment/r48-pin-unstorage-1175`（`5e458e1`）、`experiment/r49-content-2141-nitro-2135`（`89c1534`）、`experiment/r50-payload-extraction-off`（`dac335d`）、`experiment/r46-nitro-2135-bump`（`b1e0bb8`）、`experiment/nuxt4-generation-migration`（未推送）等；三平台工作流触发实证见 §4 第 9 条。
 - 验证基线：契约直跑 **26/26 PASS**；main 工作区 node_modules 已 frozen 重建回 control 态（nitropack 2.13.4 / nuxt 3.21.2，`.pnpm` = 1295 含实验期新增版本缓存，属健康）。
 - **2026-10-31 里程碑验证基线（两轮）**：①`ef5c6f9` push——CI run `41168485031` 三 job 全绿，双 Project 部署 **READY**（docs `dpl_3v75GqYt4TRSqWzXcuJ2KCQxj2up` / api `dpl_CG1NSjTjmP8BFA8mKsNwkYS31Rfm`）；②`dfa1bb2` push——CI run `41177909466` **success（2m11s）**，生产内容断言复验全绿且与 ①**逐项同量**（docs 首页 ×7 / 107519 B、api `/v1/health` `ok:true`、`/v1/runtime` `node v22.23.4 / nitro3-h3v2 / linux`、`/api/_content/query` 200 / 11927 B——docs-only 提交不改变运行时内容，符合预期）。**F41 观察点**：Linux job 连续绿、无 symlink 驱动故障 ⇒ 维持被动观察。
 

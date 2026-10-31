@@ -54,7 +54,7 @@
 
 ## 6. 收口门（批次结束）
 
-1. 三平台工作流观察（需要时）：CI 触发器看 `.github/workflows/ci.yaml`（`push: main` only）；Vercel `vercel ls <project>`（分支 push 零新增、preview 未启用）；CF `cf builds list --external-script-id <tag>`（trigger `branch_includes: ["main"]`）。**script-tag ≠ worker 名**：docs `088d894e00824f3d9577fd18926d6eb7` / api `bcb29b488fb641f1947ce87aa9f512c3`（记载于 `evidence/2026-10-16-push-788630b-production-verify.md`）。
+1. 三平台工作流观察（需要时）：CI 触发器看 `.github/workflows/ci.yaml`（`pull_request` + `push: main` + `workflow_dispatch`——**分支零 run 的前提是未开 PR**；开了 PR 会触发 `pull_request` 与 `cloud-pr-prettier`）；Vercel `vercel ls <project>`（分支 push 零新增、preview 未启用）；CF `cf builds list --external-script-id <tag>`（trigger `branch_includes: ["main"]`）。**script-tag ≠ worker 名**：docs `088d894e00824f3d9577fd18926d6eb7` / api `bcb29b488fb641f1947ce87aa9f512c3`（记载于 `evidence/2026-10-16-push-788630b-production-verify.md`）。
 2. 生产内容断言（自定义域名，响应体级）：docs 首页标记 ×7 / api health / runtime / content query 字节数。
 3. 契约直跑 `node --test tests/*.test.mjs` 全绿。
 4. 孤儿审计：`git stash list` 空、`git status` 干净、无未登记的隔离目录。
