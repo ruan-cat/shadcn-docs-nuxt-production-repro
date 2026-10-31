@@ -1,0 +1,56 @@
+name: F41 Artifact Dump
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    name: Linux docs server artifact dump (F41 symlink audit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装冻结依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 强制 fresh 串行构建
+        run: pnpm build:fresh
+
+      - name: 记录 server 产物结构（symlink 与挂载形态）
+        run: |
+          {
+            echo "== server/ 顶层 =="
+            ls -la apps/docs/.output/server/
+            echo "== server/node_modules/（默认 trace 产物）=="
+            ls -la apps/docs/.output/server/node_modules/ || echo "(不存在)"
+            echo "== @repro workspace 包在产物内的形态 =="
+            ls -la apps/docs/.output/server/node_modules/@repro/ 2>/dev/null || echo "(无 @repro)"
+            echo "== 全部符号链接 =="
+            find apps/docs/.output/server -type l
+            echo "== workspace 包 realpath =="
+            realpath apps/docs/.output/server/node_modules/@repro/shared-core 2>/dev/null || echo "(不可用)"
+          } > f41-linux-listing.txt
+          cat f41-linux-listing.txt
+
+      - name: 上传 server 产物与清单
+        uses: actions/upload-artifact@v4
+        with:
+          name: f41-linux-server-output
+          path: |
+            apps/docs/.output/server/
+            f41-linux-listing.txt
+          retention-days: 7
