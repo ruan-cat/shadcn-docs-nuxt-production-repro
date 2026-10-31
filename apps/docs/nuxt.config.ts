@@ -5,6 +5,15 @@ export default defineNuxtConfig({
 
 	devtools: { enabled: false },
 
+	// R50 唯一变量：关闭 payload 抽取（experimental.payloadExtraction → 生成 renderer 的
+	// NUXT_PAYLOAD_EXTRACTION = false），消除 .nuxt/prerender/chunks/_/renderer.mjs:390 的
+	// payloadCache.setItem("/")——nitro 2.13.5 经 unstorage 1.17.6 的 prefixStorage itemKey
+	// 校验会把 "/" 归一为空串判非法 ⇒ prerender 500（R46/R49 实证）。SSR 渲染本身不受影响，
+	// 仅不再预渲染 / 产出 _payload.json。
+	experimental: {
+		payloadExtraction: false,
+	},
+
 	i18n: {
 		defaultLocale: "zh-CN",
 		locales: [
