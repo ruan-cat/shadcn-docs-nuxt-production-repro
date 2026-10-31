@@ -171,7 +171,9 @@ fresh lockfile，观察是否跨到 2.14.x，并明确区分 manifest 允许范�
 
 ### PR R31：复现 mermaid 入口冲突 —— ✅ 已执行并终结（未开 PR，档案已并入 main）
 
-### PR R32：复现 debug ESM/CJS 入口问题 —— 🆕 **未启动**（前提被证伪后回池，单变量待重新界定）
+### PR R32：复现 debug ESM/CJS 入口问题 —— ✅ 已执行并终结（2026-10-30 verified clean negative）
+
+> 单变量经重界定后执行（「轴 B：debug 真实入场轴」，`apps/docs` 加 `debug@4.4.3`）：变量真实生效（dev 悬空告警消失、`deps/debug.js` 出现）但**功能影响为零**——零 ESM/CJS 入口错误、客户端产物无新增 chunk ⇒ F30 未复现；⚠️ 附带发现：两臂均命中 9 条 `@nuxt/content > @nuxtjs/mdc > …` 悬空告警 ⇒ 上游主题 `optimizeDeps` 清单**系统性脱节**（10 条里单点治 `debug` 只消 1 条）。详见 [experiments/R32.md](./experiments/R32.md) / QUEUE 表 2 / FINDINGS **#27**。
 
 ### PR R33：复现 sanitize-url optimizeDeps 缺口 —— ✅ 已由 R31-family 覆盖并终结（不单独开 PR）
 

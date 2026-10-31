@@ -213,6 +213,12 @@ metadata:
 - 适用场景：对 QUEUE/FINDINGS 等大对齐表格文件「编辑 → 提交 → 再编辑」穿插时 Edit 报 `File has been modified since read`；往表格尾部插行后表格渲染断裂（契约测试与 prettier 都不拦）；对 `%TEMP%` 下构建日志 `grep` 提信号时 `tail` 能看到而 `grep -E` 静默零输出；从 Git Bash 调 `powershell -NoProfile -Command` 时 `$var` 被吃导致命令散架。
 - 关键约束：任何 commit（lint-staged 跑 prettier 改写 staged 文件）之后继续编辑同一文件**必须重新 Read**；markdown 表格插行锚点必须选**表格最后一行的行尾**而非后续注记的行首；本仓构建日志含 ANSI 色码**一律 `grep -a`**；多语句 PowerShell 一律先落 `.ps1`（`%TEMP%`）再 `-File` 执行；独立复核审计是这几类「工具不报错但事实错」的唯一可靠拦截层。
 
+### Bash 工具 cwd 跨调用持久 + git 成功掩盖 mv 失败（2026-10-31）
+
+- 详细案例：`2026-10-31-cwd-persistence-silent-mv-failure.md`
+- 适用场景：多批次执行中某批执行过 `cd <子目录>` 而未归位，随后批次以相对路径操作 `node_modules`/产物目录；或复合命令里 git 与 mv/cp 混用——git 在任意子目录都能工作（向上找 repo root）而 filesystem 命令严格按 cwd，git 成功制造「环境正常」假象；`mv … && echo` 短路模式让失败零输出。
+- 关键约束：filesystem 命令一律绝对路径或批次开头显式 `cd <仓库根> &&`；「工具环境状态跨调用持续」家族（cwd / `$var` 被 bash 吃 / stale read）的共同防线 = **动手前用一条只读命令实证环境假设，不靠记忆**；混用 git 与 filesystem 的批次必须逐条核对 mv/cp 输出。
+
 ## 14. 本仓库落点覆盖
 
 - 本仓库的 bug 经验优先记录在当前技能目录：`.agents/skills/fix-bug/record-bug-fix-memory/*.md`
