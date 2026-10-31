@@ -397,3 +397,4 @@
   - **F41（Windows 本地 vs Vercel Linux 的 symlink 行为差异）本轮未单独验证**——留给 CI 的 Linux job 观察点。
   - **R11 常驻阻塞**（无证据驱动目标）。
   - **隔离目录物理清理**（`node_modules.stale-*` 等）由用户 / 主代理批量执行（运行时硬安全策略不允许本代理删除）。
+- [x] **R21 提交字节级复核（2026-10-31，遗留项 #1 闭合）**：`d7a0113` 逐 hunk 复核**通过**——唯一语义变更 = `nitro.externals.trace: false`（+ `experiment.json` 声明），其余 74 行 diff 为 `apps/docs/nuxt.config.ts` 整体缩进规范化（2 空格 → Tab），无语义漂移；`git rev-list --count 0964a2e2..d7a0113` = **1**（单提交、基线一致）；实测分支**已推送**（`origin/experiment/r21-windows-only-trace-false` = `d7a0113` = 本地 tip）⇒ 上文遗留项登记中「仅本地」为过时表述，以本条为准。R22 遗留项的「未复核」前提解除，其对「零裸导入」的口径盲区订正不受影响。落档：[experiments/R21.md](./experiments/R21.md) 与 [experiments/R22.md](./experiments/R22.md) 各追加「✝️」节（原文不改写）。
