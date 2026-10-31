@@ -115,3 +115,4 @@ memorix resume "continue R51 two-axis unstorage F48" --refresh never
 - **2026-10-31（R52 批次）**：轴 B 定案（FINDINGS #35 / QUEUE R52 行 / status-matrix F45/F48 ✝️ / evidence 索引）——R45 真因闭合、**F50 立号**（failure-catalog 至 F50）、开放项 #3 更新（双轴 ✅）。
 - **2026-10-31（第七轮）**：**上游 issue 已提交**（[nuxt/nuxt#36792](https://github.com/nuxt/nuxt/issues/36792) + F50 增补评论，用户授权）；R53（F41 专项）verified——symlink 形态平台差异定案（F41 状态行更新）；R50 浏览器级兜底验证完成（遗留标注闭合，query API 实时查询形态实锤）。
 - **2026-10-31（R54 批次）**：F50 最后一环定案（FINDINGS #37 / QUEUE R54 行 / R52 ✝️ / evidence）——prerender storage 内存态定性、workerd 前提订正；issue 增补待授权。
+- **2026-10-31（CF 瞬时故障排查）**：api worker 13:54Z build（65c31d4）fail = **CF 平台瞬时错误（deploy 阶段 code 10500）**——非本仓问题，14:13Z 后继 push 自愈（ddff7a0 双 worker success）；生产断言全健康、Vercel 零失败。判别知识见 `evidence/2026-10-31-cf-deploy-10500-transient.md`。
