@@ -48,10 +48,11 @@ memorix resume "continue R51 two-axis unstorage F48" --refresh never
 5. **SOP 技能落地**：`.agents/skills/experiment-ledger-sop/SKILL.md`（实验全流程门禁：开工 / 验收 / 落档九项 / 平台矩阵 / 收口 / 编辑纪律），AGENTS.md 技能表强制第一项。
 6. **R51 轴 A（renderer 模板轴）取证完成**（[FINDINGS #34](experiments/FINDINGS.md)）：双臂对比（main fresh build + `experiment/nuxt4-generation-migration` 现场复建）——**键形态子机理实锤**（N3 生成 renderer `:390` 三元键 `"/"` 抛 1.17.6 校验 vs N4 `getPayloadCacheKey` → `"/.json"` 通过）+ **包裹子机理否定**（两侧裸 await）+ payloadCache 实例链闭合（nitropack@2.13.5 → unstorage 1.17.6）；#33 发现 2 升级为代码级正向实锤、#32 发现 5 订正（R45 内容库空与 1.17.6 无关）；**上游 issue 证据链零推断环节**。
 7. **R51 批次收口 + G12 达成 + issue 草稿**：#32 订正补进 R45.md ✝️；全局技能 init-shadcn-docs-nuxt 1.6.1→**1.7.0**（第 23 条事故记忆 + incident-repair 事故 C——此前 22 条中 unstorage **零提及**）；cwd 持久化险情沉淀 record-bug-fix-memory 案例（家族第三例，memorix gotcha #6145）；pr-roadmap R32 状态行订正；**G12 Linux closure 达成**（`workflow_dispatch` 三连：r48 ✅ 1m54s / r49 ❌ Linux 同签名逐字一致 @ `renderer.mjs:390:22` / r50 ✅ 1m38s，run `41192048834`/`41192051449`/`41192054732`）；上游 issue 草稿组装完毕（[upstream-issue-f48-draft.md](./upstream-issue-f48-draft.md)，**提交动作等授权**）。
+8. **main push 里程碑 + monorepo 技能发布闭环**：`dfa1bb2..067c2c3` push（用户授权），三平台全绿——CI run `41194130270` success、Vercel 双 Project Ready（docs 19s / api 15s）、CF 双 worker success；生产断言 4/4 与基线同量（首页 ×7/107519B、query 200/11927B——注意 query 在 **docs** 域名，api 域名打它是 404 假信号）；monorepo `init-shadcn-docs-nuxt` 1.7.0 按标准流程发布（源 → `release-ai-plugins.ps1` v11.2.0 → commit `15e5eec2`/`a74c9a2f` push dev → CI 双 workflow success → 重装，源↔实体 byte-identical）。**流程纠偏**：主代理曾直改实体文件（安装产物）——被用户纠正为「monorepo 源 + release + 安装」标准流程，纪律已入 auto-memory + memorix #6148。
 
 ### 2.2 git 与验证基线
 
-- `origin/main` = **`dfa1bb2`**；本地未推送批次 = `e683a2d`（总盘点）→ `acfca83`（F48+SOP）→ `f75d787`（复核收口）→ `ee0f51a`（本文件深度重写）→ R51 轴 A 落档提交（本文件同批更新），**随下一里程碑 push**（push 触发双 Project 生产部署 + CI）。
+- `origin/main` = **`067c2c3`**（2026-10-31 push，三平台全绿：CI run `41194130270` success / Vercel 双 Project Ready / CF 双 worker success；生产断言 4/4 与基线同量）。本地领先项为 push 后的台账小批（若有），随下一里程碑 push。
 - 本会话 main 提交的 trailer 约定：**`Assisted-by: ZCode / GLM-5.3-Flash`，无 Co-authored-by**（ZCode/GLM 不在 git-commit 技能 allowlist，禁止冒名）。
 - 生产内容断言（两轮同量）：docs 首页「生产级复现实验室」×7 / 107519 B、api `/v1/health` `ok:true`、`/v1/runtime` `node v22.23.4 / nitro3-h3v2 / linux`、`/api/_content/query` 200 / 11927 B；CI run `41177909466` 绿。
 - 契约直跑 **26/26 PASS**；main 工作区 node_modules = control 态（nitropack 2.13.4 / nuxt 3.21.2，`.pnpm` = 1295 健康）。
