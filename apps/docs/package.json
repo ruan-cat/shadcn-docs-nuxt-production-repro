@@ -2,6 +2,7 @@
 	"name": "@repro/docs",
 	"version": "0.0.0",
 	"private": true,
+	"homepage": "shadcn-docs-nuxt-production-repro-docs.cf.ruan-cat.com",
 	"type": "module",
 	"scripts": {
 		"prepare": "nuxt prepare",

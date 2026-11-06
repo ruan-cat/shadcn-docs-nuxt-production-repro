@@ -2,6 +2,7 @@
 	"name": "@repro/api",
 	"version": "0.0.0",
 	"private": true,
+	"homepage": "shadcn-docs-nuxt-production-repro-api.cf.ruan-cat.com",
 	"type": "module",
 	"scripts": {
 		"dev": "nitro dev",
