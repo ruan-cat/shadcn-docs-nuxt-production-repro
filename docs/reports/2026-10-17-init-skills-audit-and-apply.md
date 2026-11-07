@@ -54,7 +54,7 @@
 ### 3.2 init-ai-md（record-bug-fix-memory + 技能表）
 
 - `CLAUDE.md`/`GEMINI.md` 不存在 → 按技能流程无需重定向，不新建。
-- **record-bug-fix-memory 无条件部署**（技能规定不询问）：模板 v2.0.0 逐字复制到 `.agents/skills/fix-bug/record-bug-fix-memory/SKILL.md`（202 行），案例索引初始为空。
+- **record-bug-fix-memory 无条件部署**（技能规定不询问）：模板 v2.0.0 逐字复制到 `.agents/skills/record-bug-fix-memory/SKILL.md`（202 行），案例索引初始为空。
 - **技能表**：按技能要求插入 AGENTS.md 一级标题之后、其他二级标题之前，含双层存储架构说明与读写指引。
 - **通用记忆项模板（01-11）酌情跳过**：本仓 AGENTS.md 已有等价纪律章节（基线纪律/实验纪律/验收纪律/Git 提交/部署事实），通用模板会重复并稀释实验纪律焦点；如需补项走技能的交互选择流程。
 

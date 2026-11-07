@@ -1,7 +1,7 @@
 # 2026-10-30 Vercel 生产构建失败事故：根因定位、hotfix 与生产级复验
 
 > 性质：生产故障事故记录 + 修复验证（非故障实验）。触发：用户报告「vercel 部署出现故障了，main 主分支出现故障了」。
-> 事故档案（方法论层）：`.agents/skills/fix-bug/record-bug-fix-memory/2026-10-30-vercel-shared-core-incremental-no-emit.md`。
+> 事故档案（方法论层）：`.agents/skills/record-bug-fix-memory/2026-10-30-vercel-shared-core-incremental-no-emit.md`。
 
 ## 1. 故障现象与第一失败门
 

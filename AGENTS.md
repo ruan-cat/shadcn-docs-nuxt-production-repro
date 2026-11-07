@@ -3,7 +3,7 @@
 ## 本项目的技能表
 
 - `experiment-ledger-sop` — `.agents/skills/experiment-ledger-sop/SKILL.md` — **实验全流程台账 SOP（强制）**：验证、复现、CLI 跟踪、数据 markdown 化的闭环检查清单。任何实验开工前、验收前、落档前、批次收口前必须过对应门（§0 触发时机）；其「落档门九项」与「证据等级标注」是 2026-10-31 三轮审计暴露缺口的制度化闸门。
-- `record-bug-fix-memory` — `.agents/skills/fix-bug/record-bug-fix-memory/SKILL.md` — bug 修复后的经验与事故记录沉淀（非调试流程本身）。
+- `record-bug-fix-memory` — `.agents/skills/record-bug-fix-memory/SKILL.md` — bug 修复后的经验与事故记录沉淀（非调试流程本身）。
   - **存储架构**：双层存储。SKILL.md 只放流程指导和摘要索引，详细案例存储在同目录下的独立 `YYYY-MM-DD-{slug}.md` 文件中。
   - **阅读方式**：使用此技能前，先读 SKILL.md 了解流程，再根据「案例索引」章节按需读取相关的独立案例文件。
   - **写入方式**：新增经验时，创建独立案例文件，同时在 SKILL.md 的「案例索引」追加摘要。禁止将完整事故正文写入 SKILL.md。

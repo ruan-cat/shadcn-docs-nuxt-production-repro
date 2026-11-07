@@ -71,5 +71,5 @@
 
 ## 8. 案例索引
 
-- prettier 钩子 stale read / 表格插行断裂 / ANSI grep / bash→PowerShell `$var`：`.agents/skills/fix-bug/record-bug-fix-memory/2026-10-31-ledger-editing-false-signal-traps.md`
-- F47 探针假阳性家族（判据恒 0 / 路径写错 / 端口被占）：`.agents/skills/fix-bug/record-bug-fix-memory/2026-10-30-f47-content-api-false-positive.md`
+- prettier 钩子 stale read / 表格插行断裂 / ANSI grep / bash→PowerShell `$var`：`.agents/skills/record-bug-fix-memory/2026-10-31-ledger-editing-false-signal-traps.md`
+- F47 探针假阳性家族（判据恒 0 / 路径写错 / 端口被占）：`.agents/skills/record-bug-fix-memory/2026-10-30-f47-content-api-false-positive.md`

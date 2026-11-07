@@ -88,7 +88,7 @@
 
 - 每个实验结束即为一个 checkpoint：更新 `progress.md` 的本阶段段落（追加式），并在 QUEUE 表 1 落一行。
 - 任何失败、误判、判废都必须写进 `progress.md`（原因 + 处置 + 是否可采信），不得只留在聊天里。
-- 出现新的可复用教训 → 走 `.agents/skills/fix-bug/record-bug-fix-memory`（独立案例文件 + SKILL.md 摘要索引）+ memorix。
+- 出现新的可复用教训 → 走 `.agents/skills/record-bug-fix-memory`（独立案例文件 + SKILL.md 摘要索引）+ memorix。
 
 ## 4. 进度快照
 

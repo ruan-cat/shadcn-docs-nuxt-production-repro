@@ -24,8 +24,8 @@
 - 两个项目已生成的 `.nuxt` Iconify bundle 产物
 - `shadcn-docs-nuxt@1.1.9` 的本地安装包 manifest、配置和组件源码
 - `D:\code\ruan-cat\SmallAliceWeb\reports\2026-08-01-nuxt-content-monorepo-build-fragility-incident.md`
-- `D:\code\ruan-cat\SmallAliceWeb\.agents\skills\fix-bug\record-bug-fix-memory\2026-08-01-nuxt-content-monorepo-compatibility.md`
-- `D:\code\ruan-cat\eams-component-lib\.claude\skills\fix-bug\record-bug-fix-memory\SKILL.md`
+- `D:\code\ruan-cat\SmallAliceWeb\.agents\skills\record-bug-fix-memory\2026-08-01-nuxt-content-monorepo-compatibility.md`
+- `D:\code\ruan-cat\eams-component-lib\.agents\skills\record-bug-fix-memory\SKILL.md`
 - [lucide issue #2806](https://github.com/lucide-icons/lucide/issues/2806)
 
 ## 3. shadcn-docs-nuxt 是否包含 Lucide
@@ -281,7 +281,7 @@ import * as Lucide
 - [SmallAliceWeb package.json](/D:/code/ruan-cat/SmallAliceWeb/packages/ai-vue-doc/package.json:19)
 - [eams-component-lib package.json](/D:/code/ruan-cat/eams-component-lib/packages/vue-element-cui-nuxt/package.json:27)
 - [SmallAliceWeb 构建脆弱性事故报告](/D:/code/ruan-cat/SmallAliceWeb/reports/2026-08-01-nuxt-content-monorepo-build-fragility-incident.md:39)
-- [SmallAliceWeb Nuxt Content 兼容性记忆](/D:/code/ruan-cat/SmallAliceWeb/.agents/skills/fix-bug/record-bug-fix-memory/2026-08-01-nuxt-content-monorepo-compatibility.md:12)
+- [SmallAliceWeb Nuxt Content 兼容性记忆](/D:/code/ruan-cat/SmallAliceWeb/.agents/skills/record-bug-fix-memory/2026-08-01-nuxt-content-monorepo-compatibility.md:12)
 - [lucide issue #2806](https://github.com/lucide-icons/lucide/issues/2806)
 
 ## 11. 依赖范围精细对比
@@ -577,8 +577,8 @@ eams 这次是自然完成的成功构建。上述警告需要单独治理，但
 - [eams `vue-element-cui-nuxt/package.json`](/D:/code/ruan-cat/eams-component-lib/packages/vue-element-cui-nuxt/package.json:1)
 - [eams `vue-element-cui-nuxt/nuxt.config.ts`](/D:/code/ruan-cat/eams-component-lib/packages/vue-element-cui-nuxt/nuxt.config.ts:1)
 - [eams 根 `CLAUDE.md`](/D:/code/ruan-cat/eams-component-lib/CLAUDE.md:1)
-- [eams 构建事故记录技能 `SKILL.md`](/D:/code/ruan-cat/eams-component-lib/.claude/skills/fix-bug/record-bug-fix-memory/SKILL.md:1)
-- [eams 构建事故案例文件](/D:/code/ruan-cat/eams-component-lib/.claude/skills/fix-bug/record-bug-fix-memory/2026-08-01-nuxt-content-monorepo-build-fragility-incident.md:1)
+- [eams 构建事故记录技能 `SKILL.md`](/D:/code/ruan-cat/eams-component-lib/.agents/skills/record-bug-fix-memory/SKILL.md:1)
+- [eams 构建事故案例文件](/D:/code/ruan-cat/eams-component-lib/.agents/skills/record-bug-fix-memory/2026-08-01-nuxt-content-monorepo-build-fragility-incident.md:1)
 
 以上新增内容只描述证据、配置推断和历史记录，不对两个 monorepo 做任何修改。
 

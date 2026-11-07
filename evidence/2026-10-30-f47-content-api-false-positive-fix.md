@@ -1,7 +1,7 @@
 # 2026-10-30 F47 第二层「HTTP 200 假阳性」修复证据
 
 > 触发：`main` 生产部署故障排查中发现的**第二层假阳性**（构建期故障已于 2026-10-30 hotfix 修复，见 `evidence/2026-10-30-vercel-shared-core-hotfix-verify.md`）
-> 事故档案（方法论层）：`.agents/skills/fix-bug/record-bug-fix-memory/2026-10-30-f47-content-api-false-positive.md`
+> 事故档案（方法论层）：`.agents/skills/record-bug-fix-memory/2026-10-30-f47-content-api-false-positive.md`
 > 台账：`docs/task-artifacts/failure-catalog.md`（F29 / F47）、`docs/task-artifacts/acceptance-gates.md`（G4）、`docs/task-artifacts/experiments/FINDINGS.md`（#9 / #19）
 
 ## 1. 第一失败门
