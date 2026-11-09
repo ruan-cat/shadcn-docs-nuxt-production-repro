@@ -429,12 +429,21 @@ nitropack 2.13.5 相对 2.13.4 的**唯一依赖增量**把 `unstorage` 从 `^1.
 - **R46（Nuxt 3 世代）**：nitro renderer 的 payloadCache `setItem` 未被包裹 ⇒ **prerender 500（构建级失败）**；
 - **R45（Nuxt 4 世代）**：content runtime 的 `cache.setItem(id, {parsed, hash}).catch(() => {})` 吞掉异常 ⇒ 生产**内容库为空**（构建全绿、数据全空，数据级故障）。
 
-**三规避方向已实证**（[FINDINGS #33](experiments/FINDINGS.md)）：钉 `unstorage` 1.17.5 ✅ 全保真（R48）/ content 升级 2.14.1 ❌ 无效（R49，失败写入在 Nuxt 生成 renderer，与 content 版本无关）/ `experimental.payloadExtraction: false` 调用点消除 ✅（R50，代价 = payload 静态化消失）。上游修复路径与 issue 材料见 [HANDOFF §4](HANDOFF.md) 第 7 条（待用户授权）。本编号自 [F45](#f45升级被错误理解为单包升级而不是兼容矩阵迁移) 的 ✝️ 追记独立拆出——F45 是「升级纪律」类目，本条是可按签名（`Invalid key: "/"`）检索的故障本体；相关档案：[R46.md](experiments/R46.md) / [R48.md](experiments/R48.md) / [R49.md](experiments/R49.md) / [R50.md](experiments/R50.md)。
+**三规避方向已实证**（[FINDINGS #33](experiments/FINDINGS.md)）：钉 `unstorage` 1.17.5 ✅ 全保真（R48）/ content 升级 2.14.1 ❌ 无效（R49，失败写入在 Nuxt 生成 renderer，与 content 版本无关）/ `experimental.payloadExtraction: false` 调用点消除 ✅（R50，代价 = payload 静态化消失）。上游修复路径与 issue 材料见 [HANDOFF §4](HANDOFF.md) 第 7 条（待用户授权）。本编号自 [F45](#f45升级被错误理解为单包升级而不是兼容矩阵迁移) 的 ✝️ 追记独立拆出——F45 是「升级纪律」类目，本条是可按签名（`Invalid key: "/"`）检索的故障本体；相关档案：[R46.md](experiments/R46.md) / [R48.md](experiments/R48.md) / [R49.md](experiments/R49.md) / [R50.md](experiments/R50.md)。**✝️ 2026-10-31：上游 issue 已提交**（[nuxt/nuxt#36792](https://github.com/nuxt/nuxt/issues/36792)），上文「待用户授权」为提交前快照（见 progress 第七轮）。
+
+## F49：本地探针端口占用假象——遗留 standalone 服务应答被误判为实验服务 ready（2026-10-31 登记；R45 首轮暴露，探针加固 `d2dd32b` 已固化）
+
+R45 首轮冒烟的假 FAIL 暴露 `probes/content-smoke.ts` 的 `waitForServer` **不校验应答者身份**：探针目标端口被上一轮遗留的 standalone 服务占用时，首轮 fetch 由遗留服务应答即被判定 ready ⇒ **假 PASS / 假 FAIL 双向风险**（冒烟断言的对象根本不是本轮启动的服务）。两道新门（提交 `d2dd32b`，progress 2026-10-30 批次全文）：
+
+1. **端口占用即拒绝**：spawn 前用 `node:net` 探测目标端口，已占用 ⇒ 直接 `exit 1` 并打印「端口 ${port} 已被占用，拒绝复用既有服务」（附 `--allow-port-reuse` 逃生开关）；
+2. **应答者身份校验**：就绪判据从「fetch 有应答」改为**子进程自己打印的 `Listening on <url>` 行**（依据 `nitropack/dist/presets/node/runtime/node-server.mjs:33`），并比对子进程自称监听端口与探针请求端口——**只比端口不比 host**（Windows 上 `127.0.0.1` 可能报成 `::1`）。
+
+**契约守卫**：`tests/probe-guard.test.mjs` 锁定两道门**及其调用点**（`await isPortOccupied(port)` / `LISTENING_PATTERN.exec(log)` / `await waitForServer(base, child, serverLog)`）——只查函数名存在会退化成恒真式，首轮已实测踩坑并修正为「检查调用点」。**红绿差分自证**：绿态 probe exit 0 / 13/13 PASS；红态（cmd 包装 env 起 stale standalone）probe **exit 1** 明确拒绝；拆掉 `isPortOccupied` 调用点后契约 `not ok 3`，装回后 19/19 PASS。**家族纪律**：「变量 touching 哪条路由，哪条路由就要有专属断言」的探针纪律同族（F47/F49，见 [R50.md](experiments/R50.md) 遗留节）；编号占用声明见 [R52.md](experiments/R52.md) 复现自检清单（「F49 已被探针端口占用」）。
 
 ## F50：Nuxt 4 把 nitro 主 bundle 的 buildDir 改写到 `node_modules/.cache/nuxt/.nuxt`，content v2 的预热目录随之错位 ⇒ `_snapshot` 读空 ⇒ 生产内容库为空（2026-10-31 登记；**本仓已复现**，R52 verified）
 
 `@nuxt/content` 的 `build:before` 预热钩子把 source 原文写入 `resolve(nuxt.options.buildDir, "content-cache")`（`cache:content:parsed:*`），nitro 主 bundle 的 `_snapshot`（`buildProduction` 内、rollup 之前）按 `bundledStorage.push("/cache/content")` 把该挂载快照进产物 serverAssets。**Nuxt 3 恒 `buildDir = .nuxt`，预热/回写/快照三步同目录**；**Nuxt 4 把主 bundle 实例的 buildDir 改写为 `node_modules/.cache/nuxt/.nuxt`** ⇒ base 随实例错位 ⇒ `_snapshot` 读空目录 ⇒ bundled 零条 ⇒ 生产运行时 `cache:content:parsed` 无数据 ⇒ **Content API 全空集合（构建全绿的假象）**。
 
 - **表象**（R45 / R51 臂 2 / R52 B 轮三度复现）：build exit 0、Prerendered 11 routes（页面渲染成功——prerender 期 `sourceBase` 指向 `content/` 源目录不受错位影响）、产物 `nitro:bundled:cache:content:*` **零条**、`.nuxt/content-cache/parsed/*` 停留预热裸 markdown、缺 `content-index.json`。
-- **机理铁证**（R52 插桩）：双实例 `cacheContentBase` 对比——第 1 实例 `…/apps/docs/.nuxt/content-cache`（读到预热 4 条）vs 第 2 实例（主 bundle）`…/apps/docs/node_modules/.cache/nuxt/.nuxt/content-cache`（读空）；`node_modules/.cache/nuxt/` 整体不存在 ⇒ prerender 期 `setItem` 回写丢失并被 content `storage.js:163` 的 `.catch(() => {})` 吞（workerd 内确切去向待深挖）。
+- **机理铁证**（R52 插桩）：双实例 `cacheContentBase` 对比——第 1 实例 `…/apps/docs/.nuxt/content-cache`（读到预热 4 条）vs 第 2 实例（主 bundle）`…/apps/docs/node_modules/.cache/nuxt/.nuxt/content-cache`（读空）；`node_modules/.cache/nuxt/` 整体不存在 ⇒ prerender 期 `setItem` 回写丢失并被 content `storage.js:163` 的 `.catch(() => {})` 吞（workerd 内确切去向待深挖）。**✝️ 2026-10-31：R54 已闭合**——去向 = prerender 专属内存态 storage（回写随构建消亡），workerd 前提有误（双世代均主进程 in-process），见 [R54.md](experiments/R54.md) / [FINDINGS #37](experiments/FINDINGS.md)。
 - 与 [F48](#f48unstorage-1176-的-key-校验与-content-v2-的-key-约定冲突)（Nuxt 3 世代 unstorage 校验，构建级 500）互补：**F50 = Nuxt 4 世代的数据级空集合**——Nuxt 4 迁移的两大世代适配缺口。相关档案：[R52.md](experiments/R52.md)（verified）/ [R45.md](experiments/R45.md)（阳性）；上游双靶点：nuxt（buildDir 改写语义）+ @nuxt/content（预热未对齐 nitro 实际 buildDir）。

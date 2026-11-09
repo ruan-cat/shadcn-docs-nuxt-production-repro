@@ -34,7 +34,7 @@
 - [AI 会话交接入口（HANDOFF）](./HANDOFF.md) ← **新会话起点**：memorix 命令 + 推进状态 + 遗留清单
 - [架构与边界](./architecture.md)
 - [完整故障目录](./failure-catalog.md)
-- [F01-F46 当前状态矩阵](./status-matrix.md)
+- [F01-F50 当前状态矩阵](./status-matrix.md)
 - [实验矩阵](./experiment-matrix.md)
 - [PR 路线图](./pr-roadmap.md)
 - [验收门禁](./acceptance-gates.md)
