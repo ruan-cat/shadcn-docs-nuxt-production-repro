@@ -22,3 +22,10 @@ coverage
 
 # 实验复现隔离目录（等用户批量删除确认后物理清理；safe-delete 守卫对 >50 文件删除要求确认，trash 对巨型目录会超时中止）
 node_modules.stale-*
+
+# WorkBuddy 运行时目录：技能联接指向 .agents/skills，记忆与临时产物为本地数据，均不入库
+.workbuddy/skills
+.workbuddy/tmp
+.workbuddy-ai/skills
+.workbuddy-ai/memory
+.workbuddy-ai/tmp
