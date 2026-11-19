@@ -27,5 +27,4 @@ node_modules.stale-*
 .workbuddy/skills
 .workbuddy/tmp
 .workbuddy-ai/skills
-.workbuddy-ai/memory
 .workbuddy-ai/tmp
