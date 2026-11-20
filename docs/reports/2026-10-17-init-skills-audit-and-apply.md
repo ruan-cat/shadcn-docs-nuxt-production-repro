@@ -10,7 +10,7 @@
 | 1   | init-shadcn-docs-nuxt              | 1.6.1  | ✅ **应用（合规审计模式）** | 本仓即该技能的复测实验田；逐项对照 22 条强约束做审计，不重新初始化                                                                                                      |
 | 2   | init-tsconfig                      | 1.0.0  | ✅ **应用**                 | monorepo 子包形态命中；仅动 packages ×2 tsconfig + .gitignore，零回归验证通过                                                                                           |
 | 3   | init-ai-md                         | 23.0.0 | ✅ **应用（部分）**         | AGENTS.md 已存在且为唯一事实来源；按技能规定无条件部署 record-bug-fix-memory v2.0.0 + 登记技能表；通用记忆项模板酌情跳过（理由见 §3.3）                                 |
-| 4   | init-simple-memorix                | 2.7.0  | ✅ **应用（项目级）**       | 落地 `.workbuddy/hooks/hooks.json`（仅生命周期 4 事件，无高频噪音）；MCP mode 层属用户级配置未触碰                                                                      |
+| 4   | use-memorix                        | 2.7.0  | ✅ **应用（项目级）**       | 落地 `.workbuddy/hooks/hooks.json`（仅生命周期 4 事件，无高频噪音）；MCP mode 层属用户级配置未触碰                                                                      |
 | 5   | init-vscode                        | 2.0.0  | ✅ **应用**                 | 本仓有大量构建产物（.nuxt/.output/.turbo/.vercel），三层排除 + files.eol LF 对开发体验有实际价值；纯编辑器配置，零构建链影响                                            |
 | 6   | init-prettier-git-hooks            | 4.0.0  | ⏸️ **跳过（opt-in）**       | 实验中仓新增 5 devDeps + lockfile 重算 + 全量 md 重排 = 基线噪音；MDC 防护当前无 prettier 链路故无风险；后续如需按技能契约（lint-md@1.0.1 三层一致 + 三链路验证）单独走 |
 | 7   | init-playwright                    | 1.1.0  | ⏸️ **跳过（opt-in）**       | 浏览器验证已由 agent-browser MCP 覆盖（evidence 2026-10-16）；技能自带"headless CPU 过载→3 天全删"事故复盘，实验仓不宜引入三件套扩面                                    |
@@ -58,7 +58,7 @@
 - **技能表**：按技能要求插入 AGENTS.md 一级标题之后、其他二级标题之前，含双层存储架构说明与读写指引。
 - **通用记忆项模板（01-11）酌情跳过**：本仓 AGENTS.md 已有等价纪律章节（基线纪律/实验纪律/验收纪律/Git 提交/部署事实），通用模板会重复并稀释实验纪律焦点；如需补项走技能的交互选择流程。
 
-### 3.3 init-simple-memorix（项目级 WorkBuddy hooks）
+### 3.3 use-memorix（项目级 WorkBuddy hooks）
 
 - 落地 `.workbuddy/hooks/hooks.json`：仅保留生命周期 4 事件（SessionStart / UserPromptSubmit / PreCompact / Stop），**无** PreToolUse/PostToolUse 高频噪音事件（符合技能"保留/移除"事件表）。
 - 合并策略核对：项目此前无 hooks 配置，属全新创建而非合并；未触碰用户级 `~/.workbuddy/mcp.json`（MCP mode 层需单独授权，且全局已配置）。
